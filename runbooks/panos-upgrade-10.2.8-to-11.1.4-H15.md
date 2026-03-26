@@ -29,7 +29,24 @@
 - [ ] Confirm **both firewalls** are healthy behind each LB (required for zero-downtime rolling upgrade)
 - [ ] PAN-OS 11.0 latest maintenance release image downloaded
 - [ ] PAN-OS 11.1.4-H15 image downloaded
+- [ ] **Connection draining timeout** is configured on both frontend and backend backend services (see below)
 - [ ] Change window approved and communicated
+
+**Verify/set connection draining timeout (one-time setup):**
+
+```bash
+# Check current setting
+gcloud compute backend-services describe <BACKEND_SERVICE_NAME> \
+  --region=<REGION> \
+  --format="get(connectionDraining.drainingTimeoutSec)"
+
+# If not set or too low, configure it (300s = 5 min is a good default)
+gcloud compute backend-services update <BACKEND_SERVICE_NAME> \
+  --region=<REGION> \
+  --connection-draining-timeout=300
+```
+
+> This setting controls what happens when an instance is removed from the backend. Without it, removal is a hard cut — existing connections are dropped immediately. With it configured, GCP stops new connections but continues forwarding packets for existing connections until the timeout elapses.
 
 ---
 
@@ -143,25 +160,7 @@ Confirm both `11.0.6` (or your chosen 11.0.x) and `11.1.4-h15` show `Downloaded:
 
 #### Phase 2: Drain Firewall from Load Balancer
 
-**2.1 — Ensure Connection Draining Is Configured**
-
-> **Important:** GCP Internal Network Load Balancers (L4 passthrough) do NOT honor `max-rate` as a traffic routing signal. That is an L7 HTTP(S) LB feature. For L4 ILBs, you must **remove the instance from the backend** to trigger connection draining.
-
-Verify connection draining timeout is set on the backend service (one-time setup):
-
-```bash
-# Check current setting
-gcloud compute backend-services describe <BACKEND_SERVICE_NAME> \
-  --region=<REGION> \
-  --format="get(connectionDraining.drainingTimeoutSec)"
-
-# If not set or too low, configure it (300s = 5 min is a good default)
-gcloud compute backend-services update <BACKEND_SERVICE_NAME> \
-  --region=<REGION> \
-  --connection-draining-timeout=300
-```
-
-**2.2 — Remove the Target FW from the Instance Group**
+**2.1 — Remove the Target FW from the Instance Group**
 
 This triggers connection draining — GCP stops sending new connections and allows existing ones to finish within the drain timeout window.
 
@@ -171,7 +170,7 @@ gcloud compute instance-groups unmanaged remove-instances <INSTANCE_GROUP> \
   --zone=<ZONE>
 ```
 
-**2.3 — Verify Drain via Firewall Session Logs**
+**2.2 — Verify Drain via Firewall Session Logs**
 
 Monitor active sessions on the firewall being drained:
 
@@ -190,7 +189,7 @@ Active session count should be declining and approaching zero. No new sessions s
 
 > If sessions are NOT declining, verify the instance was actually removed from the IG. If new sessions are still being established, something went wrong with the drain.
 
-**2.4 — Verify the Other FW Is Healthy**
+**2.3 — Verify the Other FW Is Healthy**
 
 On the other firewall (the one staying in production):
 
@@ -461,4 +460,27 @@ If the FW is completely broken:
 
 ---
 
-*Runbook Version: 1.1 | Created: 2026-03-26*
+### References
+
+**PAN-OS Upgrade Path and Procedures:**
+- [Determine the Upgrade Path to PAN-OS 11.1](https://docs.paloaltonetworks.com/pan-os/11-1/pan-os-upgrade/upgrade-pan-os/upgrade-the-firewall-pan-os/determine-the-upgrade-path) — Official version stepping requirements
+- [Upgrade a Standalone Firewall](https://docs.paloaltonetworks.com/pan-os/11-1/pan-os-upgrade/upgrade-pan-os/upgrade-the-firewall-pan-os/upgrade-a-standalone-firewall) — Step-by-step standalone upgrade procedure
+- [PAN-OS 11.1 Release Notes](https://docs.paloaltonetworks.com/pan-os/11-1/pan-os-release-notes) — Known issues, resolved issues, and upgrade considerations
+- [PAN-OS Compatibility Matrix](https://docs.paloaltonetworks.com/compatibility-matrix/pan-os) — Supported models and versions
+
+**PAN-OS CLI Reference:**
+- [show session info](https://docs.paloaltonetworks.com/pan-os/11-1/pan-os-cli-quick-start/cli-cheat-sheets/cli-cheat-sheet-networking) — Active session counts and statistics
+- [request system software](https://docs.paloaltonetworks.com/pan-os/11-1/pan-os-cli-quick-start/cli-cheat-sheets/cli-cheat-sheet-device-management) — Software download, install, and revert commands
+- [show system info](https://docs.paloaltonetworks.com/pan-os/11-1/pan-os-cli-quick-start/cli-cheat-sheets/cli-cheat-sheet-device-management) — Version, content, and license info
+
+**GCP Connection Draining and Load Balancing:**
+- [Enabling Connection Draining on Backend Services](https://cloud.google.com/load-balancing/docs/enabling-connection-draining) — How connection draining works, timeout configuration
+- [Internal Passthrough Network Load Balancer Overview](https://cloud.google.com/load-balancing/docs/internal) — L4 ILB architecture (Maglev/Andromeda), health probes, backend behavior
+- [Unmanaged Instance Groups](https://cloud.google.com/compute/docs/instance-groups/creating-groups-of-unmanaged-instances) — Adding/removing instances from unmanaged IGs
+
+**GCP L4 vs L7 Behavior (Important):**
+- [Backend Service Settings](https://cloud.google.com/load-balancing/docs/backend-service) — Note: `max-rate` is an L7 HTTP(S) LB capacity scaler. L4 passthrough ILBs do not use it as a traffic routing signal. For L4, removing the instance from the backend is the correct way to stop new connections.
+
+---
+
+*Runbook Version: 1.5 | Created: 2026-03-26*
