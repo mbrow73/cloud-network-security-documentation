@@ -171,24 +171,38 @@ gcloud compute instance-groups unmanaged remove-instances <INSTANCE_GROUP> \
   --zone=<ZONE>
 ```
 
-**2.3 — Wait for Connections to Drain**
+**2.3 — Verify Drain via Firewall Session Logs**
 
-On the firewall itself:
+Monitor active sessions on the firewall being drained:
+
 ```
+# Check current session count
 show session info
+
+# Watch active sessions — run this a few times over 1-2 minutes
+show session info | match "num-active"
+
+# For more detail, check sessions by policy to see what's still flowing
+show session all filter state active
 ```
 
-Active sessions should be declining. Wait for the connection draining timeout to elapse (or until sessions reach near zero). This ensures existing flows complete gracefully before reboot.
+Active session count should be declining and approaching zero. No new sessions should be establishing after the instance is removed from the IG. Wait until active sessions are at or near zero before proceeding.
 
-**2.4 — Verify the Other FW Is Handling All Traffic**
+> If sessions are NOT declining, verify the instance was actually removed from the IG. If new sessions are still being established, something went wrong with the drain.
 
-```bash
-# Confirm the other backend is HEALTHY and is the only active backend
-gcloud compute backend-services get-health <BACKEND_SERVICE_NAME> \
-  --region=<REGION>
+**2.4 — Verify the Other FW Is Healthy**
+
+On the other firewall (the one staying in production):
+
+```
+show session info | match "num-active"
+show system state filter-pretty sys.s1.p*.stats.dp-monitor
+show running resource-monitor
 ```
 
-> **STOP if the other firewall is not healthy.** You will cause an outage.
+Confirm it is actively handling sessions and resource utilization is within acceptable range. It will be carrying 100% of traffic during the upgrade.
+
+> **STOP if the other firewall is showing errors or high resource usage.** Fix it before proceeding.
 
 ---
 
