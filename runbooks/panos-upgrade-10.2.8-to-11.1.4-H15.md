@@ -143,45 +143,47 @@ Confirm both `11.0.6` (or your chosen 11.0.x) and `11.1.4-h15` show `Downloaded:
 
 #### Phase 2: Drain Firewall from Load Balancer
 
-**2.1 — Drain the Target FW from the Instance Group**
+**2.1 — Ensure Connection Draining Is Configured**
 
-In GCP Console or via `gcloud`:
+> **Important:** GCP Internal Network Load Balancers (L4 passthrough) do NOT honor `max-rate` as a traffic routing signal. That is an L7 HTTP(S) LB feature. For L4 ILBs, you must **remove the instance from the backend** to trigger connection draining.
+
+Verify connection draining timeout is set on the backend service (one-time setup):
 
 ```bash
-# Option A: Set the instance to DRAINING (graceful — lets existing connections finish)
-gcloud compute backend-services update-backend <BACKEND_SERVICE_NAME> \
-  --instance-group=<INSTANCE_GROUP> \
-  --instance-group-zone=<ZONE> \
+# Check current setting
+gcloud compute backend-services describe <BACKEND_SERVICE_NAME> \
   --region=<REGION> \
-  --max-rate=0
+  --format="get(connectionDraining.drainingTimeoutSec)"
 
-# Option B: Remove from instance group entirely (harder cutover)
+# If not set or too low, configure it (300s = 5 min is a good default)
+gcloud compute backend-services update <BACKEND_SERVICE_NAME> \
+  --region=<REGION> \
+  --connection-draining-timeout=300
+```
+
+**2.2 — Remove the Target FW from the Instance Group**
+
+This triggers connection draining — GCP stops sending new connections and allows existing ones to finish within the drain timeout window.
+
+```bash
 gcloud compute instance-groups unmanaged remove-instances <INSTANCE_GROUP> \
   --instances=<FW_INSTANCE_NAME> \
   --zone=<ZONE>
 ```
 
-> **Prefer Option A** (drain) — it stops new connections while letting existing sessions complete. Wait 60-90 seconds for sessions to clear.
-
-**2.2 — Verify FW Is Drained**
-
-```bash
-# Check backend health — target FW should show UNHEALTHY or DRAINING
-gcloud compute backend-services get-health <BACKEND_SERVICE_NAME> \
-  --region=<REGION>
-```
+**2.3 — Wait for Connections to Drain**
 
 On the firewall itself:
 ```
 show session info
 ```
 
-Active sessions should be declining. Wait until they're near zero or at an acceptable level.
+Active sessions should be declining. Wait for the connection draining timeout to elapse (or until sessions reach near zero). This ensures existing flows complete gracefully before reboot.
 
-**2.3 — Verify the Other FW Is Handling Traffic**
+**2.4 — Verify the Other FW Is Handling All Traffic**
 
 ```bash
-# Confirm the other backend is HEALTHY
+# Confirm the other backend is HEALTHY and is the only active backend
 gcloud compute backend-services get-health <BACKEND_SERVICE_NAME> \
   --region=<REGION>
 ```
@@ -309,17 +311,9 @@ show system disk-space
 
 #### Phase 5: Re-Add to Load Balancer
 
-**5.1 — Add FW Back to Instance Group / Restore Rate**
+**5.1 — Add FW Back to Instance Group**
 
 ```bash
-# If you used Option A (max-rate=0):
-gcloud compute backend-services update-backend <BACKEND_SERVICE_NAME> \
-  --instance-group=<INSTANCE_GROUP> \
-  --instance-group-zone=<ZONE> \
-  --region=<REGION> \
-  --max-rate-per-instance=<ORIGINAL_RATE>  # or remove rate limit
-
-# If you used Option B (removed from group):
 gcloud compute instance-groups unmanaged add-instances <INSTANCE_GROUP> \
   --instances=<FW_INSTANCE_NAME> \
   --zone=<ZONE>
