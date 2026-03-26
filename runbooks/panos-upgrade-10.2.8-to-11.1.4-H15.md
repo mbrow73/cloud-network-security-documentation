@@ -4,7 +4,7 @@
 
 ---
 
-### 📋 Overview
+### Overview
 
 | Item | Detail |
 |---|---|
@@ -13,30 +13,29 @@
 | **Upgrade Path** | 10.2.8 → 11.0 (latest maint.) → 11.1.4-H15 |
 | **Architecture** | LB-sandwiched PA-VM (frontend INLB + backend INLB) |
 | **HA Mode** | None — LB health probes provide failover |
-| **Estimated Downtime Per FW** | ~15-20 min per reboot (×2 reboots per FW) |
-| **Total Impact** | Zero downtime if 2+ firewalls behind each LB |
+| **Estimated Downtime Per FW** | ~15-20 min per reboot (x2 reboots per FW) |
+| **Total Impact** | Zero downtime — 2 firewalls behind each LB |
 
-> ⚠️ **PAN-OS requires stepping through major versions.** You cannot jump from 10.2 → 11.1 directly. You **must** install 11.0.x first, reboot, then install 11.1.4-H15 and reboot again.
+> **PAN-OS requires stepping through major versions.** You cannot jump from 10.2 → 11.1 directly. You **must** install 11.0.x first, reboot, then install 11.1.4-H15 and reboot again.
 
 ---
 
-### 🔑 Prerequisites
+### Prerequisites
 
-- [ ] **Panorama** (if managing these FWs) is already upgraded to ≥ 11.1.x
-- [ ] **WildFire appliance** (if applicable) is upgraded before firewalls
+- [ ] **Panorama** (if managing these FWs) is already upgraded to >= 11.1.x
 - [ ] Verify current version: `show system info | match sw-version`
 - [ ] Confirm firewall model is supported on 11.1 — check [compatibility matrix](https://docs.paloaltonetworks.com/compatibility-matrix/pan-os)
 - [ ] Verify active support/license: `request license info`
-- [ ] Confirm **at least 2 firewalls** exist behind each LB (required for zero-downtime rolling upgrade)
+- [ ] Confirm **both firewalls** are healthy behind each LB (required for zero-downtime rolling upgrade)
 - [ ] PAN-OS 11.0 latest maintenance release image downloaded
 - [ ] PAN-OS 11.1.4-H15 image downloaded
 - [ ] Change window approved and communicated
 
 ---
 
-### 📦 Pre-Stage Images (Do This Ahead of Time — No Impact)
+### Pre-Stage Images (Do This Ahead of Time — No Impact)
 
-Run on **every** firewall before the maintenance window:
+Run on **both** firewalls before the maintenance window:
 
 ```
 # Check available versions
@@ -51,7 +50,7 @@ request system software download version 11.1.4-h15
 # Monitor: request system software download status
 ```
 
-> 💡 Downloads happen in the background with zero traffic impact. Do this during business hours to save time in the window.
+> Downloads happen in the background with zero traffic impact. Do this during business hours to save time in the window.
 
 Verify both images show `Downloaded: yes`:
 ```
@@ -60,38 +59,40 @@ show system software status
 
 ---
 
-### 🏗️ Architecture Context
+### Architecture Context
 
 ```
-                    ┌──────────────────┐
-    Traffic In ───► │  Frontend INLB   │
-                    └──────┬───────────┘
-                           │
-                ┌──────────┼──────────┐
-                ▼          ▼          ▼
-          ┌─────────┐┌─────────┐┌─────────┐
-          │  PA-01  ││  PA-02  ││  PA-0N  │
-          └─────────┘└─────────┘└─────────┘
-                │          │          │
-                ▼          ▼          ▼
-                    ┌──────────────────┐
-                    │  Backend INLB    │
-                    └──────────────────┘
-                           │
-                    ▼  Backend Servers  ▼
+                    +------------------+
+    Traffic In ---> |  Frontend INLB   |
+                    +--------+---------+
+                             |
+                    +--------+--------+
+                    v                 v
+              +---------+       +---------+
+              |  PA-01  |       |  PA-02  |
+              +---------+       +---------+
+                    |                 |
+                    v                 v
+                    +--------+--------+
+                             |
+                    +------------------+
+                    |  Backend INLB    |
+                    +------------------+
+                             |
+                    v  Backend Servers  v
 ```
 
-**How failover works:** GCP INLB health probes check each firewall. When a FW goes down for reboot, the LB stops sending traffic to it within ~10 seconds (default probe interval). Traffic shifts to remaining healthy FWs. When the FW comes back and passes probes, LB re-adds it.
+**How failover works:** GCP INLB health probes check each firewall. When a FW goes down for reboot, the LB stops sending traffic to it within ~10 seconds (default probe interval). Traffic shifts to the remaining healthy FW. When the rebooted FW comes back and passes probes, the LB re-adds it.
 
 ---
 
-### 🔄 Rolling Upgrade Procedure
+### Rolling Upgrade Procedure
 
-> **CRITICAL:** Upgrade firewalls **one at a time.** Never upgrade more than one simultaneously. Wait for each FW to fully recover and pass health probes before moving to the next.
+> **CRITICAL:** Upgrade firewalls **one at a time.** Never upgrade both simultaneously. Wait for the first FW to fully recover and pass health probes before starting the second.
 
 ---
 
-#### 🔁 Repeat the following for EACH firewall (PA-01, PA-02, PA-0N...)
+#### Repeat the following for EACH firewall (PA-01 first, then PA-02)
 
 ---
 
@@ -160,7 +161,7 @@ gcloud compute instance-groups unmanaged remove-instances <INSTANCE_GROUP> \
   --zone=<ZONE>
 ```
 
-> 💡 **Prefer Option A** (drain) — it stops new connections while letting existing sessions complete. Wait 60-90 seconds for sessions to clear.
+> **Prefer Option A** (drain) — it stops new connections while letting existing sessions complete. Wait 60-90 seconds for sessions to clear.
 
 **2.2 — Verify FW Is Drained**
 
@@ -177,15 +178,15 @@ show session info
 
 Active sessions should be declining. Wait until they're near zero or at an acceptable level.
 
-**2.3 — Verify Remaining FWs Are Handling Traffic**
+**2.3 — Verify the Other FW Is Handling Traffic**
 
 ```bash
-# Confirm at least one other backend is HEALTHY
+# Confirm the other backend is HEALTHY
 gcloud compute backend-services get-health <BACKEND_SERVICE_NAME> \
   --region=<REGION>
 ```
 
-> 🛑 **STOP if no other healthy backends exist.** You will cause an outage.
+> **STOP if the other firewall is not healthy.** You will cause an outage.
 
 ---
 
@@ -210,7 +211,7 @@ Wait for the install job to complete (status: `FIN`).
 request restart system
 ```
 
-> ⏱️ **Expected reboot time: ~10-15 minutes.** The firewall will be unreachable during this time.
+> **Expected reboot time: ~10-15 minutes.** The firewall will be unreachable during this time.
 
 **3.3 — Verify 11.0.x Boot**
 
@@ -254,7 +255,7 @@ show jobs all
 request restart system
 ```
 
-> ⏱️ **Expected reboot time: ~10-15 minutes.**
+> **Expected reboot time: ~10-15 minutes.**
 
 **4.3 — Post-Upgrade Verification**
 
@@ -281,7 +282,7 @@ show running nat-policy | match rules
 request license info
 
 # Content versions
-show system info | match -i "threat-version\|app-version\|antivirus-version\|wildfire-version"
+show system info | match -i "threat-version\|app-version\|antivirus-version"
 
 # Dataplane health
 show running resource-monitor
@@ -346,7 +347,7 @@ Active sessions should begin climbing. Monitor for 5-10 minutes to confirm stabl
 
 #### Phase 6: Bake Time
 
-> ⏱️ **Wait a minimum of 15-30 minutes** with the upgraded FW handling production traffic before moving to the next firewall.
+> **Wait a minimum of 15-30 minutes** with the upgraded FW handling production traffic before moving to the next firewall.
 
 During bake time, monitor:
 - Session counts (should be stable/growing)
@@ -354,17 +355,17 @@ During bake time, monitor:
 - Health probe status (should stay HEALTHY)
 - Application logs for errors from clients behind this FW
 
-**Only proceed to the next firewall after bake time passes with no issues.**
+**Only proceed to PA-02 after bake time passes with no issues.**
 
 ---
 
-#### ➡️ NEXT FIREWALL
+#### NEXT FIREWALL
 
-Go back to **Phase 1** and repeat for the next firewall (PA-02, PA-03, etc.)
+Go back to **Phase 1** and repeat for PA-02.
 
 ---
 
-### 🔙 Rollback Procedure
+### Rollback Procedure
 
 If anything goes wrong during or after upgrade:
 
@@ -392,29 +393,28 @@ commit
 
 If the FW is completely broken:
 1. Keep it removed from the LB
-2. Remaining FWs handle all traffic
+2. The other FW handles all traffic
 3. Open a Palo Alto TAC case
-4. Do **not** proceed with other FW upgrades
+4. Do **not** proceed with the other FW upgrade
 
 ---
 
-### 📊 Upgrade Tracker
+### Upgrade Tracker
 
 | Firewall | Pre-Stage | Drained | 11.0.x Installed | 11.1.4-H15 Installed | Verified | Re-Added | Bake OK | Operator |
 |---|---|---|---|---|---|---|---|---|
-| PA-01 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | |
-| PA-02 | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | |
-| PA-0N | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | |
+| PA-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | |
+| PA-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | |
 
 ---
 
-### 📝 Post-Upgrade Checklist (After ALL Firewalls Done)
+### Post-Upgrade Checklist (After Both Firewalls Done)
 
-- [ ] All firewalls running 11.1.4-H15: `show system info | match sw-version`
-- [ ] All firewalls HEALTHY in both frontend and backend LBs
-- [ ] Session distribution is balanced across all FWs
-- [ ] Threat/content updates are current on all FWs
-- [ ] Panorama shows all FWs connected and in-sync (if applicable)
+- [ ] Both firewalls running 11.1.4-H15: `show system info | match sw-version`
+- [ ] Both firewalls HEALTHY in frontend and backend LBs
+- [ ] Session distribution is balanced across both FWs
+- [ ] Threat/content updates are current on both FWs
+- [ ] Panorama shows both FWs connected and in-sync (if applicable)
 - [ ] Monitoring/alerting thresholds reviewed for new version
 - [ ] Update CMDB/asset inventory with new PAN-OS version
 - [ ] Close change ticket with upgrade tracker + verification outputs
@@ -422,23 +422,21 @@ If the FW is completely broken:
 
 ---
 
-### ⏰ Estimated Timeline
+### Estimated Timeline
 
 | Activity | Duration |
 |---|---|
-| Pre-stage images (all FWs) | 15-30 min (do ahead of window) |
+| Pre-stage images (both FWs) | 15-30 min (do ahead of window) |
 | Per-firewall upgrade cycle | ~45-60 min |
 | Bake time per firewall | 15-30 min |
 | **Total per firewall** | **~60-90 min** |
-| **Total for N firewalls** | **N × 60-90 min** |
-
-> For 2 firewalls: ~2-3 hours total window. For 3: ~3-4.5 hours.
+| **Total for both firewalls** | **~2-3 hours** |
 
 ---
 
-### 📌 Important Notes
+### Important Notes
 
-1. **Never upgrade more than one FW at a time.** The LB health probes are your only failover mechanism — respect it.
+1. **Never upgrade both FWs at the same time.** The LB health probes are your only failover mechanism — respect it.
 2. **The 11.0.x intermediate step requires a full reboot.** There's no way around this — PAN-OS enforces the major version stepping.
 3. **Pre-staging images is free.** Download them days before the window to reduce change window duration.
 4. **If you're Panorama-managed**, ensure Panorama is upgraded to 11.1.x FIRST. Managing a FW on a version higher than Panorama is unsupported and will cause issues.
@@ -447,4 +445,4 @@ If the FW is completely broken:
 
 ---
 
-*Runbook Version: 1.0 | Created: 2026-03-26*
+*Runbook Version: 1.1 | Created: 2026-03-26*
