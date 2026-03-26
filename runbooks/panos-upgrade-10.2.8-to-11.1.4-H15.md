@@ -313,11 +313,19 @@ show system disk-space
 
 **5.1 — Add FW Back to Instance Group**
 
+Re-run the Terraform workspace that manages the instance group. Terraform will detect the removed instance as drift and re-add it:
+
 ```bash
-gcloud compute instance-groups unmanaged add-instances <INSTANCE_GROUP> \
-  --instances=<FW_INSTANCE_NAME> \
-  --zone=<ZONE>
+terraform plan    # should show the instance being added back to the IG
+terraform apply
 ```
+
+> Alternatively, if you need to re-add manually without waiting for a Terraform run:
+> ```bash
+> gcloud compute instance-groups unmanaged add-instances <INSTANCE_GROUP> \
+>   --instances=<FW_INSTANCE_NAME> \
+>   --zone=<ZONE>
+> ```
 
 **5.2 — Verify Health Probe Passes**
 
