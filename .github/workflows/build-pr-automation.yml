@@ -1,0 +1,58 @@
+name: "Build Ticket: PR Lifecycle Automation"
+
+# Automates Build ticket status transitions based on PR events.
+# PR opened -> In Review | Review requested changes -> Changes Requested
+# PR approved and merged -> Merged | Issue closed after merge -> Closed
+
+on:
+  pull_request:
+    types: [opened, reopened, review_requested]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  update-project-status:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: read
+    steps:
+      - name: Extract linked issue numbers
+        id: issues
+        run: |
+          # Parse PR body for "Closes #123", "Fixes #123", "Resolves #123"
+          BODY="${{ github.event.pull_request.body }}"
+          ISSUES=$(echo "$BODY" | grep -oiE '(close[sd]?|fix(e[sd])?|resolve[sd]?) #[0-9]+' | grep -oE '[0-9]+' | sort -u | tr '\n' ' ')
+          echo "issue_numbers=$ISSUES" >> $GITHUB_OUTPUT
+
+      - name: Update linked issues on PR opened
+        if: github.event_name == 'pull_request' && (github.event.action == 'opened' || github.event.action == 'reopened')
+        run: |
+          for ISSUE in ${{ steps.issues.outputs.issue_numbers }}; do
+            gh issue comment $ISSUE --body "PR #${{ github.event.pull_request.number }} opened. Moving to **In Review**." --repo ${{ github.repository }}
+            gh issue edit $ISSUE --add-label "status:in-review" --remove-label "status:in-progress" --repo ${{ github.repository }} || true
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update linked issues on changes requested
+        if: github.event_name == 'pull_request_review' && github.event.review.state == 'changes_requested'
+        run: |
+          PR_BODY=$(gh pr view ${{ github.event.pull_request.number }} --json body -q .body --repo ${{ github.repository }})
+          ISSUES=$(echo "$PR_BODY" | grep -oiE '(close[sd]?|fix(e[sd])?|resolve[sd]?) #[0-9]+' | grep -oE '[0-9]+' | sort -u)
+          for ISSUE in $ISSUES; do
+            gh issue comment $ISSUE --body "PR #${{ github.event.pull_request.number }} has changes requested. Moving to **Changes Requested**." --repo ${{ github.repository }}
+            gh issue edit $ISSUE --add-label "status:changes-requested" --remove-label "status:in-review" --repo ${{ github.repository }} || true
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update linked issues on PR merged
+        if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+        run: |
+          for ISSUE in ${{ steps.issues.outputs.issue_numbers }}; do
+            gh issue comment $ISSUE --body "PR #${{ github.event.pull_request.number }} merged. Moving to **Merged**." --repo ${{ github.repository }}
+            gh issue edit $ISSUE --add-label "status:merged" --remove-label "status:in-review,status:changes-requested" --repo ${{ github.repository }} || true
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

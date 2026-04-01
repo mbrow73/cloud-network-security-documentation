@@ -1,0 +1,58 @@
+name: "📐 Standards"
+description: "SOPs, baselines, regulatory controls, control docs."
+labels: ["standards"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Standards:** SOPs, standards, baselines, regulatory controls.
+
+        Workflow: `Draft` > `Internal Review` > `Stakeholder Review` > `Approved` > `Published / Retired`
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+    validations:
+      required: true
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      options:
+        - Palo Alto
+        - Illumio
+        - Cloud Network Security
+        - IaC & Automation
+        - Governance & Compliance
+        - Training & Enablement
+        - General Operations
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+  - type: textarea
+    id: compliance
+    attributes:
+      label: Compliance Framework(s)
+      description: SOX, PCI, NIST, etc.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What standard/SOP is being created or updated?
+    validations:
+      required: true
+  - type: textarea
+    id: stakeholders
+    attributes:
+      label: Stakeholders
+      description: Who needs to review/approve?

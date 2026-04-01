@@ -1,0 +1,76 @@
+name: "📋 Change (Standard)"
+description: "Routine, low-risk, pre-approved change patterns."
+labels: ["change", "change-standard"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Standard Change:** Routine, low-risk work following pre-approved patterns.
+
+        Examples: adding a firewall rule from an approved request, deploying a tested Terraform module to non-prod, routine Panorama config push.
+
+        Workflow: `To Do` > `Closed`
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+    validations:
+      required: true
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      options:
+        - Palo Alto
+        - Illumio
+        - Cloud Network Security
+        - IaC & Automation
+        - Governance & Compliance
+        - Training & Enablement
+        - General Operations
+    validations:
+      required: true
+  - type: dropdown
+    id: partner_team
+    attributes:
+      label: Partner Team
+      options:
+        - Internal
+        - Cloud Engineering
+        - Platform
+        - SaaS Security
+        - DBaaS
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - Non-Prod
+        - Prod
+    validations:
+      required: true
+  - type: input
+    id: servicenow_chg
+    attributes:
+      label: ServiceNow Change ID
+      description: e.g., CHG0012345678
+  - type: textarea
+    id: description
+    attributes:
+      label: What's changing?
+    validations:
+      required: true

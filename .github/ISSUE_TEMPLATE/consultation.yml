@@ -1,0 +1,66 @@
+name: "💬 Consultation"
+description: "Ad-hoc design sessions, advisory, cross-team support."
+labels: ["consultation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Consultation:** Ad-hoc design sessions, solution reviews, cross-team architecture discussions.
+
+        Workflow: `Open` > `In Progress` > `Completed`
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+    validations:
+      required: true
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      options:
+        - Palo Alto
+        - Illumio
+        - Cloud Network Security
+        - IaC & Automation
+        - Governance & Compliance
+        - Training & Enablement
+        - General Operations
+    validations:
+      required: true
+  - type: dropdown
+    id: partner_team
+    attributes:
+      label: Partner Team
+      description: Who is requesting the consultation?
+      options:
+        - Internal
+        - Cloud Engineering
+        - Platform
+        - SaaS Security
+        - DBaaS
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What do they need help with?
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Expected Outcome
+      description: What should the consultation deliver? (design doc, recommendation, approval, etc.)

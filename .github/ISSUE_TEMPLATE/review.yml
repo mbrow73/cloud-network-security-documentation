@@ -1,0 +1,69 @@
+name: "🔍 Review"
+description: "Cloud service, SaaS, or third-party security review."
+labels: ["review"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Review:** Cloud service network security reviews, SaaS security support, third-party security review support.
+
+        Workflow: `Open` > `In Review` > `Decision`
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+    validations:
+      required: true
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      options:
+        - Palo Alto
+        - Illumio
+        - Cloud Network Security
+        - IaC & Automation
+        - Governance & Compliance
+        - Training & Enablement
+        - General Operations
+    validations:
+      required: true
+  - type: dropdown
+    id: partner_team
+    attributes:
+      label: Partner Team
+      options:
+        - Internal
+        - Cloud Engineering
+        - Platform
+        - SaaS Security
+        - DBaaS
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What's being reviewed?
+    validations:
+      required: true
+  - type: input
+    id: design_doc
+    attributes:
+      label: Design Doc / Architecture Link
+  - type: textarea
+    id: compliance
+    attributes:
+      label: Compliance Considerations
+      description: Any regulatory frameworks involved? (SOX, PCI, NIST, etc.)
