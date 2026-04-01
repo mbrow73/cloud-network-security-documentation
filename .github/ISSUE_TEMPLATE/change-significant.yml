@@ -94,3 +94,12 @@ body:
       label: Rollback Plan
     validations:
       required: true
+  - type: dropdown
+    id: resolution
+    attributes:
+      label: Resolution (set when closing)
+      description: Leave blank until closing the ticket
+      options:
+        - Successful
+        - Rolled Back
+        - Cancelled

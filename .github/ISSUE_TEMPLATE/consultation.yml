@@ -64,3 +64,10 @@ body:
     attributes:
       label: Expected Outcome
       description: What should the consultation deliver? (design doc, recommendation, approval, etc.)
+  - type: markdown
+    attributes:
+      value: |
+        **Guidance:**
+        - Create **one ticket per engagement**, not one per call.
+        - Log each session as a comment with date, attendees, and key decisions.
+        - If the consultation grows into a project, create a Feature and link this ticket to it.

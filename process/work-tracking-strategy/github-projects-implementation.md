@@ -122,7 +122,7 @@ GitHub Projects doesn't enforce per-label workflows natively. Instead, each issu
 | `build` | IaC, automation, tooling, new capabilities | Backlog > In Progress > In Review > Changes Requested > Merged > Closed | Yes (PR lifecycle) | No |
 | `change` | Deploying/modifying infrastructure | Standard: To Do > Closed / Significant: Draft > Ready for Review > Approved > Scheduled > Closed / Emergency: In Progress > Closed | Partial (PR links) | Optional |
 | `consultation` | Design sessions, advisory, cross-team support | Open > In Progress > Completed | No | No |
-| `review` | Cloud service, SaaS, third-party security reviews | Open > In Review > Decision | No | Optional |
+| `review` | Cloud service, SaaS, third-party security reviews | Open > In Review > Approved / Approved with Conditions / Denied | No | Optional |
 | `finding` | Vulnerabilities, misconfigs, audit findings | Open > Triaged > Assigned > In Remediation > Verified > Closed / Risk Accepted | Yes (scanner webhooks) | Yes |
 | `incident` | Reactive security events | Detected > Investigating > Remediating > Resolved > RCA > Closed | Partial | Yes |
 | `task` | Ops work, documentation, training, meetings | To Do > In Progress > Blocked > Done | No | No |
@@ -154,7 +154,7 @@ GitHub Projects doesn't enforce per-label workflows natively. Instead, each issu
 
 *Deploying, modifying, or decommissioning infrastructure in an actual environment.*
 
-Changes have three workflow tracks based on risk:
+Changes have three workflow tracks based on risk. **Default to Standard.** Use Significant for production deployments, new services, or anything touching >1 environment. Use Emergency only for unplanned changes that cannot wait for the normal process.
 
 #### Standard Change (routine, low-risk, pre-approved patterns)
 
@@ -166,19 +166,63 @@ Examples: adding a firewall rule from an approved request, deploying a tested Te
 
 **Status Flow:** `Draft` > `Ready for Review` > `Approved` > `Scheduled` > `Closed`
 
+| Status | Description |
+|--------|-------------|
+| Draft | Change being defined, not ready for peer review |
+| Ready for Review | Change proposal complete, peer or change board review |
+| Approved | Sign-off received, waiting for change window |
+| Scheduled | Change window confirmed |
+| Closed | Deployed and complete |
+
+**Resolutions:** When closing a Change ticket, set the Resolution label to reflect the outcome:
+
+| Resolution | When to Use |
+|------------|-------------|
+| Successful | Deployed as planned, no issues |
+| Rolled Back | Deployed but reverted due to issues -- create a new ticket for remediation |
+| Cancelled | Change was abandoned before deployment |
+
+This keeps a single "Closed" status on the board while still capturing outcomes for reporting (e.g., rollback rate per quarter, cancellation reasons).
+
 Examples: new Palo Alto virtual firewall deployment, production VPC peering changes, Illumio policy enforcement mode switch.
 
 #### Emergency Change (unplanned, must happen now)
 
 **Status Flow:** `In Progress` > `Closed`
 
+The ticket may be created during or after the change -- don't slow down the emergency. Approval is verbal or implicit.
+
+**Mandatory fields before closing an Emergency Change:**
+- What was changed and why (root cause/trigger)
+- Who authorized it (verbal approval from whom)
+- Rollback status (was it needed? was it successful?)
+- Follow-up actions (link to any Finding, Incident, or Build tickets spawned)
+
 Examples: critical vulnerability patching, production outage remediation, emergency firewall rule for active incident.
 
 ### Consultation
 
-*Ad-hoc design sessions, solution reviews, cross-team architecture discussions.*
+*Ad-hoc design sessions, solution architecture discussions, advisory work, and cross-team support calls.*
 
 **Status Flow:** `Open` > `In Progress` > `Completed`
+
+| Status | Description |
+|--------|-------------|
+| Open | Engagement identified or requested |
+| In Progress | Active -- calls scheduled, sessions ongoing |
+| Completed | Engagement concluded, outcomes documented |
+
+**Required fields:**
+- **Partner Team** -- who you're supporting
+- **Summary** -- topic and context (one line is fine)
+- **Outcome/Decisions** -- updated in comments as the engagement progresses
+
+**Guidance:**
+- Create **one ticket per engagement**, not one per call. If you have five calls with Cloud Engineering about EKS network design, that's one Consultation ticket. Log each session as a comment with date, attendees, and key decisions.
+- If a consultation grows into a project with deliverables, create a Feature and link the Consultation ticket to it. The consultation becomes part of the project's Discovery workstream.
+- If the consultation is part of an existing project, link it to that project's Feature rather than creating a standalone ticket.
+
+**This is the most important issue type for making invisible work visible.** Without it, hours spent in design sessions, architecture reviews, and advisory calls disappear from the record. If you spent two hours on a call helping another team, there should be a ticket for it.
 
 **When to use:** Another team asks for design help, architecture guidance, or a working session. The deliverable is advice or a recommendation, not a code artifact or infrastructure change.
 

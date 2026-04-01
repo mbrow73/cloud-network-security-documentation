@@ -53,3 +53,27 @@ body:
       label: Impact if not executed
     validations:
       required: true
+  - type: markdown
+    attributes:
+      value: |
+        **Before closing this ticket, fill in the fields below.** The ticket may be created during or after the change -- don't slow down the emergency.
+  - type: input
+    id: authorized_by
+    attributes:
+      label: Who authorized this change?
+      description: Verbal approval from whom?
+  - type: textarea
+    id: root_cause
+    attributes:
+      label: What was changed and why?
+      description: Root cause / trigger for the emergency
+  - type: textarea
+    id: rollback_status
+    attributes:
+      label: Rollback status
+      description: Was rollback needed? Was it successful?
+  - type: textarea
+    id: followup
+    attributes:
+      label: Follow-up actions
+      description: Link to any Finding, Incident, or Build tickets spawned from this
