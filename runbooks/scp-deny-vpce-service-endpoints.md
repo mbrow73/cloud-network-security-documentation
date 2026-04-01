@@ -23,7 +23,7 @@ This runbook walks through sharing GWLB VPC endpoint services across an AWS Orga
 │  │                   │       └────────────────────────┘  │
 │  │                   │                                   │
 │  │                   │       ┌────────────────────────┐  │
-│  │                   │--RAM--│  PCI OU                │  │
+│  │                   │--RAM--│  PCI Account              │  │
 │  │                   │share  │  + SCP applied         │  │
 │  │                   │       │                        │  │
 │  │                   │       │  ✅ Can create VPC-E   │  │
@@ -40,7 +40,7 @@ This runbook walks through sharing GWLB VPC endpoint services across an AWS Orga
 
 - [ ] AWS Organizations enabled with SCPs turned on
 - [ ] Inspection account that owns the GWLB and endpoint services (AWS_ISInspection_600001725)
-- [ ] OU structure in place (e.g., General Workload OU, PCI OU)
+- [ ] OU structure in place (e.g., General Workload OU) and PCI account identified
 - [ ] Endpoint service IDs for all GWLB services (both general and PCI-dedicated)
 
 ---
@@ -49,7 +49,7 @@ This runbook walks through sharing GWLB VPC endpoint services across an AWS Orga
 
 **Why first:** The SCP must be in place BEFORE sharing the endpoint services. If you share first, PCI accounts could create non-compliant endpoints in the window before the SCP is applied.
 
-Our team does not create SCPs. Provide the following policy to the team that manages SCPs and request it be attached to the PCI OU.
+Our team does not create SCPs. Provide the following policy to the team that manages SCPs and request it be attached to the PCI account.
 
 ### SCP Policy: Deny List
 
@@ -120,7 +120,7 @@ For a stricter posture, an allow list blocks ALL custom endpoint services except
 - `StringNotEquals` carves out the authorized PCI service
 - AWS-managed endpoints (S3, KMS, Lambda, etc.) use a different naming pattern (`com.amazonaws.<region>.<service>`) and are never affected
 
-**⚠️ Do not proceed to Step 2 until the SCP is confirmed attached to the PCI OU.**
+**⚠️ Do not proceed to Step 2 until the SCP is confirmed attached to the PCI account.**
 
 ---
 
