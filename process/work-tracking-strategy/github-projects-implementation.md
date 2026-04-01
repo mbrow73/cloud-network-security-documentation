@@ -184,39 +184,119 @@ Examples: critical vulnerability patching, production outage remediation, emerge
 
 ### Review
 
-*Cloud service, SaaS, or third-party security reviews.*
+*Cloud service network security reviews, SaaS security support, third-party security review support.*
 
-**Status Flow:** `Open` > `In Review` > `Decision`
+**Status Flow:** `Open` > `In Review` > `Approved` | `Approved with Conditions` | `Denied`
+
+| Status | Description |
+|--------|-------------|
+| Open | Review requested, not yet started |
+| In Review | Actively evaluating |
+| Approved | Service/product cleared with no conditions |
+| Approved with Conditions | Cleared with specific requirements that must be met |
+| Denied | Not approved -- documented rationale required |
+
+**Required fields:** Partner Team (who requested the review), Summary (service name, vendor, use case).
+
+**Guidance:**
+- Attach or link the review artifact (document, spreadsheet, email thread) to the ticket.
+- For "Approved with Conditions," document the conditions in the ticket.
+- Reviews supporting SaaS security or third-party security teams should set Partner Team accordingly for reporting on support metrics.
 
 **When to use:** A team is onboarding a new cloud service or SaaS product and needs network security sign-off.
 
 ### Finding
 
-*Vulnerabilities, misconfigurations, audit findings.*
+*Vulnerabilities, misconfigurations, or audit findings requiring remediation.*
 
-**Status Flow:** `Open` > `Triaged` > `Assigned` > `In Remediation` > `Verified` > `Closed` / `Risk Accepted`
+**Status Flow:** `Open` > `Triaged` > `Assigned` > `In Remediation` > `Remediated` > `Verified` > `Closed` | `Risk Accepted`
+
+| Status | Description |
+|--------|-------------|
+| Open | Finding identified -- often auto-created by security tooling |
+| Triaged | Severity confirmed, validity assessed |
+| Assigned | Owner identified -- SLA clock starts |
+| In Remediation | Active work underway |
+| Remediated | Fix applied, pending confirmation |
+| Verified | Scanner or manual check confirms resolution |
+| Closed | Complete |
+| Risk Accepted | Conscious decision not to remediate, with documented rationale and approver |
+
+**SLA targets by severity:**
+
+| Severity | Time to Assign | Time to Verified |
+|----------|---------------|-----------------|
+| Critical | 24 hours | 7 days |
+| High | 3 business days | 30 days |
+| Medium | 5 business days | 90 days |
+| Low | 10 business days | 180 days |
+
+These times will be adjusted as required.
+
+**Risk Accepted** is a terminal state, not a workaround. It requires:
+- Documented rationale
+- Named approver (manager or above)
+- Review date (when to reassess)
 
 **Automation:** Security scanners (Prisma, Earlybird) can auto-create Finding issues via webhook with severity label and SLA due date pre-populated.
 
 ### Incident
 
-*Reactive work triggered by security events.*
+*Reactive work triggered by a security event.*
 
 **Status Flow:** `Detected` > `Investigating` > `Remediating` > `Resolved` > `RCA` > `Closed`
 
+| Status | Description |
+|--------|-------------|
+| Detected | Event identified, ticket created |
+| Investigating | Assigned, actively triaging and determining scope |
+| Remediating | Root cause identified, fix being applied |
+| Resolved | Threat addressed, systems stable |
+| RCA | Root cause analysis in progress |
+| Closed | RCA complete and documented |
+
+**Incidents spawn child tickets.** An incident often surfaces Findings (underlying vulnerabilities), requires Changes (infrastructure modifications), and generates Build work (tooling improvements). The Incident ticket is the parent that ties them together. Child tickets can outlive the parent -- the Incident closes when the RCA is done, even if remediation work continues under linked tickets.
+
 ### Task
 
-*Ops work, documentation, training, meetings.*
+*Catch-all for work that doesn't fit other types -- operational tasks, documentation, training sessions, meetings, handoff activities.*
 
 **Status Flow:** `To Do` > `In Progress` > `Blocked` > `Done`
 
-The catch-all. If it doesn't fit another type, it's a Task.
+| Status | Description |
+|--------|-------------|
+| To Do | Defined, not started |
+| In Progress | Actively working |
+| Blocked | Waiting on an external dependency -- gets its own status for standup visibility |
+| Done | Complete |
+
+**When to use:**
+- Writing or updating documentation and runbooks
+- Conducting training sessions
+- Attending handoff meetings
+- Recurring operational work (access audits, certificate renewals)
+- Anything that doesn't fit the other issue types
+
+**When NOT to use:** If the work produces code, it's a Build. If it's deploying to or modifying a live environment (including manual firewall rule changes in Panorama), it's a Change. If you're advising another team, it's a Consultation. Keep Task as a true catch-all, not a dumping ground for work that should be properly categorized.
 
 ### Standards
 
-*SOPs, baselines, regulatory controls.*
+*Standards, SOPs, baselines, control documentation, and required configurations -- the technical "how we do it" documents that implement organizational policies.*
 
-**Status Flow:** `Draft` > `Internal Review` > `Stakeholder Review` > `Approved` > `Published` / `Retired`
+**Status Flow:** `Draft` > `Internal Review` > `Stakeholder Review` > `Approved` > `Published` | `Retired`
+
+| Status | Description |
+|--------|-------------|
+| Draft | Standard/SOP being written or revised |
+| Internal Review | Security team peer review |
+| Stakeholder Review | Out to affected teams or leadership for sign-off |
+| Approved | Sign-off received, ready to publish |
+| Published | Active standard -- terminal state until next review cycle |
+| Retired | Standard formally decommissioned with documented rationale |
+
+**Review cadence:** Set a due date on Published tickets. Use GitHub Actions automation to create a new Draft ticket 30 days before the review date, so standards reviews are never forgotten.
+
+**Compliance Framework field:** Tag Standards tickets with applicable frameworks (SOX, PCI, NIST, etc.) to quickly pull all standards relevant to a specific audit.
 
 ### Milestone
 
@@ -233,21 +313,38 @@ Zero-effort markers that give leadership and PMs phase visibility without readin
 ### Hierarchy
 
 ```
-Feature (The Project)
-  The overarching container for a project or engagement.
-  Tracked as either "Internal Project" or "External Support".
-  
-  > Workstreams (The Phase)
-    Implemented as GitHub Milestones (e.g., Discovery, Build).
-    
-    > Issues (The Work)
-      The actual actionable items. Must match the nature of the work
-      (Build for code, Change for infra, Consultation for advisory).
-      
-      > Milestone Issues (The Gate)
-        Zero-effort markers that give leadership phase visibility
-        without reading every underlying ticket.
+Feature (the project)
+  └── Workstream (the phase or track)
+        └── Issue Type tickets (the actual work)
+              └── Milestone (phase gate)
 ```
+
+- **Features** represent projects -- either internal initiatives or external support engagements.
+- **Workstreams** are implemented as GitHub Milestones within the project. Standard components: **Discovery, Design, Build, Deployment, Handoff**. PMs can add project-specific milestones as needed (e.g., "Migration - Wave 1", "Enforcement"). Filter with milestone labels or combine with project context.
+- **Individual tickets** use the appropriate issue type based on the nature of the work.
+- **Milestones** mark phase boundaries within the Feature.
+
+### Internal vs. External Projects
+
+**Internal Projects** -- your team defines the scope, owns the deliverables, and controls the timeline. Examples: Palo Alto platform migration, new Terraform module library, Illumio policy enforcement rollout.
+
+**External Support Projects** -- another team has a project, and your team is providing network security architecture, engineering, or consultation. Examples: EKS security enablement for Cloud Engineering, network security review for a new SaaS platform. You contribute but don't own the overall delivery.
+
+The distinction matters for capacity reporting. Leadership needs to see how much of the team's time goes to internal initiatives vs. supporting other teams.
+
+### Standard Workstream Components
+
+Every project should use a consistent set of milestones (workstreams) to represent phases:
+
+| Workstream | Purpose |
+|------------|---------|
+| Discovery | Requirements gathering, current state analysis, stakeholder interviews |
+| Design | Architecture decisions, solution design, design doc creation |
+| Build | IaC development, automation, tooling, code artifacts |
+| Deployment | Environment setup, config push, cutover execution |
+| Handoff | Documentation, training, operational handoff to steady-state team |
+
+PMs can add project-specific milestones as needed (e.g., "Migration - Wave 1", "Enforcement", "Pilot"). The standard set ensures consistency across projects while allowing flexibility.
 
 ### Example: Panorama Consolidation
 
@@ -277,22 +374,41 @@ Feature: Panorama Consolidation
 
 ## Day-to-Day Operating Procedures
 
-### Creating Work
+### For Engineers
 
-1. Go to the repo > Issues > New Issue
-2. Select the appropriate template (Build, Change, Consultation, etc.)
-3. Fill in the required fields
-4. The issue is automatically added to the NETSEC project board
+**Start of day:**
+1. Open the Kanban board (filtered to your Domain if preferred)
+2. Check your In Progress tickets -- update status if anything moved
+3. Check for new tickets assigned to you
 
-### Moving Work
+**During the day:**
+- When you start work on something, move the ticket to In Progress
+- When you're pulled into an ad-hoc call or design session, create a Consultation ticket (or update an existing one) before the day ends
+- When you finish something, move it to the appropriate next status -- don't let tickets sit in a stale state
+- If you're blocked, move the ticket to Blocked and add a comment explaining what you're waiting on
 
-- Engineers update the Status field on their issues as work progresses
-- For Build tickets, PR automation handles In Review / Changes Requested / Merged transitions
-- When blocked, add the `blocked` label and note the blocker in a comment
+**End of day:**
+- Every piece of work you did today should be reflected on the board. If you spent two hours on a call helping another team, there should be a ticket for it.
 
-### Daily Standup (optional, async)
+### Ticket Creation Guidelines
 
-Filter the board by your name. What's In Progress? What's Blocked? That's your standup.
+**When to create a ticket:**
+- When the work is meaningful enough that someone would want to know about it -- whether that's your lead, a partner team, or a future you trying to remember what you worked on last quarter
+- After any ad-hoc request, consultation call, or review -- even if the work is already done
+- When a new request comes in via Slack, email, or a meeting
+
+**What to fill out:**
+- **Summary:** Clear, descriptive title. "Fix firewall rule" is bad. "NETSEC-East: Add egress rule for app-x to reach payment gateway" is good.
+- **Issue Type:** Pick the right one (see guidance under each type above)
+- **Domain:** Which specialty area does this fall under?
+- **Partner Team:** Who is this for? Use "Internal" for team-owned work.
+- **Priority:** Critical/High/Medium/Low
+- **Description:** Enough context that another team member could pick this up if you were unavailable.
+
+**What NOT to do:**
+- Don't create a single ticket and dump unrelated work into it
+- Don't leave tickets in Backlog/To Do forever -- if it's not going to happen, close it
+- Don't skip the ticket because "it was just a quick thing" -- quick things add up and become invisible work
 
 ### Weekly Lead Review
 
@@ -329,6 +445,10 @@ POST /repos/{owner}/{repo}/issues
 ```
 
 The webhook sets severity, SLA due date, and affected resources automatically.
+
+### Standards Review Cadence Automation
+
+A GitHub Actions workflow (`.github/workflows/standards-review-reminder.yml`) runs daily on weekdays and checks for Published standards with a review date approaching within 30 days. When found, it auto-creates a new Draft issue linked to the original standard, so reviews are never forgotten.
 
 ### Slack Integration
 

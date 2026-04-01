@@ -67,3 +67,11 @@ body:
     attributes:
       label: Compliance Considerations
       description: Any regulatory frameworks involved? (SOX, PCI, NIST, etc.)
+  - type: textarea
+    id: guidance
+    attributes:
+      label: Guidance Notes
+      description: |
+        - Attach or link the review artifact (document, spreadsheet, email thread) to the ticket.
+        - For "Approved with Conditions," document the conditions in the ticket.
+        - Reviews supporting SaaS security or third-party security teams should set Partner Team accordingly for reporting on support metrics.

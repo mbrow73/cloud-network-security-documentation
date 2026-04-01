@@ -81,3 +81,12 @@ body:
     attributes:
       label: Compliance Framework(s)
       description: SOX, PCI, NIST, etc.
+  - type: textarea
+    id: risk_acceptance
+    attributes:
+      label: Risk Acceptance (if applicable)
+      description: |
+        If moving to Risk Accepted, ALL of the following are required:
+        - Documented rationale
+        - Named approver (manager or above)
+        - Review date (when to reassess)
