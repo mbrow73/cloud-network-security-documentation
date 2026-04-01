@@ -1,0 +1,92 @@
+name: "⚠️ Finding"
+description: "Vulnerabilities, misconfigs, or audit findings."
+labels: ["finding"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Finding:** Vulnerabilities, misconfigurations, audit findings requiring remediation.
+
+        Workflow: `Open` > `Triaged` > `Assigned` > `In Remediation` > `Verified` > `Closed / Risk Accepted`
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+    validations:
+      required: true
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      options:
+        - Palo Alto
+        - Illumio
+        - Cloud Network Security
+        - IaC & Automation
+        - Governance & Compliance
+        - Training & Enablement
+        - General Operations
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority / Severity
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Finding Source
+      options:
+        - Prisma Cloud
+        - Earlybird
+        - Internal Audit
+        - External Audit
+        - Pen Test
+        - Manual Discovery
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: sla_due
+    attributes:
+      label: SLA Due Date
+      description: Remediation deadline (YYYY-MM-DD)
+  - type: textarea
+    id: description
+    attributes:
+      label: Finding Details
+    validations:
+      required: true
+  - type: textarea
+    id: affected_resources
+    attributes:
+      label: Affected Resources
+      description: What systems/accounts/rules are impacted?
+    validations:
+      required: true
+  - type: textarea
+    id: remediation_plan
+    attributes:
+      label: Remediation Plan
+      description: How do we fix this?
+  - type: textarea
+    id: compliance
+    attributes:
+      label: Compliance Framework(s)
+      description: SOX, PCI, NIST, etc.
+  - type: textarea
+    id: risk_acceptance
+    attributes:
+      label: Risk Acceptance (if applicable)
+      description: |
+        If moving to Risk Accepted, ALL of the following are required:
+        - Documented rationale
+        - Named approver (manager or above)
+        - Review date (when to reassess)

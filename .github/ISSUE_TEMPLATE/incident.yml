@@ -1,0 +1,70 @@
+name: "🔥 Incident"
+description: "Reactive security work triggered by events."
+labels: ["incident"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Incident:** Reactive work triggered by security events.
+
+        Workflow: `Detected` > `Investigating` > `Remediating` > `Resolved` > `RCA` > `Closed`
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+    validations:
+      required: true
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      options:
+        - Palo Alto
+        - Illumio
+        - Cloud Network Security
+        - IaC & Automation
+        - Governance & Compliance
+        - Training & Enablement
+        - General Operations
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Severity
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+  - type: input
+    id: sla_due
+    attributes:
+      label: SLA Due Date
+      description: Resolution deadline (YYYY-MM-DD)
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: What's affected? Scope of blast radius.
+    validations:
+      required: true
+  - type: textarea
+    id: affected_resources
+    attributes:
+      label: Affected Resources
+    validations:
+      required: true
+  - type: input
+    id: detected_by
+    attributes:
+      label: Detected By
+      description: Alert, scanner, manual, report, etc.

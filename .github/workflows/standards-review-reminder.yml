@@ -1,0 +1,64 @@
+name: "Standards: Review Cadence Automation"
+
+# Runs daily. Checks for Published standards issues with a review date
+# approaching within 30 days and creates a new Draft issue for the review.
+
+on:
+  schedule:
+    - cron: '0 12 * * 1-5'  # Noon UTC, weekdays
+  workflow_dispatch:
+
+jobs:
+  check-standards-review:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Check for standards approaching review date
+        run: |
+          # Find all open issues with 'standards' label and 'Published' in their status
+          # that have a due date within 30 days
+          ISSUES=$(gh issue list --repo ${{ github.repository }} \
+            --label standards \
+            --state open \
+            --json number,title,body \
+            --limit 100)
+          
+          TODAY=$(date +%s)
+          THIRTY_DAYS=$((TODAY + 2592000))
+          
+          echo "$ISSUES" | jq -c '.[]' | while read -r issue; do
+            NUMBER=$(echo "$issue" | jq -r '.number')
+            TITLE=$(echo "$issue" | jq -r '.title')
+            
+            # Check if issue has a review date in the body (YYYY-MM-DD format)
+            REVIEW_DATE=$(echo "$issue" | jq -r '.body' | grep -oE 'Review [Dd]ate:?\s*[0-9]{4}-[0-9]{2}-[0-9]{2}' | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}' | head -1)
+            
+            if [ -n "$REVIEW_DATE" ]; then
+              REVIEW_TS=$(date -d "$REVIEW_DATE" +%s 2>/dev/null || echo "0")
+              if [ "$REVIEW_TS" -gt "$TODAY" ] && [ "$REVIEW_TS" -lt "$THIRTY_DAYS" ]; then
+                # Check if a review issue already exists
+                EXISTING=$(gh issue list --repo ${{ github.repository }} \
+                  --label standards \
+                  --search "Review: $TITLE" \
+                  --state open \
+                  --json number | jq length)
+                
+                if [ "$EXISTING" -eq 0 ]; then
+                  gh issue create --repo ${{ github.repository }} \
+                    --title "Review: $TITLE" \
+                    --label "standards" \
+                    --body "Scheduled review for standard #$NUMBER: $TITLE
+
+Review date: $REVIEW_DATE
+
+This issue was auto-created 30 days before the review date.
+
+Related: #$NUMBER"
+                  echo "Created review issue for #$NUMBER ($TITLE)"
+                fi
+              fi
+            fi
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

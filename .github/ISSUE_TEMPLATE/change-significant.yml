@@ -1,0 +1,105 @@
+name: "📋 Change (Significant)"
+description: "New deployments, production changes, architectural shifts."
+labels: ["change", "change-significant"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Significant Change:** New deployments, production changes, or architectural shifts requiring review and approval.
+
+        Workflow: `Draft` > `Ready for Review` > `Approved` > `Scheduled` > `Closed`
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+    validations:
+      required: true
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      options:
+        - Palo Alto
+        - Illumio
+        - Cloud Network Security
+        - IaC & Automation
+        - Governance & Compliance
+        - Training & Enablement
+        - General Operations
+    validations:
+      required: true
+  - type: dropdown
+    id: partner_team
+    attributes:
+      label: Partner Team
+      options:
+        - Internal
+        - Cloud Engineering
+        - Platform
+        - SaaS Security
+        - DBaaS
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - Non-Prod
+        - Prod
+    validations:
+      required: true
+  - type: dropdown
+    id: change_risk
+    attributes:
+      label: Change Risk
+      options:
+        - Standard
+        - Significant
+        - Emergency
+    validations:
+      required: true
+  - type: input
+    id: servicenow_chg
+    attributes:
+      label: ServiceNow Change ID
+      description: e.g., CHG0012345678
+  - type: input
+    id: scheduled_date
+    attributes:
+      label: Scheduled Date
+      description: When is this change planned?
+  - type: textarea
+    id: description
+    attributes:
+      label: Change Description
+      description: What's being deployed/modified and why?
+    validations:
+      required: true
+  - type: textarea
+    id: rollback
+    attributes:
+      label: Rollback Plan
+    validations:
+      required: true
+  - type: dropdown
+    id: resolution
+    attributes:
+      label: Resolution (set when closing)
+      description: Leave blank until closing the ticket
+      options:
+        - Successful
+        - Rolled Back
+        - Cancelled

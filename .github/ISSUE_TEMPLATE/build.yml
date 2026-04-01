@@ -1,0 +1,81 @@
+name: "🔨 Build"
+description: "Net-new IaC, automation, tooling, or platform capability work."
+labels: ["build"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **When to use:** Any work that produces a code artifact -- Terraform modules, Ansible playbooks, PaC rules, automation scripts, GitHub Actions workflows.
+
+        **When NOT to use:** If the work is deploying existing code to an environment or modifying live infrastructure (including firewall rules in Panorama, whether via IaC or manually), that's a **Change**.
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+      description: Brief description of what's being built
+    validations:
+      required: true
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      options:
+        - Palo Alto
+        - Illumio
+        - Cloud Network Security
+        - IaC & Automation
+        - Governance & Compliance
+        - Training & Enablement
+        - General Operations
+    validations:
+      required: true
+  - type: dropdown
+    id: partner_team
+    attributes:
+      label: Partner Team
+      description: Who is this supporting? Select "Internal" for team-owned work.
+      options:
+        - Internal
+        - Cloud Engineering
+        - Platform
+        - SaaS Security
+        - DBaaS
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Only if this involves a deployment target
+      options:
+        - N/A
+        - Non-Prod
+        - Prod
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What are we building and why?
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: Acceptance Criteria
+      description: What does "done" look like?
+      value: |
+        - [ ] 
+        - [ ] 
+        - [ ] 

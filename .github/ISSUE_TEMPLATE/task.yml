@@ -1,0 +1,60 @@
+name: "✅ Task"
+description: "Ops work, documentation, training, meetings."
+labels: ["task"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Task:** General ops work, documentation, training, meetings.
+
+        Workflow: `To Do` > `In Progress` > `Blocked` > `Done`
+  - type: input
+    id: summary
+    attributes:
+      label: Summary
+    validations:
+      required: true
+  - type: dropdown
+    id: domain
+    attributes:
+      label: Domain
+      options:
+        - Palo Alto
+        - Illumio
+        - Cloud Network Security
+        - IaC & Automation
+        - Governance & Compliance
+        - Training & Enablement
+        - General Operations
+    validations:
+      required: true
+  - type: dropdown
+    id: partner_team
+    attributes:
+      label: Partner Team
+      options:
+        - Internal
+        - Cloud Engineering
+        - Platform
+        - SaaS Security
+        - DBaaS
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Critical
+        - High
+        - Medium
+        - Low
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+    validations:
+      required: true
