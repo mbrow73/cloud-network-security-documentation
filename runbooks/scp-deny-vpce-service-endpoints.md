@@ -23,7 +23,7 @@ This runbook walks through sharing GWLB VPC endpoint services across an AWS Orga
 │  │                   │       └────────────────────────┘  │
 │  │                   │                                   │
 │  │                   │       ┌────────────────────────┐  │
-│  │                   │--RAM--│  PCI Account              │  │
+│  │                   │--RAM--│  PCI Account            │  │
 │  │                   │share  │  + SCP applied         │  │
 │  │                   │       │                        │  │
 │  │                   │       │  ✅ Can create VPC-E   │  │
@@ -87,39 +87,6 @@ Block specific general workload endpoint services. PCI accounts can still connec
 
 Replace the placeholder service IDs with the actual endpoint service names from AWS_ISInspection_600001725.
 
-### Alternative: Allow List
-
-For a stricter posture, an allow list blocks ALL custom endpoint services except the ones explicitly authorized. New services are denied by default without SCP updates.
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Sid": "DenyAllCustomVpceExceptAuthorized",
-      "Effect": "Deny",
-      "Action": "ec2:CreateVpcEndpoint",
-      "Resource": "*",
-      "Condition": {
-        "StringLike": {
-          "ec2:VpceServiceName": "com.amazonaws.vpce.*.vpce-svc-*"
-        },
-        "StringNotEquals": {
-          "ec2:VpceServiceName": [
-            "com.amazonaws.vpce.us-east-1.vpce-svc-pci12345"
-          ]
-        }
-      }
-    }
-  ]
-}
-```
-
-**How it works:**
-- `StringLike` scopes the deny to only custom endpoint services (`vpce-svc-*` pattern)
-- `StringNotEquals` carves out the authorized PCI service
-- AWS-managed endpoints (S3, KMS, Lambda, etc.) use a different naming pattern (`com.amazonaws.<region>.<service>`) and are never affected
-
 **⚠️ Do not proceed to Step 2 until the SCP is confirmed attached to the PCI account.**
 
 ---
@@ -138,14 +105,18 @@ These are the values needed in the SCP (Step 1) and the RAM share (Step 3).
 
 ### 2b. Set Auto-Accept
 
-For each endpoint service that should support automatic association:
+```hcl
+resource "aws_vpc_endpoint_service" "gwlb_general" {
+  acceptance_required        = false
+  gateway_load_balancer_arns = [aws_lb.gwlb_general.arn]
 
-1. Select the endpoint service in the console
-2. **Actions > Modify endpoint service**
-3. Set **Acceptance required** to `false`
-4. Save
+  tags = {
+    Name = "gwlb-general-workload-endpoint-service"
+  }
+}
+```
 
-This ensures that when a consumer account creates a VPC endpoint referencing the service, the connection is automatically accepted with no manual approval needed.
+Setting `acceptance_required = false` ensures that when a consumer account creates a VPC endpoint referencing the service, the connection is automatically accepted with no manual approval needed.
 
 ---
 
@@ -153,23 +124,36 @@ This ensures that when a consumer account creates a VPC endpoint referencing the
 
 ### 3a. Create the RAM Resource Share
 
-1. Navigate to **RAM > Resource Shares** in the AWS Console (inspection account)
-2. Click **Create resource share**
-3. Name: `gwlb-general-endpoint-service` (or appropriate name per service)
-4. Resource type: **VPC Endpoint Services**
-5. Select the endpoint service(s) to share
-6. Click **Next**
+```hcl
+resource "aws_ram_resource_share" "gwlb_general" {
+  name                      = "gwlb-general-endpoint-service"
+  allow_external_principals = false
+
+  tags = {
+    Name = "gwlb-general-endpoint-service-share"
+  }
+}
+
+resource "aws_ram_resource_association" "gwlb_general" {
+  resource_arn       = aws_vpc_endpoint_service.gwlb_general.arn
+  resource_share_arn = aws_ram_resource_share.gwlb_general.arn
+}
+```
 
 ### 3b. Associate Principals
 
-1. Under **Principals**, select **Allow sharing with anyone in your organization**
-2. Add the target OU ARN: `arn:aws:organizations::<mgmt-account-id>:ou/o-xxxxxxxx/ou-aaaa-bbbbbbbb`
-3. You can add multiple OUs or individual account IDs as needed
-4. Click **Next**, review, and **Create resource share**
+```hcl
+resource "aws_ram_principal_association" "workload_ou" {
+  principal          = "arn:aws:organizations::111111111111:ou/o-xxxxxxxx/ou-aaaa-bbbbbbbb"
+  resource_share_arn = aws_ram_resource_share.gwlb_general.arn
+}
+```
+
+You can add multiple `aws_ram_principal_association` resources to share with additional OUs or individual account IDs.
 
 ### 3c. Verify the Share
 
-Confirm the share shows as **Active** in the RAM console and that the correct principals are listed.
+After `terraform apply`, confirm the share shows as **Active** in the RAM console and that the correct principals are listed.
 
 ---
 
@@ -193,12 +177,9 @@ The full flow:
 | AWS managed (gateway) | `com.amazonaws.<region>.<service>` | `com.amazonaws.us-east-1.s3` |
 | Custom / GWLB | `com.amazonaws.vpce.<region>.vpce-svc-<id>` | `com.amazonaws.vpce.us-east-1.vpce-svc-abc123` |
 
-**Why this matters:** The allow list SCP option uses `StringLike: com.amazonaws.vpce.*.vpce-svc-*` to scope the deny to only custom services. AWS-managed endpoints never match this pattern, so they are never affected.
-
 ---
 
 ## Maintenance Notes
 
-- **Adding new GWLB services:** If using the deny list SCP, update the SCP to include the new service name. If using the allow list SCP, no change needed since new services are blocked by default.
-- **New PCI-authorized services:** If using the allow list, add the service name to the `StringNotEquals` array.
+- **Adding new GWLB services:** Update the SCP to include the new service name.
 - **Existing endpoints:** SCPs only block new `CreateVpcEndpoint` calls. Audit PCI accounts for any pre-existing non-compliant endpoints that were created before the SCP was applied and remove them manually.
