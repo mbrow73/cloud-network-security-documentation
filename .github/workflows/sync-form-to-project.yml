@@ -24,16 +24,14 @@ jobs:
           ISSUE_NODE_ID=${{ github.event.issue.node_id }}
           BODY=$(gh issue view $ISSUE_NUMBER --repo ${{ github.repository }} --json body -q .body)
 
-          # Parse Domain from form response
-          DOMAIN=$(echo "$BODY" | grep -A1 "### Domain" | tail -1 | xargs)
-          # Parse Partner Team
-          PARTNER=$(echo "$BODY" | grep -A1 "### Partner Team" | tail -1 | xargs)
-          # Parse Priority
-          PRIORITY=$(echo "$BODY" | grep -A1 "### Priority" | tail -1 | xargs)
-          # Parse Environment
-          ENVIRONMENT=$(echo "$BODY" | grep -A1 "### Environment" | tail -1 | xargs)
-          # Parse Change Risk
-          CHANGE_RISK=$(echo "$BODY" | grep -A1 "### Change Risk" | tail -1 | xargs)
+          # Parse fields from form response
+          # Form fields render as: ### Field Name\n\nValue
+          # So we need -A2 to skip the blank line after the heading
+          DOMAIN=$(echo "$BODY" | grep -A2 "^### Domain$" | tail -1 | xargs)
+          PARTNER=$(echo "$BODY" | grep -A2 "^### Partner Team$" | tail -1 | xargs)
+          PRIORITY=$(echo "$BODY" | grep -A2 "^### Priority" | tail -1 | xargs)
+          ENVIRONMENT=$(echo "$BODY" | grep -A2 "^### Environment$" | tail -1 | xargs)
+          CHANGE_RISK=$(echo "$BODY" | grep -A2 "^### Change Risk$" | tail -1 | xargs)
 
           echo "Domain: $DOMAIN"
           echo "Partner Team: $PARTNER"
