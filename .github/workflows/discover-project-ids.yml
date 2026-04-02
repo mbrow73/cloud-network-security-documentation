@@ -1,0 +1,130 @@
+name: "Discover Project IDs for Migration"
+
+# Run this manually to dump all project IDs, field IDs, and option IDs
+# needed to configure the sync-form-to-project workflow on a new project.
+#
+# Usage: Actions > Discover Project IDs > Run workflow
+# Fill in the owner (user or org) and project number.
+
+on:
+  workflow_dispatch:
+    inputs:
+      owner:
+        description: 'Project owner (GitHub username or org name)'
+        required: true
+      owner_type:
+        description: 'Owner type'
+        required: true
+        type: choice
+        options:
+          - user
+          - organization
+      project_number:
+        description: 'Project number (from the URL, e.g., 2 for /projects/2)'
+        required: true
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Discover project and field IDs
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: |
+          OWNER="${{ inputs.owner }}"
+          OWNER_TYPE="${{ inputs.owner_type }}"
+          PROJECT_NUM="${{ inputs.project_number }}"
+
+          if [ "$OWNER_TYPE" = "user" ]; then
+            QUERY_ROOT="user(login: \"$OWNER\")"
+          else
+            QUERY_ROOT="organization(login: \"$OWNER\")"
+          fi
+
+          echo "============================================"
+          echo "  NETSEC Project Discovery Report"
+          echo "  Owner: $OWNER ($OWNER_TYPE)"
+          echo "  Project: #$PROJECT_NUM"
+          echo "============================================"
+          echo ""
+
+          # Get project ID
+          RESULT=$(gh api graphql -f query="
+          {
+            $QUERY_ROOT {
+              projectV2(number: $PROJECT_NUM) {
+                id
+                title
+                url
+                fields(first: 50) {
+                  nodes {
+                    ... on ProjectV2SingleSelectField {
+                      id
+                      name
+                      options {
+                        id
+                        name
+                      }
+                    }
+                    ... on ProjectV2Field {
+                      id
+                      name
+                      dataType
+                    }
+                  }
+                }
+              }
+            }
+          }")
+
+          # Parse and display
+          PROJECT_ID=$(echo "$RESULT" | jq -r '.data[].projectV2.id')
+          PROJECT_TITLE=$(echo "$RESULT" | jq -r '.data[].projectV2.title')
+          PROJECT_URL=$(echo "$RESULT" | jq -r '.data[].projectV2.url')
+
+          echo "PROJECT"
+          echo "-------"
+          echo "  Title:      $PROJECT_TITLE"
+          echo "  URL:        $PROJECT_URL"
+          echo "  Project ID: $PROJECT_ID"
+          echo ""
+          echo ""
+
+          echo "FIELDS & OPTIONS"
+          echo "----------------"
+          echo ""
+
+          # List all fields with their IDs and options
+          echo "$RESULT" | jq -r '
+            .data[].projectV2.fields.nodes[] |
+            if .options then
+              "  Field: \(.name)\n    Field ID: \(.id)\n    Options:\(.options | map("\n      \(.name) = \(.id)") | join(""))\n"
+            elif .dataType then
+              "  Field: \(.name)\n    Field ID: \(.id)\n    Type: \(.dataType)\n"
+            else
+              empty
+            end'
+
+          echo ""
+          echo "============================================"
+          echo "  COPY-PASTE CONFIG FOR sync-form-to-project"
+          echo "============================================"
+          echo ""
+          echo "env:"
+          echo "  PROJECT_ID: \"$PROJECT_ID\""
+          echo ""
+
+          # Generate field ID variables
+          echo "# Field IDs"
+          echo "$RESULT" | jq -r '
+            .data[].projectV2.fields.nodes[] |
+            select(.options) |
+            "  \(.name | gsub(" "; "_") | gsub("&"; "and") | ascii_upcase)_FIELD=\"\(.id)\""'
+
+          echo ""
+          echo "# Option ID Maps"
+          echo "$RESULT" | jq -r '
+            .data[].projectV2.fields.nodes[] |
+            select(.options) |
+            "  # \(.name)",
+            (.options[] | "  MAP[\"\(.name)\"]=\"\(.id)\"")'
