@@ -196,6 +196,13 @@ The following items must be completed to kick off the Phase 1 POC (Split Control
 - [ ] **Define automated exception process** - Build the ISAFE reject pipeline for requests that violate policy standards (overly broad rules, disallowed ports, missing fields, cross-environment requests). Define escalation path for legitimate exceptions that require manual override.
 - [ ] **Establish rule lifecycle management** - Define TTL/expiration policy for automated rules, periodic review cadence, and orphaned rule cleanup process.
 
+### Cross-Environment Policy Enforcement
+
+- [ ] **ITSM integration for environment resolution** - The policy engine must determine the environment (prod, staging, dev) of both source and destination workloads to enforce cross-environment rules (e.g., reject prod-to-dev requests). DDI (Cygna Labs IPControl) does not reliably carry environment metadata - approximately half of the containers are named with environment context, which is insufficient for automated policy decisions across an enterprise network. **Proposed resolution chain:** FQDN -> IP resolution -> ITSM asset lookup by IP/hostname -> environment field from asset record -> policy decision. ITSM is the system of record for all on-prem assets and must carry environment data as it is required for change management lead times and change windows. All on-prem assets are expected to be registered in ITSM.
+- [ ] **ITSM API access and query design** - Establish API connectivity to ITSM. Design queries to resolve IP or hostname to asset record and extract environment classification. Handle edge cases: multiple assets on same IP (NAT/shared services), decommissioned assets with stale IPs, unregistered assets.
+- [ ] **Caching recommendation** - Live ITSM API queries at policy decision time will add latency to the developer request flow. Recommend building a cached environment lookup table (CIDR/IP -> environment mapping) that syncs from ITSM on a regular interval (hourly or daily). Cache invalidation should trigger on ITSM asset record changes if webhooks or event streams are available. Fallback to live ITSM query if cache miss occurs.
+- [ ] **AWS-side environment resolution** - For cloud-side source workloads, environment is determined via AWS resource tags (already enforced by the SG Framework via mandatory tagging). No ITSM dependency for AWS workloads.
+
 ### Operational Readiness
 
 - [ ] **Establish logging and monitoring** - Ensure ISAFE-pushed rules on EQUINIX_DC are logged separately from existing rules. Build dashboards for rule hit counts, zero-hit rules (candidates for removal), and policy engine approval/rejection rates.
