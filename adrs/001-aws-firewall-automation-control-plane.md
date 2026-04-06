@@ -37,11 +37,13 @@ informed: Enterprise Architecture, Infrastructure Security
 
 The current firewall rule request process for cloud-to-on-prem and on-prem-to-cloud connectivity requires manual ticket submission and review, resulting in a 1-2 week turnaround time per request. This creates a bottleneck for development teams and incentivizes workarounds that weaken the security posture.
 
-Additionally, the current firewall chain between AWS and on-premises has a significant segmentation gap. An Illumio EDL-based rule exists on **all firewalls in the path** (EQUINIX_DC, Core, and Midrange) that allows bidirectional traffic between Illumio-enforced agents and any destination. This means:
+Additionally, the current firewall chain between AWS and on-premises presents a potential segmentation risk if cloud summary ranges were broadly opened on Illumio VENs. An Illumio EDL-based rule exists on **all firewalls in the path** (EQUINIX_DC, Core, and Midrange) that allows bidirectional traffic between Illumio-enforced agents and any destination. Under the current SOP, granular Illumio rules are written per-workload, which limits the blast radius. However, if the approach shifted to broad cloud summary allowances on VENs, the EDL rule would effectively eliminate segmentation for all managed workloads:
 
-- All Illumio-managed workloads can communicate with any destination across AWS, GCP, and Azure without restriction at the firewall layer.
-- Illumio-managed hosts are paradoxically **less segmented** than unmanaged hosts, as unmanaged hosts must match specific firewall rules while managed hosts pass through the broad EDL rule.
+- Illumio-managed workloads would be able to communicate with any destination across AWS, GCP, and Azure without restriction at the firewall layer.
+- Managed hosts would become paradoxically **less segmented** than unmanaged hosts, as unmanaged hosts must match specific firewall rules while managed hosts pass through the broad EDL rule.
 - The EDL rule is load-bearing for all three cloud environments and cannot be modified without risk to GCP and Azure traffic flows.
+
+This is not a current problem statement under normal SOP, but represents a gap that must be addressed if the architecture moves toward broader cloud summary rules on Illumio VENs.
 
 For workloads behind a NAT Gateway in non-routable subnets, the firewall chain has an additional visibility limitation. The firewall only sees the NAT Gateway IP as the source, not the individual workload IP. This makes it impossible to write granular per-workload firewall rules for NATted traffic. Security Groups are the only enforcement point that sees the true source and destination at the instance level.
 
@@ -57,18 +59,18 @@ AWS Workload → Security Group → NAT GW (non-routable) or direct (routable)
 
 ### Current Firewall Rules (All Firewalls)
 
-| Firewall | Rule | Impact |
-|---|---|---|
-| EQUINIX_DC | EDL: Any to Illumio Agents | Bidirectional allow for all enforced agents |
-| EQUINIX_DC | EDL: Illumio Agents to Any | across AWS, GCP, and Azure |
-| Core | AWS Summary to Any | Coarse-grain cloud summary rules |
-| Core | Any to AWS Summary | |
-| Core | EDL: Any to Illumio Agents | Same EDL pass-through as EQUINIX_DC |
-| Core | EDL: Illumio Agents to Any | |
-| Midrange | AWS Summary to Any | Coarse-grain cloud summary rules |
-| Midrange | Any to AWS Summary | |
-| Midrange | EDL: Any to Illumio Agents | Same EDL pass-through as EQUINIX_DC |
-| Midrange | EDL: Illumio Agents to Any | |
+| Firewall | Rule | Type | Impact |
+|---|---|---|---|
+| EQUINIX_DC | EDL: Any to Illumio Agents | Current | Bidirectional allow for all enforced agents |
+| EQUINIX_DC | EDL: Illumio Agents to Any | Current | across AWS, GCP, and Azure |
+| Core | EDL: Any to Illumio Agents | Current | Same EDL pass-through as EQUINIX_DC |
+| Core | EDL: Illumio Agents to Any | Current | |
+| Midrange | EDL: Any to Illumio Agents | Current | Same EDL pass-through as EQUINIX_DC |
+| Midrange | EDL: Illumio Agents to Any | Current | |
+| Core | AWS Summary to Any | **Proposed (POC)** | Coarse-grain cloud summary rules for POC |
+| Core | Any to AWS Summary | **Proposed (POC)** | |
+| Midrange | AWS Summary to Any | **Proposed (POC)** | Coarse-grain cloud summary rules for POC |
+| Midrange | Any to AWS Summary | **Proposed (POC)** | |
 
 ## Decision Drivers
 
@@ -91,6 +93,8 @@ AWS Workload → Security Group → NAT GW (non-routable) or direct (routable)
 - **Option 2: Unified Control Plane** — SG Framework extended to manage both AWS Security Groups AND Palo Alto firewall rules via PAN-OS Terraform provider. Single YAML request, single PR approval, two enforcement points.
 
 ### Option 1: Split Control Plane (ISAFE + SG Framework)
+
+![Split Control Plane Architecture](diagrams/split-control-plane.png)
 
 ISAFE operates as a standalone automation platform that receives programmatic API calls from developers for Palo Alto firewall rules. It includes a built-in policy engine that approves or rejects requests before pushing granular FQDN-based policy to the EQUINIX_DC Palo Alto firewalls via the management interface.
 
@@ -126,6 +130,8 @@ The SG Framework operates independently to manage AWS Security Groups via YAML r
 - FQDN-to-IP translation not automated for the SG side
 
 ### Option 2: Unified Control Plane (SG Framework Extended)
+
+![Unified Control Plane Architecture](diagrams/unified-control-plane.png)
 
 The existing SG Framework is extended to manage both AWS Security Groups and Palo Alto firewall rules. A single YAML request captures the developer's intent including FQDN destination. Terraform apply splits into two provider targets:
 
@@ -187,7 +193,7 @@ Both options are technically viable. The split control plane (Option 1) offers a
 
 **Risk: EDL on All Firewalls**
 
-The Illumio EDL rule exists on EQUINIX_DC, Core, and Midrange firewalls with bidirectional allow (Any to Illumio Agents, Illumio Agents to Any) across all three cloud environments. This effectively provides zero segmentation for Illumio-managed workloads at the firewall layer. Both options mitigate this risk for AWS workloads by establishing SGs as the primary granular enforcement point, but the EDL rule itself remains unchanged. A separate initiative is recommended to evaluate scoping or decomposing the EDL rule across the firewall chain.
+The Illumio EDL rule exists on EQUINIX_DC, Core, and Midrange firewalls with bidirectional allow (Any to Illumio Agents, Illumio Agents to Any) across all three cloud environments. Under current SOP, granular Illumio rules limit the effective blast radius. However, if the architecture moves toward broad cloud summary allowances on Illumio VENs, the EDL rule would effectively eliminate segmentation for all managed workloads at the firewall layer. Both options mitigate this risk for AWS workloads by establishing SGs as the primary granular enforcement point. A separate initiative is recommended to evaluate scoping or decomposing the EDL rule across the firewall chain if broader VEN policies are adopted.
 
 ## References
 
