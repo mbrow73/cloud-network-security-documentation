@@ -201,7 +201,47 @@ The following items must be completed to kick off the Phase 1 POC (Split Control
 - [ ] **ITSM integration for environment resolution** - The policy engine must determine the environment (prod, staging, dev) of both source and destination workloads to enforce cross-environment rules (e.g., reject prod-to-dev requests). DDI (Cygna Labs IPControl) does not reliably carry environment metadata - approximately half of the containers are named with environment context, which is insufficient for automated policy decisions across an enterprise network. **Proposed resolution chain:** FQDN -> IP resolution -> ITSM asset lookup by IP/hostname -> environment field from asset record -> policy decision. ITSM is the system of record for all on-prem assets and must carry environment data as it is required for change management lead times and change windows. All on-prem assets are expected to be registered in ITSM.
 - [ ] **ITSM API access and query design** - Establish API connectivity to ITSM. Design queries to resolve IP or hostname to asset record and extract environment classification. Handle edge cases: multiple assets on same IP (NAT/shared services), decommissioned assets with stale IPs, unregistered assets.
 - [ ] **Caching recommendation** - Live ITSM API queries at policy decision time will add latency to the developer request flow. Recommend building a cached environment lookup table (CIDR/IP -> environment mapping) that syncs from ITSM on a regular interval (hourly or daily). Cache invalidation should trigger on ITSM asset record changes if webhooks or event streams are available. Fallback to live ITSM query if cache miss occurs.
-- [ ] **AWS-side environment resolution** - For cloud-side source workloads, environment is determined via AWS resource tags (already enforced by the SG Framework via mandatory tagging). No ITSM dependency for AWS workloads.
+- [ ] **AWS-side environment resolution** - Two approaches evaluated for determining cloud-side source environment:
+
+#### Approach A: Zero-Trust Programmatic Resolution (Recommended)
+
+The policy engine derives the environment from the account ID provided in the request schema. No reliance on developer self-declaration.
+
+**Resolution chain:** Account ID from request -> account name lookup via AWS Organizations API -> pattern match on account naming convention -> environment classification.
+
+| Account Name Pattern | Environment | Classification |
+|---|---|---|
+| `*devl*` | E1 - Non-Production (Dev) | nonprod |
+| `*test*` | E2 - Non-Production (Test) | nonprod |
+| `*prod*` | E3 - Production | prod |
+
+- Account naming convention is the primary signal. Pattern match (grep/regex) against the account name is faster and simpler than VPC tag lookups.
+- Fallback: If account name does not match any known pattern, query VPC tags in the specified region for environment metadata.
+- Fallback 2: If VPC tags are also missing, request is flagged for manual classification. Policy engine does not guess.
+- **Accounts that fall through the cracks** (non-standard naming, no VPC tags) are surfaced as a data quality report for remediation rather than silently accepted.
+- Cache the account ID -> environment mapping (refresh daily from AWS Organizations). Eliminates runtime API calls for known accounts.
+
+#### Approach B: Developer-Declared Environment (Risk-Accept)
+
+The developer declares the source and destination environment in the request schema. The policy engine trusts the declaration.
+
+```yaml
+source:
+  account: "123456789012"
+  environment: prod       # developer-declared
+destination:
+  fqdn: inventory.corp.internal
+  environment: prod       # developer-declared
+  port: 443
+  protocol: tcp
+```
+
+- Faster to implement. No API integrations required for environment resolution.
+- Risk: developer can misclassify environment (accidentally or intentionally), which would bypass cross-environment policy checks.
+- Mitigation: periodic audit job that reconciles declared environments against actual account names / ITSM records and flags mismatches.
+- Suitable as an interim solution while Approach A integrations are built.
+
+**Recommendation:** Implement Approach B as the initial POC path for speed. Build Approach A in parallel and switch to programmatic resolution once validated. Approach B declarations can serve as a verification baseline for testing Approach A accuracy.
 
 ### Operational Readiness
 
