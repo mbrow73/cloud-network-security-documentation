@@ -3,7 +3,7 @@ title: AWS Firewall Automation Control Plane Architecture
 ea_file_type: ADR
 status: proposed
 date: 2026-04-06
-decision-makers: NSAE Director
+decision-makers: NSAE Leadership
 consulted: Cloud Network Security, Cloud Platform Engineering
 informed: Enterprise Architecture, Infrastructure Security
 ---
