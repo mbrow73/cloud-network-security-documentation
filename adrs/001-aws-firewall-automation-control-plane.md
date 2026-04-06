@@ -174,6 +174,36 @@ Both options are technically viable. The split control plane (Option 1) offers a
 
 **Recommendation:** Begin with Option 1 (Split Control Plane) for the POC phase, scoped to non-Illumio routable hosts. This proves the automation model with minimal blast radius. Evaluate Option 2 (Unified Control Plane) as the strategic target architecture once the POC validates the self-service model and organizational readiness is assessed.
 
+## Phase 1 POC Checklist
+
+The following items must be completed to kick off the Phase 1 POC (Split Control Plane, non-Illumio routable hosts).
+
+### Prerequisites
+
+- [ ] **Validate FQDN object support on Palo Alto appliance** — Test FQDN object creation and use in security policy on the EQUINIX_DC Palo Alto. Confirm DNS resolution behavior, refresh intervals, and rule match accuracy against live traffic.
+- [ ] **Validate PAN-OS API / Terraform provider connectivity** — Confirm programmatic access to the EQUINIX_DC Palo Alto management interface. Test rule creation, modification, and deletion via API or PAN-OS Terraform provider from the automation platform.
+- [ ] **Identify POC workloads** — Select a set of non-Illumio routable AWS workloads with known on-prem destinations for initial rule automation. Prefer workloads with stable, well-documented traffic patterns.
+
+### Developer Experience
+
+- [ ] **Standardize developer submission schema** — Define the YAML/API request format with fields required for gateway PA policy creation (source workload, destination FQDN, port, protocol, business justification, environment, expiration).
+- [ ] **Collaborate with Stephen Bulmer on required DX for developers** — Align on developer-facing workflow, documentation, submission interface, and feedback mechanisms (approval notifications, rule status, error handling).
+- [ ] **Define SG Framework request schema alignment** — Ensure the SG Framework YAML schema and ISAFE API schema are compatible to enable future unification (Option 2).
+
+### Policy Engine
+
+- [ ] **Define policy engine capable of zero-touch approval** — Establish automated approval criteria (known-good FQDN lists, approved port ranges, environment-scoped rules, tag requirements). Define what qualifies for auto-approve vs. manual review.
+- [ ] **Define automated exception process** — Build the ISAFE reject pipeline for requests that violate policy standards (overly broad rules, disallowed ports, missing fields, cross-environment requests). Define escalation path for legitimate exceptions that require manual override.
+- [ ] **Establish rule lifecycle management** — Define TTL/expiration policy for automated rules, periodic review cadence, and orphaned rule cleanup process.
+
+### Operational Readiness
+
+- [ ] **Establish logging and monitoring** — Ensure ISAFE-pushed rules on EQUINIX_DC are logged separately from existing rules. Build dashboards for rule hit counts, zero-hit rules (candidates for removal), and policy engine approval/rejection rates.
+- [ ] **Define rollback procedure** — Document the process to revert ISAFE-pushed rules in the event of a bad policy push. Test bulk rule removal via API.
+- [ ] **Proposed POC coarse-grain rules on Core/Midrange** — Deploy the proposed AWS Summary to Any / Any to AWS Summary rules on Core and Midrange firewalls to support POC traffic. These are net-new rules scoped to POC ranges only.
+- [ ] **Coordinate with Illumio team** — Confirm that POC workloads are non-Illumio managed and will not match the EDL rule. Document the boundary between ISAFE-managed and Illumio-managed workloads.
+- [ ] **Define success criteria** — Establish measurable POC exit criteria (e.g., rule deployment latency < X minutes, zero mismatched rules after Y days, developer satisfaction score).
+
 ## Consequences
 
 **Positive Consequences**
