@@ -179,6 +179,14 @@ Operationally less clear, harder to troubleshoot, and less defensible than the p
 - Native Cloud NGFW may remain attractive enough to revisit later, so the ADR must explain clearly why it is not preferred today
 - Some conceptually simpler alternatives are eliminated by platform limitations rather than by architectural preference alone
 
+## Rollout Considerations
+
+### Cloud NAT IP sourcing
+
+For initial POC deployment, Cloud NAT can use Google-managed public IPs to reduce setup time and avoid creating a dependency on BYOIP readiness.
+
+For POA and production adoption, Cloud NAT should move to manually assigned BYOIP-backed regional external IPs. This provides stable enterprise-owned egress addresses for partner allowlisting without changing the core architecture for either option.
+
 ## Risks and Mitigations
 
 | Risk | Likelihood | Impact | Mitigation |
