@@ -12,7 +12,7 @@
 
 ## Context
 
-We need a standardized pattern for **internet-bound outbound traffic inspection in GCP** for workloads that consume an internally published service via **Private Service Connect (PSC)** and egress through an **Egress Workload Proxy (EWP)**.
+We need a standardized pattern for **internet-bound outbound traffic inspection in GCP** for workloads that consume an internally published service via **Private Service Connect (PSC)** and egress through an **Egress Workload Proxy (enterprise web gateway) (EWP)**.
 
 The design needs to provide:
 
@@ -20,14 +20,14 @@ The design needs to provide:
 - Outbound inspection for EWP-initiated internet traffic
 - Clear routing semantics that can be reviewed and operated by network/security engineers
 - A deployable pattern in GCP that respects real platform constraints
-- Strong Infrastructure as Code support for repeatable deployment and policy management
+- Repeatable deployment and policy management support
 
 During option analysis, several conceptually cleaner architectures were eliminated because of **hard GCP networking limitations**, especially around multi-interface firewall placement patterns. That materially narrowed the practical option set.
 
 The two viable options are:
 
-1. **Option A — Palo Alto appliance-based split-VPC egress design**
-2. **Option B — Native GCP Cloud NGFW-based inspection design**
+1. **Option A: Palo Alto appliance-based split-VPC egress design**
+2. **Option B: Native GCP Cloud NGFW-based inspection design**
 
 ## Decision
 
@@ -35,9 +35,9 @@ We will treat **Option A (Palo Alto split-VPC design)** as the **preferred archi
 
 Option A is preferred because it aligns more closely with the current enterprise security model, preserves the richer feature set of Palo Alto firewall appliances, and is more likely to pass leadership review without introducing a net new enforcement model.
 
-Option B remains viable because it is cloud-native, quick to deploy, and fully manageable through Infrastructure as Code, but it is a newer direction for the organization and does not provide full parity with the capabilities currently expected from Palo Alto-based enforcement.
+Option B remains viable because it is cloud-native, quick to deploy, and more straightforward to manage through Infrastructure as Code, but it is a newer direction for the organization and does not provide full parity with the capabilities currently expected from Palo Alto-based enforcement.
 
-## Option A — Preferred: Palo Alto Appliance-Based Split-VPC Design
+## Option A: Preferred Palo Alto Appliance-Based Split-VPC Design
 
 ### Description
 
@@ -64,6 +64,10 @@ In this model:
 
 `Internet → Cloud NAT / default internet gateway → Public Egress VPC untrust interface → PAN return route to trust interface → EWP → PSC response path → client`
 
+### Diagram
+
+![Option A diagram](../diagrams/gcp-internet-egress-option-a-palo-alto.png)
+
 ### Why this is preferred
 
 | Reason | Detail |
@@ -85,11 +89,10 @@ In this model:
 ### Cons
 
 - More moving parts than a native service design
-- More net new routing and appliance insertion complexity in GCP
+- More net new routing complexity in GCP
 - Higher operational overhead than a managed cloud-native service
-- Requires careful route design and appliance insertion validation
 
-## Option B — Viable Secondary Option: Native GCP Cloud NGFW Design
+## Option B: Viable Secondary Option, Native GCP Cloud NGFW Design
 
 ### Description
 
@@ -113,20 +116,24 @@ In this model:
 
 `Internet → Cloud NAT / default internet gateway → firewall endpoint path → EWP → PSC response path → client`
 
+### Diagram
+
+![Option B diagram](../diagrams/gcp-internet-egress-option-b-cloud-ngfw.png)
+
 ### Why this is viable
 
 | Reason | Detail |
 |--------|--------|
 | **Cloud-native** | Uses managed Google Cloud security constructs rather than self-managed appliance infrastructure. |
 | **Fast to deploy** | Eliminates the need to stand up and operate Palo Alto appliance components. |
-| **IaC-friendly** | Firewall policies and associated service constructs are well-aligned with repeatable Infrastructure as Code workflows. |
+| **More IaC-friendly than appliances** | Firewall policies and associated service constructs are easier to express in Infrastructure as Code than a VM-based firewall stack. |
 | **Lower operational burden** | Reduces the amount of appliance lifecycle management compared to VM-based firewalls. |
 
 ### Pros
 
 - Fastest path to implementation
 - Native Google Cloud control plane and service model
-- Fully controllable through Infrastructure as Code
+- More straightforward to manage through Infrastructure as Code than appliance-based inspection
 - Lower appliance-management overhead
 - Cleaner service ownership model from a cloud platform perspective
 
@@ -185,11 +192,11 @@ Operationally less clear, harder to troubleshoot, and less defensible than the p
 
 | Option | Recommendation | Why |
 |--------|----------------|-----|
-| **Option A — Palo Alto split-VPC** | **Preferred** | Stronger feature set, more aligned with current enterprise security posture, lower approval risk, cleaner security boundary story |
-| **Option B — Cloud NGFW service** | **Viable secondary option** | Fast, cloud-native, IaC-friendly, but net new and not yet as fully approved or feature-complete for this use case |
+| **Option A: Palo Alto split-VPC** | **Preferred** | Stronger feature set, more aligned with current enterprise security posture, lower approval risk, cleaner security boundary story |
+| **Option B: Cloud NGFW service** | **Viable secondary option** | Fast, cloud-native, IaC-friendly, but net new and not yet as fully approved or feature-complete for this use case |
 
 ## References
 
 - Cloud NGFW overview: <https://docs.cloud.google.com/firewall/docs/about-firewalls>
-- Option A diagram: `diagrams/gcp-internet-egress-option-a-palo-alto.png`
-- Option B diagram: `diagrams/gcp-internet-egress-option-b-cloud-ngfw.png`
+- Option A diagram: `../diagrams/gcp-internet-egress-option-a-palo-alto.png`
+- Option B diagram: `../diagrams/gcp-internet-egress-option-b-cloud-ngfw.png`
