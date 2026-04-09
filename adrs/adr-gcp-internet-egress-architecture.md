@@ -12,7 +12,7 @@
 
 ## Context
 
-We need a standardized pattern for **internet-bound outbound traffic inspection in GCP** for workloads that consume an internally published service via **Private Service Connect (PSC)** and egress through an **Egress Workload Proxy (enterprise web gateway) (EWP)**.
+We need a standardized pattern for **internet-bound outbound traffic inspection in GCP** for workloads that consume an internally published service via **Private Service Connect (PSC)** and egress through an **Enterprise Web Proxy (EWP)**.
 
 The design needs to provide:
 
