@@ -76,13 +76,6 @@ resource "google_compute_region_backend_service" "backend_inlb" {
 }
 ```
 
-To verify the current value from Terraform state:
-
-```bash
-terraform state show google_compute_region_backend_service.frontend_inlb | grep connection_draining_timeout_sec
-terraform state show google_compute_region_backend_service.backend_inlb  | grep connection_draining_timeout_sec
-```
-
 > This setting controls what happens when an instance is removed from the backend. Without it, removal is a hard cut — existing connections are dropped immediately. With it configured, GCP stops new connections but continues forwarding packets for existing connections until the timeout elapses.
 
 ---
