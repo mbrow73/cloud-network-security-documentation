@@ -34,16 +34,53 @@
 
 **Verify/set connection draining timeout (one-time setup):**
 
-```bash
-# Check current setting
-gcloud compute backend-services describe <BACKEND_SERVICE_NAME> \
-  --region=<REGION> \
-  --format="get(connectionDraining.drainingTimeoutSec)"
+Manage this in Terraform, not with ad-hoc `gcloud`.
 
-# If not set or too low, configure it (300s = 5 min is a good default)
-gcloud compute backend-services update <BACKEND_SERVICE_NAME> \
-  --region=<REGION> \
-  --connection-draining-timeout=300
+```hcl
+resource "google_compute_region_backend_service" "frontend_inlb" {
+  name                  = "<FRONTEND_BACKEND_SERVICE_NAME>"
+  region                = var.region
+  load_balancing_scheme = "INTERNAL"
+  protocol              = "TCP"
+
+  connection_draining_timeout_sec = 300
+
+  backend {
+    group = google_compute_instance_group.pa_01.self_link
+  }
+
+  backend {
+    group = google_compute_instance_group.pa_02.self_link
+  }
+
+  health_checks = [google_compute_region_health_check.panorama_probe.id]
+}
+
+resource "google_compute_region_backend_service" "backend_inlb" {
+  name                  = "<BACKEND_BACKEND_SERVICE_NAME>"
+  region                = var.region
+  load_balancing_scheme = "INTERNAL"
+  protocol              = "TCP"
+
+  connection_draining_timeout_sec = 300
+
+  backend {
+    group = google_compute_instance_group.pa_01.self_link
+  }
+
+  backend {
+    group = google_compute_instance_group.pa_02.self_link
+  }
+
+  health_checks = [google_compute_region_health_check.workload_probe.id]
+}
+```
+
+To verify the current value from Terraform state:
+
+```bash
+terraform state show google_compute_region_backend_service.frontend_inlb | grep connection_draining_timeout_sec
+terraform state show google_compute_region_backend_service.backend_inlb  | grep connection_draining_timeout_sec
 ```
 
 > This setting controls what happens when an instance is removed from the backend. Without it, removal is a hard cut — existing connections are dropped immediately. With it configured, GCP stops new connections but continues forwarding packets for existing connections until the timeout elapses.
@@ -164,11 +201,32 @@ Confirm both `11.0.6` (or your chosen 11.0.x) and `11.1.4-h15` show `Downloaded:
 
 This triggers connection draining — GCP stops sending new connections and allows existing ones to finish within the drain timeout window.
 
-```bash
-gcloud compute instance-groups unmanaged remove-instances <INSTANCE_GROUP> \
-  --instances=<FW_INSTANCE_NAME> \
-  --zone=<ZONE>
+Do this by temporarily removing the target firewall from the Terraform-managed unmanaged instance group membership.
+
+```hcl
+resource "google_compute_instance_group" "pa_01" {
+  name      = "<PA_01_INSTANCE_GROUP>"
+  zone      = var.zone_1
+  network   = google_compute_network.firewall_vpc.id
+  instances = []
+}
+
+resource "google_compute_instance_group" "pa_02" {
+  name      = "<PA_02_INSTANCE_GROUP>"
+  zone      = var.zone_2
+  network   = google_compute_network.firewall_vpc.id
+  instances = [google_compute_instance.pa_02.self_link]
+}
 ```
+
+Then run:
+
+```bash
+terraform plan
+terraform apply
+```
+
+> If your module builds `instances` from variables or locals, make the temporary change there instead of editing the resource block directly. The point is the same: remove the target PA from the IG in Terraform and apply it so GCP drains it cleanly.
 
 **2.2 — Verify Drain via Firewall Session Logs**
 
@@ -326,28 +384,35 @@ show system disk-space
 
 **5.1 — Add FW Back to Instance Group**
 
-Re-run the Terraform workspace that manages the instance group. Terraform will detect the removed instance as drift and re-add it:
+Revert the temporary Terraform change so the upgraded firewall is back in its unmanaged instance group:
+
+```hcl
+resource "google_compute_instance_group" "pa_01" {
+  name      = "<PA_01_INSTANCE_GROUP>"
+  zone      = var.zone_1
+  network   = google_compute_network.firewall_vpc.id
+  instances = [google_compute_instance.pa_01.self_link]
+}
+```
+
+Then run:
 
 ```bash
 terraform plan    # should show the instance being added back to the IG
 terraform apply
 ```
 
-> Alternatively, if you need to re-add manually without waiting for a Terraform run:
-> ```bash
-> gcloud compute instance-groups unmanaged add-instances <INSTANCE_GROUP> \
->   --instances=<FW_INSTANCE_NAME> \
->   --zone=<ZONE>
-> ```
-
 **5.2 — Verify Health Probe Passes**
 
+Verify from the Terraform-managed load balancer path using the GCP Console or your normal monitoring stack. At a minimum, confirm the firewall has been re-associated with the unmanaged IG in Terraform state and is passing traffic again.
+
 ```bash
-gcloud compute backend-services get-health <BACKEND_SERVICE_NAME> \
-  --region=<REGION>
+terraform state show google_compute_instance_group.pa_01
+terraform state show google_compute_region_backend_service.frontend_inlb
+terraform state show google_compute_region_backend_service.backend_inlb
 ```
 
-Wait for the upgraded FW to show `HEALTHY`. This typically takes 2-3 probe intervals (~20-30 seconds).
+Wait for the upgraded FW to show healthy in your operational view. This typically takes 2-3 probe intervals (~20-30 seconds).
 
 **5.3 — Verify Traffic Is Flowing**
 
@@ -456,7 +521,7 @@ If the FW is completely broken:
 3. **Pre-staging images is free.** Download them days before the window to reduce change window duration.
 4. **If you're Panorama-managed**, ensure Panorama is upgraded to 11.1.x FIRST. Managing a FW on a version higher than Panorama is unsupported and will cause issues.
 5. **Content updates** may need to be refreshed after the major version jump. Run `request content upgrade check` and install the latest after reaching 11.1.4-H15.
-6. **GCP health probes** — verify your probe configuration (port, interval, threshold) before starting. If probes are slow (high interval + high threshold), your drain/re-add times will be longer.
+6. **GCP health probes** — verify your Terraform-defined probe configuration (port, interval, threshold) before starting. If probes are slow (high interval + high threshold), your drain/re-add times will be longer.
 
 ---
 
@@ -476,11 +541,13 @@ If the FW is completely broken:
 **GCP Connection Draining and Load Balancing:**
 - [Enabling Connection Draining on Backend Services](https://cloud.google.com/load-balancing/docs/enabling-connection-draining) — How connection draining works, timeout configuration
 - [Internal Passthrough Network Load Balancer Overview](https://cloud.google.com/load-balancing/docs/internal) — L4 ILB architecture (Maglev/Andromeda), health probes, backend behavior
-- [Unmanaged Instance Groups](https://cloud.google.com/compute/docs/instance-groups/creating-groups-of-unmanaged-instances) — Adding/removing instances from unmanaged IGs
+- [Unmanaged Instance Groups](https://cloud.google.com/compute/docs/instance-groups/creating-groups-of-unmanaged-instances) — Backend membership model used by this runbook
+- [Terraform: google_compute_region_backend_service](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_region_backend_service) — Backend service resource, including connection draining
+- [Terraform: google_compute_instance_group](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/compute_instance_group) — Zonal unmanaged instance groups for 1:1 PA membership
 
 **GCP L4 vs L7 Behavior (Important):**
 - [Backend Service Settings](https://cloud.google.com/load-balancing/docs/backend-service) — Note: `max-rate` is an L7 HTTP(S) LB capacity scaler. L4 passthrough ILBs do not use it as a traffic routing signal. For L4, removing the instance from the backend is the correct way to stop new connections.
 
 ---
 
-*Runbook Version: 1.5 | Created: 2026-03-26*
+*Runbook Version: 1.6 | Created: 2026-03-26 | Updated: 2026-04-14*
