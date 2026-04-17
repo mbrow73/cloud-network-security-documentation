@@ -1,40 +1,36 @@
-# ADR: PAN-OS FQDN Policy for GTM-Backed Destinations
+# PAN-OS FQDN Object Testing for GTM-Backed Destinations
 
 | Field | Value |
 |-------|-------|
 | **Status** | Draft |
 | **Date** | 2026-04-17 |
-| **Proposed by** | Maximilian Browne |
-| **Stakeholders** | Network Security, Cloud Platform Engineering, Security Leadership |
-| **Supersedes** | N/A |
+| **Prepared by** | Maximilian Browne |
+| **Audience** | Network Security Leadership, Cloud Platform Engineering |
+| **Document Type** | Test Findings and Recommendation |
 
 ---
 
-## Context
+## Purpose
 
-We evaluated whether **PAN-OS security policy using FQDN address objects** is a viable control for egress to **GTM-backed application destinations**.
+Document the results of live testing performed to evaluate whether **PAN-OS FQDN address objects** are a viable control for **GTM-backed application destinations**.
 
-The intended value of the pattern was straightforward:
+This document is intended to present the observed behavior, identified risks, and a recommendation for leadership review. It is not written as a final governance decision.
+
+## Background
+
+The proposed value of FQDN-based policy was straightforward:
 
 - define destination policy in PAN-OS using an FQDN object
 - allow workloads to reach approved application endpoints without manually tracking every backend IP
 - simplify policy automation for destinations that may change over time
 
-That model only works if the firewall's DNS view is a reliable proxy for the client's DNS view.
+That model depends on one key assumption:
 
-In our environment, that assumption does not hold.
+> the firewall's DNS view is a reliable proxy for the client's DNS view
 
-Our GTM implementation returns destination IPs based on **client conditions, resolver context, and views**. As a result, the Palo Alto firewall may resolve a different destination IP set than the actual workload receives.
+The testing below shows that assumption does not hold for this GTM-backed flow.
 
-That creates a structural mismatch between:
-
-- the IPs stored in the PAN-OS FQDN object
-- the IP the client workload is actually handed by DNS
-- the destination IP against which security policy is enforced
-
-This is not a theoretical concern. It was observed during live testing.
-
-## Test Summary
+## Test Scope and Method
 
 Testing was performed against a real GTM-backed application flow.
 
@@ -47,32 +43,46 @@ Testing was performed against a real GTM-backed application flow.
 - Policy match behavior was tested on the firewall using the resolved IPs
 - Client-side DNS resolution behavior was compared against firewall-side FQDN resolution
 
-### Observed behavior
+### What was being validated
 
-The firewall successfully resolved the FQDN object to a set of IPs and policy testing succeeded for those resolved addresses.
+The test was intended to answer a practical question:
 
-However, the client workload could receive a **different GTM-selected IP** than the firewall had associated with the FQDN object.
+> Can PAN-OS FQDN address objects be relied on for policy enforcement when GTM answers may vary by client condition, resolver context, or view?
 
-In practical terms, the test demonstrated this failure mode:
+## Findings
+
+### 1. Firewall-side FQDN resolution succeeded
+
+The firewall successfully resolved the FQDN object to a set of destination IPs.
+
+Policy testing on the firewall also succeeded for those firewall-resolved IPs.
+
+### 2. Client-side DNS resolution was not guaranteed to match firewall-side resolution
+
+The client workload could receive a **different GTM-selected IP** than the firewall had associated with the same FQDN object.
+
+In practical terms, the observed failure mode looked like this:
 
 - firewall-resolved destination = **IP 1**
 - workload-resolved destination = **IP 2**
 
 Because GTM answers were conditional, the firewall and the client were not guaranteed to receive the same answer for the same hostname.
 
-## Decision
+### 3. This creates a policy enforcement mismatch risk
 
-We will **not** use **PAN-OS FQDN address objects** as the enforcement primitive for GTM-backed destinations when DNS answers vary by client condition, resolver view, or source context.
-
-## Rationale
-
-### 1. GTM / client-view mismatch is a hard-fail condition
-
-PAN-OS FQDN address objects represent **what the firewall resolved**, not **what the client will connect to**.
+PAN-OS FQDN address objects represent **what the firewall resolved**, not necessarily **what the client will connect to**.
 
 When GTM answers vary by source context, that difference becomes operationally significant. A policy can appear correct on the firewall while still failing or behaving inconsistently for the workload.
 
-### 2. The design introduces management-plane dependency and load
+## Risks Observed During Evaluation
+
+### 1. GTM / client-view mismatch is a hard-fail condition
+
+This is the primary viability issue.
+
+If GTM returns different destination IPs to different clients or resolvers, the firewall may enforce policy based on an IP set that does not match the workload's actual destination.
+
+### 2. FQDN refreshes introduce management-plane load
 
 FQDN object refreshes consume management-plane cycles on:
 
@@ -81,18 +91,18 @@ FQDN object refreshes consume management-plane cycles on:
 
 That is undesirable in an environment where management plane capacity is already a concern.
 
-### 3. The approach adds new failure points
+### 3. The approach adds additional failure points
 
 Using FQDN objects for this use case introduces dependency on:
 
 - management-plane DNS resolution
 - management interface availability and bandwidth
 - resolver reachability and correctness
-- refresh timing / propagation timing
+- refresh timing and propagation timing
 
-That is additional operational complexity for an already fragile enforcement path.
+That adds operational complexity to an already sensitive enforcement path.
 
-### 4. Refresh timing can create intermittent policy mismatches
+### 4. Staggered resolution timing can create intermittent issues
 
 Even if firewall and client resolution eventually converge, they may not converge at the same time.
 
@@ -102,36 +112,27 @@ This creates windows where:
 - the firewall still holds an older answer set
 - different firewalls may hold different answer sets at different times
 
-That kind of staggered resolution is exactly how you get weird outages and painful troubleshooting sessions.
+That kind of staggered resolution can create intermittent policy mismatches and difficult troubleshooting conditions.
 
-## Consequences
+## Assessment
 
-### Positive
+Based on live testing, **PAN-OS FQDN address objects do not appear to be a reliable enforcement primitive for GTM-backed destinations when DNS answers vary by client condition, resolver view, or source context**.
 
-- avoids building policy automation on an unreliable primitive
-- prevents false confidence in FQDN-based allow rules for conditional DNS targets
-- keeps focus on deterministic enforcement mechanisms
+The approach may still be workable in environments where DNS answers are effectively flat and uniform for all clients traversing the policy domain, but that was not true in this test scenario.
 
-### Negative
+## Recommendation for Leadership Review
 
-- removes a potentially convenient abstraction for dynamic destinations
-- means destination control must come from a more explicit inventory or another deterministic source of truth
-- may require more engineering effort for automation design
+Based on the observed behavior, the recommended path is:
 
-## Recommendation
+- **do not proceed** with FQDN-object-based security policy automation for this flow in its current form
+- use a control mechanism based on a **known destination IP inventory** or another **deterministic source of truth** that does not depend on the firewall's independent DNS resolution behavior
 
-Do **not** proceed with FQDN-object-based security policy automation for this flow.
-
-Instead, use a control mechanism based on a **known destination IP inventory** or another **deterministic source of truth** that does not depend on the firewall's independent DNS resolution behavior.
-
-FQDN-based policy may only be reconsidered if all of the following become true:
+FQDN-based policy could be reconsidered only if all of the following become true:
 
 - GTM behavior is effectively flattened
 - all relevant clients receive the same destination answers
 - the firewall DNS view is intentionally aligned with the client DNS view
 - the management-plane and refresh-timing risks are explicitly accepted
-
-Those conditions are not met today.
 
 ## Evidence Summary
 
@@ -142,6 +143,6 @@ Testing demonstrated that:
 - the workload can still receive a different GTM-selected destination IP
 - therefore, successful firewall-side FQDN resolution does **not** guarantee reliable client traffic enforcement
 
-## Suggested Decision Statement
+## Suggested Leadership Summary
 
-> Based on live testing, PAN-OS FQDN address objects are not a reliable policy primitive for GTM-backed destinations in our environment. Because DNS answers vary by client context, the firewall's resolved IP set can diverge from the workload's actual destination IP, creating enforcement mismatch risk. We should not use FQDN-based security policy automation for this flow.
+> Live testing showed that PAN-OS FQDN address objects are not a reliable control for this GTM-backed flow because the firewall's DNS answer can diverge from the workload's DNS answer. That creates a policy enforcement mismatch risk. Based on these findings, the recommendation is not to proceed with FQDN-based policy automation for this use case unless DNS behavior is made uniform across the relevant clients and enforcement path.
