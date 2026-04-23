@@ -15,14 +15,33 @@ jobs:
       repository-projects: write
     env:
       GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+      GH_HOST: github.aexp.com
       PROJECT_ID: "PVT_kwHOCGKaWs4BTeel"
 
     steps:
+      - name: Install GitHub CLI
+        run: |
+          type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
+          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | \
+            sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+          sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
+          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | \
+            sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+          sudo apt update
+          sudo apt install gh -y
+
+      - name: Authenticate GitHub CLI
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: |
+          echo "$GH_TOKEN" | gh auth login --hostname github.aexp.com --with-token
+          gh auth status --hostname github.aexp.com
+
       - name: Parse form fields and update project
         run: |
           ISSUE_NUMBER=${{ github.event.issue.number }}
           ISSUE_NODE_ID=${{ github.event.issue.node_id }}
-          BODY=$(gh issue view $ISSUE_NUMBER --repo ${{ github.repository }} --json body -q .body)
+          BODY=$(gh issue view $ISSUE_NUMBER --repo ${{ github.repository }} --hostname github.aexp.com --json body -q .body)
 
           # Parse fields from form response
           # Form fields render as: ### Field Name\n\nValue
@@ -40,7 +59,7 @@ jobs:
           echo "Change Risk: $CHANGE_RISK"
 
           # Get the project item ID for this issue
-          ITEM_ID=$(gh api graphql -f query='
+          ITEM_ID=$(gh api graphql --hostname github.aexp.com -f query='
             query($issueId: ID!) {
               node(id: $issueId) {
                 ... on Issue {
@@ -58,7 +77,7 @@ jobs:
           if [ -z "$ITEM_ID" ]; then
             echo "Issue not on project yet, waiting 10s..."
             sleep 10
-            ITEM_ID=$(gh api graphql -f query='
+            ITEM_ID=$(gh api graphql --hostname github.aexp.com -f query='
               query($issueId: ID!) {
                 node(id: $issueId) {
                   ... on Issue {
@@ -133,7 +152,7 @@ jobs:
 
             if [ -n "$option_id" ]; then
               echo "Setting $field_name to option $option_id"
-              gh api graphql -f query='
+              gh api graphql --hostname github.aexp.com -f query='
                 mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
                   updateProjectV2ItemFieldValue(input: {
                     projectId: $projectId
