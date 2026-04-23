@@ -41,7 +41,7 @@ jobs:
         run: |
           ISSUE_NUMBER=${{ github.event.issue.number }}
           ISSUE_NODE_ID=${{ github.event.issue.node_id }}
-          BODY=$(gh issue view $ISSUE_NUMBER --repo ${{ github.repository }} --hostname github.aexp.com --json body -q .body)
+          BODY=$(gh issue view $ISSUE_NUMBER --repo ${{ github.repository }} --json body -q .body)
 
           # Parse fields from form response
           # Form fields render as: ### Field Name\n\nValue
