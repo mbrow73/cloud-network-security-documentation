@@ -41,6 +41,13 @@ jobs:
       - name: Verify GitHub CLI
         run: gh --version
 
+      - name: Authenticate GitHub CLI
+        env:
+          GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+        run: |
+          echo "$GH_TOKEN" | gh auth login --hostname github.aexp.com --with-token
+          gh auth status --hostname github.aexp.com
+
       - name: Discover project and field IDs
         env:
           GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
@@ -64,7 +71,7 @@ jobs:
           echo ""
 
           # Get project ID
-          RESULT=$(gh api graphql -f query="
+          RESULT=$(gh api graphql --hostname github.aexp.com -f query="
           {
             $QUERY_ROOT {
               projectV2(number: $PROJECT_NUM) {
