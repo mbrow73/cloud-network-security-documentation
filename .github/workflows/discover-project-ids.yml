@@ -70,6 +70,28 @@ jobs:
           echo "============================================"
           echo ""
 
+          # Diagnostic org/user query first, to help distinguish owner mismatch
+          # from classic-vs-v2 / GHE support issues.
+          DIAG=$(gh api graphql --hostname github.aexp.com -f query="
+          {
+            $QUERY_ROOT {
+              login
+              projectsV2(first: 10) {
+                nodes {
+                  id
+                  number
+                  title
+                  url
+                }
+              }
+            }
+          }")
+
+          echo "DIAGNOSTIC PROJECT LIST"
+          echo "-----------------------"
+          echo "$DIAG" | jq -r '.data[] | .projectsV2.nodes[]? | "  #\(.number) | \(.title) | \(.url)"'
+          echo ""
+
           # Get project ID
           RESULT=$(gh api graphql --hostname github.aexp.com -f query="
           {
@@ -103,6 +125,16 @@ jobs:
           PROJECT_ID=$(echo "$RESULT" | jq -r '.data[].projectV2.id')
           PROJECT_TITLE=$(echo "$RESULT" | jq -r '.data[].projectV2.title')
           PROJECT_URL=$(echo "$RESULT" | jq -r '.data[].projectV2.url')
+
+          if [ -z "$PROJECT_ID" ] || [ "$PROJECT_ID" = "null" ]; then
+            echo ""
+            echo "ERROR: Could not resolve projectV2 number $PROJECT_NUM under owner $OWNER ($OWNER_TYPE)."
+            echo "If the diagnostic list above is empty or missing #$PROJECT_NUM, this is likely one of:"
+            echo "  - wrong owner / owner type"
+            echo "  - classic Projects instead of Projects v2"
+            echo "  - GitHub Enterprise instance/version does not expose Projects v2 as expected"
+            exit 1
+          fi
 
           echo "PROJECT"
           echo "-------"
