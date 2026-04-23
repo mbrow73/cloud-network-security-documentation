@@ -44,6 +44,7 @@ jobs:
       - name: Discover project and field IDs
         env:
           GH_TOKEN: ${{ secrets.PROJECT_TOKEN }}
+          GH_HOST: github.aexp.com
         run: |
           OWNER="${{ inputs.owner }}"
           OWNER_TYPE="${{ inputs.owner_type }}"
