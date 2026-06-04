@@ -10,7 +10,8 @@ This script is intentionally conservative:
   - skips anything with non-zero policy_reference_count unless --include-referenced
   - skips anything with non-zero global_reference_count unless --include-global-referenced
   - skips anything with group_membership_count > 0 unless --include-group-members
-  - skips rows with delete_eligible=no unless --include-ineligible
+  - requires safety columns from the current analyzer by default
+  - only emits rows with delete_eligible=yes unless --include-ineligible
   - skips group_member_only rows unless --include-group-member-only
   - supports filtering by scope/kind
   - writes commands to a file for review/change control
@@ -66,6 +67,7 @@ def main() -> int:
     ap.add_argument("--include-group-members", action="store_true", help="Allow rows with group_membership_count > 0. Strongly not recommended.")
     ap.add_argument("--include-ineligible", action="store_true", help="Allow rows with delete_eligible=no. Strongly not recommended.")
     ap.add_argument("--include-group-member-only", action="store_true", help="Include rows with cleanup_reason=group_member_only_no_policy_references")
+    ap.add_argument("--allow-legacy-csv", action="store_true", help="Allow old candidate CSVs missing safety columns. Not recommended.")
     ap.add_argument("--limit", type=int, default=0, help="Max commands to emit, useful for staged batches")
     ap.add_argument("--no-commit-comment", action="store_true", help="Do not append commit/validate reminder comments")
     args = ap.parse_args()
@@ -77,10 +79,20 @@ def main() -> int:
 
     with args.csv.open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
-        required = {"scope", "kind", "name", "policy_reference_count", "cleanup_reason"}
-        missing = required - set(reader.fieldnames or [])
+        base_required = {"scope", "kind", "name", "policy_reference_count", "cleanup_reason"}
+        safety_required = {"global_reference_count", "group_membership_count", "delete_eligible"}
+        fieldnames = set(reader.fieldnames or [])
+        missing = base_required - fieldnames
         if missing:
             raise SystemExit(f"CSV missing required columns: {', '.join(sorted(missing))}")
+        missing_safety = safety_required - fieldnames
+        if missing_safety and not args.allow_legacy_csv:
+            raise SystemExit(
+                "CSV is missing current safety columns: "
+                + ", ".join(sorted(missing_safety))
+                + ". Re-run panorama_object_cleanup_candidates.py from latest main, "
+                + "or pass --allow-legacy-csv only for manual/report-only legacy use."
+            )
 
         for row in reader:
             scope = row["scope"].strip()
@@ -88,10 +100,9 @@ def main() -> int:
             name = row["name"].strip()
             reason = row["cleanup_reason"].strip()
             ref_count = int(row.get("policy_reference_count") or 0)
-            # Newer analyzer CSVs include global_reference_count. Older CSVs do not; keep backward compatibility.
             global_ref_count = int(row.get("global_reference_count") or 0)
             group_membership_count = int(row.get("group_membership_count") or 0)
-            delete_eligible = (row.get("delete_eligible") or "yes").strip().lower()
+            delete_eligible = (row.get("delete_eligible") or "no").strip().lower()
 
             if scopes and scope not in scopes:
                 skipped += 1
@@ -108,7 +119,7 @@ def main() -> int:
             if group_membership_count > 0 and not args.include_group_members:
                 skipped += 1
                 continue
-            if delete_eligible == "no" and not args.include_ineligible:
+            if delete_eligible != "yes" and not args.include_ineligible:
                 skipped += 1
                 continue
             if reason == "group_member_only_no_policy_references" and not args.include_group_member_only:

@@ -23,7 +23,7 @@ Treat the output as review candidates, not automatic delete instructions. Valida
 
 ## `panorama_candidates_to_delete_commands.py`
 
-Converts reviewed rows from `panorama_cleanup_candidates.csv` into Panorama CLI `delete` commands. When the candidates CSV includes `global_reference_count`, `group_membership_count`, or `delete_eligible`, unsafe rows are skipped by default.
+Converts reviewed rows from `panorama_cleanup_candidates.csv` into Panorama CLI `delete` commands. The generator fails closed unless the CSV includes the current safety columns: `global_reference_count`, `group_membership_count`, and `delete_eligible`. Unsafe rows are skipped by default.
 
 Example:
 
