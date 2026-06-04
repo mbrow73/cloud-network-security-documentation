@@ -8,6 +8,9 @@ Input is the `panorama_cleanup_candidates.csv` produced by
 This script is intentionally conservative:
   - emits DELETE commands, not SET commands
   - skips anything with non-zero policy_reference_count unless --include-referenced
+  - skips anything with non-zero global_reference_count unless --include-global-referenced
+  - skips anything with group_membership_count > 0 unless --include-group-members
+  - skips rows with delete_eligible=no unless --include-ineligible
   - skips group_member_only rows unless --include-group-member-only
   - supports filtering by scope/kind
   - writes commands to a file for review/change control
@@ -59,6 +62,9 @@ def main() -> int:
     ap.add_argument("--scope", action="append", help="Only include this scope; can repeat, e.g. shared or device-group:DG1")
     ap.add_argument("--kind", action="append", choices=sorted(SUPPORTED_KINDS), help="Only include this object kind; can repeat")
     ap.add_argument("--include-referenced", action="store_true", help="Allow rows with policy_reference_count > 0. Not recommended.")
+    ap.add_argument("--include-global-referenced", action="store_true", help="Allow rows with global_reference_count > 0. Strongly not recommended.")
+    ap.add_argument("--include-group-members", action="store_true", help="Allow rows with group_membership_count > 0. Strongly not recommended.")
+    ap.add_argument("--include-ineligible", action="store_true", help="Allow rows with delete_eligible=no. Strongly not recommended.")
     ap.add_argument("--include-group-member-only", action="store_true", help="Include rows with cleanup_reason=group_member_only_no_policy_references")
     ap.add_argument("--limit", type=int, default=0, help="Max commands to emit, useful for staged batches")
     ap.add_argument("--no-commit-comment", action="store_true", help="Do not append commit/validate reminder comments")
@@ -82,6 +88,10 @@ def main() -> int:
             name = row["name"].strip()
             reason = row["cleanup_reason"].strip()
             ref_count = int(row.get("policy_reference_count") or 0)
+            # Newer analyzer CSVs include global_reference_count. Older CSVs do not; keep backward compatibility.
+            global_ref_count = int(row.get("global_reference_count") or 0)
+            group_membership_count = int(row.get("group_membership_count") or 0)
+            delete_eligible = (row.get("delete_eligible") or "yes").strip().lower()
 
             if scopes and scope not in scopes:
                 skipped += 1
@@ -90,6 +100,15 @@ def main() -> int:
                 skipped += 1
                 continue
             if ref_count > 0 and not args.include_referenced:
+                skipped += 1
+                continue
+            if global_ref_count > 0 and not args.include_global_referenced:
+                skipped += 1
+                continue
+            if group_membership_count > 0 and not args.include_group_members:
+                skipped += 1
+                continue
+            if delete_eligible == "no" and not args.include_ineligible:
                 skipped += 1
                 continue
             if reason == "group_member_only_no_policy_references" and not args.include_group_member_only:
