@@ -92,6 +92,7 @@ class ObjDef:
     description: str = ""
     tags: set[str] = field(default_factory=set)
     xpath_hint: str = ""
+    entry_id: int = 0
 
 
 @dataclass
@@ -105,6 +106,16 @@ class Ref:
     field: str
     resolved_to: ObjKey | None
     via_group: str = ""
+
+
+@dataclass
+class GlobalRef:
+    object_key: ObjKey
+    ref_scope: str
+    ref_xpath: str
+    ref_tag: str
+    ref_text: str
+    context: str
 
 
 def strip_ns(tag: str) -> str:
@@ -213,7 +224,7 @@ def parse_objects(root: ET.Element, parents: dict[int, ET.Element]) -> dict[ObjK
             tags_node = next((c for c in list(e) if strip_ns(c.tag) == "tag"), None)
             tags = members_of(tags_node) if tags_node is not None else set()
             key = ObjKey(scope, kind, name)
-            objects[key] = ObjDef(key, value, members, desc, tags, xpath_hint(e, parents))
+            objects[key] = ObjDef(key, value, members, desc, tags, xpath_hint(e, parents), id(e))
     return objects
 
 
@@ -399,6 +410,53 @@ def collect_group_internal_refs(objects: dict[ObjKey, ObjDef], dg_parents: dict[
     return internal
 
 
+def is_within_node(node: ET.Element, ancestor_id: int, parents: dict[int, ET.Element]) -> bool:
+    cur: ET.Element | None = node
+    while cur is not None:
+        if id(cur) == ancestor_id:
+            return True
+        cur = parents.get(id(cur))
+    return False
+
+
+def global_name_refs(root: ET.Element, parents: dict[int, ET.Element], objects: dict[ObjKey, ObjDef]) -> list[GlobalRef]:
+    """Conservatively scan the entire XML for exact object-name text references.
+
+    This intentionally scans beyond known rulebases/templates/policies. It records any
+    element text exactly equal to an object name, excluding the object's own
+    definition subtree. This may include false positives, but that is safer for
+    cleanup than missing config dependencies.
+    """
+    by_name: dict[str, list[ObjKey]] = defaultdict(list)
+    for key in objects:
+        by_name[key.name].append(key)
+
+    refs: list[GlobalRef] = []
+    for node in root.iter():
+        text = (node.text or "").strip()
+        if not text or text not in by_name or text in BUILT_INS:
+            continue
+        ref_scope = get_scope_for_node(node, parents)
+        ref_tag = strip_ns(node.tag)
+        hint = xpath_hint(node, parents)
+        context_parts = []
+        cur = parents.get(id(node))
+        for _ in range(4):
+            if cur is None:
+                break
+            t = strip_ns(cur.tag)
+            n = entry_name(cur)
+            context_parts.append(f"{t}:{n}" if n else t)
+            cur = parents.get(id(cur))
+        context = " <- ".join(context_parts)
+        for key in by_name[text]:
+            obj = objects[key]
+            if obj.entry_id and is_within_node(node, obj.entry_id, parents):
+                continue
+            refs.append(GlobalRef(key, ref_scope, hint, ref_tag, text, context))
+    return refs
+
+
 def duplicate_value_rows(objects: dict[ObjKey, ObjDef]) -> list[dict[str, str]]:
     buckets = defaultdict(list)
     for obj in objects.values():
@@ -448,6 +506,7 @@ def main() -> int:
     ap.add_argument("--csv", type=Path, default=Path("panorama_cleanup_candidates.csv"), help="Object candidate CSV output")
     ap.add_argument("--refs", type=Path, default=Path("panorama_object_refs.csv"), help="Reference detail CSV output")
     ap.add_argument("--duplicates", type=Path, default=Path("panorama_duplicate_values.csv"), help="Duplicate address/service value CSV output")
+    ap.add_argument("--global-refs", type=Path, default=Path("panorama_global_refs.csv"), help="Conservative whole-config exact-name reference CSV output")
     ap.add_argument("--include-groups", action="store_true", help="Include groups in zero-policy-reference candidate output")
     args = ap.parse_args()
 
@@ -474,6 +533,8 @@ def main() -> int:
     print("expanding recursive group references...", flush=True)
     all_refs = propagate_group_refs(objects, direct_refs, dg_parents)
     internal_group_refs = collect_group_internal_refs(objects, dg_parents)
+    print("scanning whole config for exact object-name references...", flush=True)
+    global_refs = global_name_refs(root, parents, objects)
 
     policy_ref_counts = defaultdict(int)
     direct_policy_ref_counts = defaultdict(int)
@@ -489,6 +550,10 @@ def main() -> int:
     for r in direct_refs:
         if r.resolved_to:
             direct_policy_ref_counts[r.resolved_to] += 1
+
+    global_ref_counts = defaultdict(int)
+    for gr in global_refs:
+        global_ref_counts[gr.object_key] += 1
 
     candidate_rows = []
     for key, obj in sorted(objects.items(), key=lambda kv: (kv[0].scope, kv[0].kind, kv[0].name)):
@@ -507,6 +572,7 @@ def main() -> int:
                 "value": obj.value,
                 "policy_reference_count": str(count),
                 "direct_policy_reference_count": str(direct_count),
+                "global_reference_count": str(global_ref_counts[key]),
                 "cleanup_reason": reason,
                 "description": obj.description,
                 "tags": ";".join(sorted(obj.tags)),
@@ -530,10 +596,22 @@ def main() -> int:
         })
 
     dup_rows = duplicate_value_rows(objects)
+    global_ref_rows = []
+    for gr in sorted(global_refs, key=lambda x: (x.object_key.scope, x.object_key.kind, x.object_key.name, x.ref_scope, x.ref_xpath)):
+        global_ref_rows.append({
+            "scope": gr.object_key.scope,
+            "kind": gr.object_key.kind,
+            "name": gr.object_key.name,
+            "ref_scope": gr.ref_scope,
+            "ref_tag": gr.ref_tag,
+            "ref_text": gr.ref_text,
+            "context": gr.context,
+            "ref_xpath": gr.ref_xpath,
+        })
 
     write_csv(args.csv, candidate_rows, [
         "scope", "kind", "name", "value", "policy_reference_count", "direct_policy_reference_count",
-        "cleanup_reason", "description", "tags", "xpath_hint",
+        "global_reference_count", "cleanup_reason", "description", "tags", "xpath_hint",
     ])
     write_csv(args.refs, ref_rows, [
         "ref_scope", "rulebase", "policy_type", "rule_name", "field", "ref_name", "ref_family",
@@ -542,11 +620,15 @@ def main() -> int:
     write_csv(args.duplicates, dup_rows, [
         "kind", "normalized_value", "scope", "name", "raw_value", "description", "tags",
     ])
+    write_csv(args.global_refs, global_ref_rows, [
+        "scope", "kind", "name", "ref_scope", "ref_tag", "ref_text", "context", "ref_xpath",
+    ])
 
     print(f"policy refs parsed: direct={len(direct_refs)} expanded={len(all_refs)} unresolved_direct={len(unresolved)}", flush=True)
     print(f"cleanup candidates written: {args.csv.resolve()} ({len(candidate_rows)} rows)", flush=True)
     print(f"reference details written: {args.refs.resolve()} ({len(ref_rows)} rows)", flush=True)
     print(f"duplicate values written: {args.duplicates.resolve()} ({len(dup_rows)} rows)", flush=True)
+    print(f"global references written: {args.global_refs.resolve()} ({len(global_ref_rows)} rows)", flush=True)
     if unresolved:
         print("warning: unresolved object names exist in policy refs; review refs CSV for blanks", file=sys.stderr, flush=True)
     return 0
