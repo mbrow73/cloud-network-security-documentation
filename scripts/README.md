@@ -16,3 +16,16 @@ python3 scripts/panorama_object_cleanup_candidates.py panorama.xml \
 ```
 
 Treat the output as review candidates, not automatic delete instructions. Validate against Panorama before removing objects.
+
+
+## `panorama_candidates_to_delete_commands.py`
+
+Converts reviewed rows from `panorama_cleanup_candidates.csv` into Panorama CLI `delete` commands.
+
+Example:
+
+```bash
+python3 scripts/panorama_candidates_to_delete_commands.py panorama_cleanup_candidates.csv   --out delete-unused-objects.txt   --limit 500
+```
+
+Run generated commands from Panorama CLI configure mode only after review and a config snapshot. Prefer small batches with validate/commit between waves.
