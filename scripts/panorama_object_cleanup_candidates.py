@@ -451,17 +451,27 @@ def main() -> int:
     ap.add_argument("--include-groups", action="store_true", help="Include groups in zero-policy-reference candidate output")
     args = ap.parse_args()
 
+    print(f"loading XML: {args.xml}", flush=True)
     try:
-        root = ET.parse(args.xml).getroot()
+        tree = ET.parse(args.xml)
+        root = tree.getroot()
     except Exception as e:
-        print(f"failed to parse XML: {e}", file=sys.stderr)
+        print(f"failed to parse XML: {e}", file=sys.stderr, flush=True)
         return 2
 
+    print("building XML parent map...", flush=True)
     parents = build_parent_map(root)
+    print("discovering device groups...", flush=True)
     dgs = find_device_groups(root)
     dg_parents = parse_device_group_parents(dgs)
+    print(f"device groups discovered: {len(dgs)}", flush=True)
+    print("parsing objects...", flush=True)
     objects = parse_objects(root, parents)
+    print(f"objects parsed: {len(objects)}", flush=True)
+    print("parsing policy references...", flush=True)
     direct_refs = parse_policy_refs(root, parents, objects, dg_parents)
+    print(f"direct policy refs parsed: {len(direct_refs)}", flush=True)
+    print("expanding recursive group references...", flush=True)
     all_refs = propagate_group_refs(objects, direct_refs, dg_parents)
     internal_group_refs = collect_group_internal_refs(objects, dg_parents)
 
@@ -533,13 +543,12 @@ def main() -> int:
         "kind", "normalized_value", "scope", "name", "raw_value", "description", "tags",
     ])
 
-    print(f"objects parsed: {len(objects)}")
-    print(f"policy refs parsed: direct={len(direct_refs)} expanded={len(all_refs)} unresolved_direct={len(unresolved)}")
-    print(f"cleanup candidates written: {args.csv} ({len(candidate_rows)} rows)")
-    print(f"reference details written: {args.refs} ({len(ref_rows)} rows)")
-    print(f"duplicate values written: {args.duplicates} ({len(dup_rows)} rows)")
+    print(f"policy refs parsed: direct={len(direct_refs)} expanded={len(all_refs)} unresolved_direct={len(unresolved)}", flush=True)
+    print(f"cleanup candidates written: {args.csv.resolve()} ({len(candidate_rows)} rows)", flush=True)
+    print(f"reference details written: {args.refs.resolve()} ({len(ref_rows)} rows)", flush=True)
+    print(f"duplicate values written: {args.duplicates.resolve()} ({len(dup_rows)} rows)", flush=True)
     if unresolved:
-        print("warning: unresolved object names exist in policy refs; review refs CSV for blanks", file=sys.stderr)
+        print("warning: unresolved object names exist in policy refs; review refs CSV for blanks", file=sys.stderr, flush=True)
     return 0
 
 
