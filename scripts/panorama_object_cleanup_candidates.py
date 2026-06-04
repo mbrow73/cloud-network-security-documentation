@@ -457,6 +457,32 @@ def global_name_refs(root: ET.Element, parents: dict[int, ET.Element], objects: 
     return refs
 
 
+def group_membership_refs(objects: dict[ObjKey, ObjDef], dg_parents: dict[str, str]) -> dict[ObjKey, set[str]]:
+    """Map every object to groups that contain it, using scope-aware and fallback exact-name matching.
+
+    This is deliberately conservative. If a member name cannot be resolved by scope,
+    any object with that exact name is treated as a possible member reference.
+    """
+    by_name: dict[str, list[ObjKey]] = defaultdict(list)
+    for key in objects:
+        by_name[key.name].append(key)
+
+    memberships: dict[ObjKey, set[str]] = defaultdict(set)
+    for group_key, group in objects.items():
+        if group_key.kind not in GROUP_MEMBER_KINDS:
+            continue
+        fam = group_family(group_key.kind)
+        group_label = f"{group_key.scope}/{group_key.kind}/{group_key.name}"
+        for member_name in group.members:
+            resolved = resolve_name(member_name, fam, group_key.scope, objects, dg_parents)
+            if resolved:
+                memberships[resolved].add(group_label)
+                continue
+            for possible in by_name.get(member_name, []):
+                memberships[possible].add(group_label + " (unresolved-scope-fallback)")
+    return memberships
+
+
 def duplicate_value_rows(objects: dict[ObjKey, ObjDef]) -> list[dict[str, str]]:
     buckets = defaultdict(list)
     for obj in objects.values():
@@ -555,6 +581,8 @@ def main() -> int:
     for gr in global_refs:
         global_ref_counts[gr.object_key] += 1
 
+    group_memberships = group_membership_refs(objects, dg_parents)
+
     candidate_rows = []
     for key, obj in sorted(objects.items(), key=lambda kv: (kv[0].scope, kv[0].kind, kv[0].name)):
         if not args.include_groups and key.kind in GROUP_MEMBER_KINDS:
@@ -565,6 +593,14 @@ def main() -> int:
             reason = "zero_policy_references"
             if key in internal_group_refs:
                 reason = "group_member_only_no_policy_references"
+            membership_count = len(group_memberships.get(key, set()))
+            global_count = global_ref_counts[key]
+            delete_eligible = (
+                count == 0
+                and global_count == 0
+                and membership_count == 0
+                and reason == "zero_policy_references"
+            )
             candidate_rows.append({
                 "scope": key.scope,
                 "kind": key.kind,
@@ -572,8 +608,11 @@ def main() -> int:
                 "value": obj.value,
                 "policy_reference_count": str(count),
                 "direct_policy_reference_count": str(direct_count),
-                "global_reference_count": str(global_ref_counts[key]),
+                "global_reference_count": str(global_count),
+                "group_membership_count": str(membership_count),
+                "delete_eligible": "yes" if delete_eligible else "no",
                 "cleanup_reason": reason,
+                "member_of_groups": ";".join(sorted(group_memberships.get(key, set()))),
                 "description": obj.description,
                 "tags": ";".join(sorted(obj.tags)),
                 "xpath_hint": obj.xpath_hint,
@@ -611,7 +650,8 @@ def main() -> int:
 
     write_csv(args.csv, candidate_rows, [
         "scope", "kind", "name", "value", "policy_reference_count", "direct_policy_reference_count",
-        "global_reference_count", "cleanup_reason", "description", "tags", "xpath_hint",
+        "global_reference_count", "group_membership_count", "delete_eligible", "cleanup_reason", "member_of_groups",
+        "description", "tags", "xpath_hint",
     ])
     write_csv(args.refs, ref_rows, [
         "ref_scope", "rulebase", "policy_type", "rule_name", "field", "ref_name", "ref_family",

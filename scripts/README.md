@@ -16,14 +16,14 @@ python3 scripts/panorama_object_cleanup_candidates.py panorama.xml \
   --global-refs global_refs.csv
 ```
 
-The cleanup candidate CSV includes both `policy_reference_count` and `global_reference_count`. Treat rows with `global_reference_count > 0` as still referenced somewhere in the XML until reviewed.
+The cleanup candidate CSV includes `policy_reference_count`, `global_reference_count`, `group_membership_count`, and `delete_eligible`. Treat rows with `delete_eligible=no`, `global_reference_count > 0`, or `group_membership_count > 0` as not ready for delete until reviewed.
 
 Treat the output as review candidates, not automatic delete instructions. Validate against Panorama before removing objects.
 
 
 ## `panorama_candidates_to_delete_commands.py`
 
-Converts reviewed rows from `panorama_cleanup_candidates.csv` into Panorama CLI `delete` commands. When the candidates CSV includes `global_reference_count`, rows with non-zero global references are skipped by default.
+Converts reviewed rows from `panorama_cleanup_candidates.csv` into Panorama CLI `delete` commands. When the candidates CSV includes `global_reference_count`, `group_membership_count`, or `delete_eligible`, unsafe rows are skipped by default.
 
 Example:
 
