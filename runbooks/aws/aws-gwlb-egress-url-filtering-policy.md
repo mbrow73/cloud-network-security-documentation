@@ -1,14 +1,14 @@
-# AWS GWLB Egress Core — Proxy URL Filtering Policy Plan
+# AWS GWLB Egress Core - EWP URL Filtering Policy Plan
 
 ## Scope
 
 This document defines the Panorama / PAN-OS 10.2.x policy structure for the AWS GWLB egress-core design:
 
 ```text
-AWS workload explicit proxy -> TGW -> proxy in egress VPC -> GWLBe -> inspection -> GWLBe return -> NAT Gateway -> IGW
+AWS workload -> EWP -> TGW -> EWP in egress VPC -> GWLBe -> inspection -> GWLBe return -> NAT Gateway -> IGW
 ```
 
-The firewall policy intent is **not** to be a blind `proxy -> any 443` IPS-only path. The proxy/firewall egress rule should allow web egress, while the attached URL Filtering profile applies category-based guardrails and logs URL decisions.
+The firewall policy intent is **not** to be a blind `EWP -> any 443` IPS-only path. The EWP/firewall egress rule should allow web egress, while the attached URL Filtering profile applies category-based guardrails and logs URL decisions.
 
 ## Panorama Inputs
 
@@ -17,23 +17,22 @@ Device Group: AWS_GWLB_EGRESSCORE_NP
 Rulebase: pre-rulebase
 From Zone: EGRESS
 To Zone: EGRESS
-Proxy Source Address Object: TBD
+EWP Source Address Object: EWP
 URL Filtering Profile: URLF-EGRESS-PROXY-GUARDRAILS
-Security Rule Name: EGRESS-PROXY-URL-GUARDRAILS
+Security Rule Name: EGRESS-EWP-URL-GUARDRAILS
 Future Exception Custom URL Category: URLC-EGRESS-APPROVED-EXCEPTIONS
-Future Exception Rule Name: EGRESS-PROXY-ALLOW-URL-EXCEPTIONS
+Future Exception Rule Name: EGRESS-EWP-ALLOW-URL-EXCEPTIONS
 ```
 
-For initial build, source is set to `any` until the proxy address object exists. Replace `source any` later with the proxy object.
 
 ## Design Summary
 
 Initial policy structure:
 
-1. **Single proxy egress allow rule**
+1. **Single EWP egress allow rule**
    - `from EGRESS`
    - `to EGRESS`
-   - source: proxy address object once known, `any` during initial build
+   - source: `EWP`
    - destination: `any`
    - applications: `ssl`, `web-browsing`
    - service: `application-default`
@@ -64,7 +63,7 @@ configure
 ### Create URL Filtering Profile
 
 ```bash
-set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS description "AWS proxy egress URL guardrails"
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS description "AWS EWP egress URL guardrails"
 set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS log-container-page-only yes
 ```
 
@@ -100,28 +99,17 @@ set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY
 
 ### Create Security Policy Rule
 
-Initial source is `any` until the proxy source object is known.
-
 ```bash
-set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-URL-GUARDRAILS from EGRESS
-set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-URL-GUARDRAILS to EGRESS
-set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-URL-GUARDRAILS source any
-set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-URL-GUARDRAILS destination any
-set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-URL-GUARDRAILS application ssl
-set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-URL-GUARDRAILS application web-browsing
-set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-URL-GUARDRAILS service application-default
-set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-URL-GUARDRAILS action allow
-set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-URL-GUARDRAILS log-end yes
-set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-URL-GUARDRAILS profile-setting profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS
-```
-
-### Later: Replace Source `any` with Proxy Object
-
-Once the proxy address object is known:
-
-```bash
-delete device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-URL-GUARDRAILS source any
-set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-URL-GUARDRAILS source <PROXY_ADDRESS_OBJECT>
+set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-EWP-URL-GUARDRAILS from EGRESS
+set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-EWP-URL-GUARDRAILS to EGRESS
+set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-EWP-URL-GUARDRAILS source EWP
+set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-EWP-URL-GUARDRAILS destination any
+set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-EWP-URL-GUARDRAILS application ssl
+set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-EWP-URL-GUARDRAILS application web-browsing
+set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-EWP-URL-GUARDRAILS service application-default
+set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-EWP-URL-GUARDRAILS action allow
+set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-EWP-URL-GUARDRAILS log-end yes
+set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-EWP-URL-GUARDRAILS profile-setting profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS
 ```
 
 ### Commit / Push
@@ -141,13 +129,13 @@ URL Filtering logs are generated when all of these are true:
 1. Traffic matches an **allow** security rule.
 2. That rule has a **URL Filtering profile** attached.
 3. The matching URL category action is log-producing, such as:
-   - `alert` — allow and log
-   - `block` — block and log
-   - `continue` / `override` — user interaction actions, also logged
+   - `alert` - allow and log
+   - `block` - block and log
+   - `continue` / `override` - user interaction actions, also logged
 
 So the script above **does enable URL Filtering logging behavior** by:
 
-- attaching `URLF-EGRESS-PROXY-GUARDRAILS` to `EGRESS-PROXY-URL-GUARDRAILS`
+- attaching `URLF-EGRESS-PROXY-GUARDRAILS` to `EGRESS-EWP-URL-GUARDRAILS`
 - setting allowed categories to `alert`
 - setting denied categories to `block`
 
@@ -164,10 +152,10 @@ Monitor > Logs > URL Filtering
 Useful fields/filters:
 
 ```text
-Rule = EGRESS-PROXY-URL-GUARDRAILS
+Rule = EGRESS-EWP-URL-GUARDRAILS
 URL Category = <category>
 Action = block-url / alert / allowed equivalent
-Source = proxy source IP
+Source = EWP source IP
 Destination = destination IP
 URL / Host = requested domain or URL
 Application = ssl or web-browsing
@@ -195,7 +183,7 @@ Reason: without decryption, the firewall can usually only classify based on TLS 
 
 ## Future Exception Process
 
-Do not build the exception rule/category until there is at least one approved exception.
+Create the exception rule/category only when the first approved exception is required.
 
 When a business-approved operational URL is blocked by the guardrails profile:
 
@@ -228,27 +216,27 @@ set device-group AWS_GWLB_EGRESSCORE_NP profiles custom-url-category URLC-EGRESS
 ### Future Exception Rule
 
 ```bash
-set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-ALLOW-URL-EXCEPTIONS from EGRESS
-set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-ALLOW-URL-EXCEPTIONS to EGRESS
-set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-ALLOW-URL-EXCEPTIONS source <PROXY_ADDRESS_OBJECT>
-set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-ALLOW-URL-EXCEPTIONS destination any
-set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-ALLOW-URL-EXCEPTIONS application ssl
-set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-ALLOW-URL-EXCEPTIONS application web-browsing
-set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-ALLOW-URL-EXCEPTIONS service application-default
-set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-ALLOW-URL-EXCEPTIONS category URLC-EGRESS-APPROVED-EXCEPTIONS
-set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-ALLOW-URL-EXCEPTIONS action allow
-set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-ALLOW-URL-EXCEPTIONS log-end yes
-set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-ALLOW-URL-EXCEPTIONS profile-setting profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS
+set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-EWP-ALLOW-URL-EXCEPTIONS from EGRESS
+set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-EWP-ALLOW-URL-EXCEPTIONS to EGRESS
+set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-EWP-ALLOW-URL-EXCEPTIONS source EWP
+set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-EWP-ALLOW-URL-EXCEPTIONS destination any
+set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-EWP-ALLOW-URL-EXCEPTIONS application ssl
+set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-EWP-ALLOW-URL-EXCEPTIONS application web-browsing
+set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-EWP-ALLOW-URL-EXCEPTIONS service application-default
+set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-EWP-ALLOW-URL-EXCEPTIONS category URLC-EGRESS-APPROVED-EXCEPTIONS
+set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-EWP-ALLOW-URL-EXCEPTIONS action allow
+set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-EWP-ALLOW-URL-EXCEPTIONS log-end yes
+set device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-EWP-ALLOW-URL-EXCEPTIONS profile-setting profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS
 ```
 
-Place this rule above `EGRESS-PROXY-URL-GUARDRAILS`.
+Place this rule above `EGRESS-EWP-URL-GUARDRAILS`.
 
 ## Verification Commands
 
 ```bash
 set cli config-output-format set
 show device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS
-show device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-PROXY-URL-GUARDRAILS
+show device-group AWS_GWLB_EGRESSCORE_NP pre-rulebase security rules EGRESS-EWP-URL-GUARDRAILS
 ```
 
 After testing a blocked URL, verify in:
@@ -260,7 +248,7 @@ Monitor > Logs > URL Filtering
 Filter by:
 
 ```text
-(rule eq 'EGRESS-PROXY-URL-GUARDRAILS')
+(rule eq 'EGRESS-EWP-URL-GUARDRAILS')
 ```
 
-or by the source proxy IP once known.
+or by the EWP source IP.
