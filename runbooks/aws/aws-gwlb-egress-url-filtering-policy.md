@@ -80,33 +80,86 @@ set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY
 set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS log-container-page-only yes
 ```
 
-### Allowed-but-Logged Categories
+### Exhaustive URL Category Coverage
 
-These categories are permitted, but logged to **Monitor > Logs > URL Filtering** because their action is `alert`.
+Do not rely on implicit default behavior for URL categories. New custom URL Filtering profiles can leave categories at implicit `allow`, which may permit traffic without URL Filtering log visibility.
+
+For this design, every live non-custom/predefined URL category available on the target Panorama/PAN-OS content version must be explicitly configured as either:
+
+- `block`: denied and logged in URL Filtering logs
+- `alert`: allowed and logged in URL Filtering logs
+
+Generate the category commands from the live category list on the target Panorama or firewall content version. Do not maintain a stale hand-written category list in this runbook. Palo Alto can add, rename, or split categories through content/version updates.
+
+Helper script:
 
 ```bash
-set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert business-and-economy
-set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert computer-and-internet-info
-set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert content-delivery-networks
-set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert software-update
-set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert financial-services
-set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert internet-communications-and-telephony
+python3 scripts/generate_url_filtering_profile_commands.py \
+  --categories-file live-url-categories.txt \
+  --device-group AWS_GWLB_EGRESSCORE_NP \
+  --profile URLF-EGRESS-PROXY-GUARDRAILS \
+  --include-base \
+  > generated-url-filtering-profile-commands.txt
 ```
 
-### Blocked Categories
+The input file should contain the live predefined URL categories from Panorama/PAN-OS, one category per line, for example:
 
-These categories are blocked by the URL Filtering profile and logged to **Monitor > Logs > URL Filtering** with a URL action of `block-url` / blocked equivalent depending on log rendering.
+```text
+business-and-economy
+computer-and-internet-info
+malware
+phishing
+newly-registered-domain
+unknown
+```
+
+It can also consume XML-ish output containing category entries like:
+
+```xml
+<entry name="business-and-economy"/>
+<entry name="malware"/>
+```
+
+The generator applies the default guardrail model:
+
+- risky categories are emitted as `block`
+- every other discovered predefined category is emitted as `alert`
+
+Current default block category set in the generator:
+
+```text
+abused-drugs
+adult
+command-and-control
+compromised-website
+copyright-infringement
+dynamic-dns
+encrypted-dns
+extremism
+gambling
+grayware
+hacking
+malware
+newly-registered-domain
+parked
+phishing
+proxy-avoidance-and-anonymizers
+ransomware
+unknown
+```
+
+Review the generated output before applying it. If the live content version includes a category that should be blocked for this environment, add it with repeated `--block <category>` flags or update the script default block set.
+
+Example generated commands:
 
 ```bash
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS description "AWS EWP egress URL guardrails"
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS log-container-page-only yes
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert business-and-economy
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert computer-and-internet-info
 set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block malware
 set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block phishing
-set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block command-and-control
-set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block grayware
-set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block hacking
-set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block proxy-avoidance-and-anonymizers
-set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block dynamic-dns
 set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block newly-registered-domain
-set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block parked
 set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block unknown
 ```
 
