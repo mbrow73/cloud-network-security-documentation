@@ -34,22 +34,3 @@ python3 scripts/panorama_candidates_to_delete_commands.py panorama_cleanup_candi
 ```
 
 Run generated commands from Panorama CLI configure mode only after review and a config snapshot. Prefer small batches with validate/commit between waves.
-
-## `generate_url_filtering_profile_commands.py`
-
-Generates exhaustive Panorama `set` commands for a URL Filtering profile from the live predefined URL category list on the target Panorama/PAN-OS content version.
-
-Use this for egress profiles where every predefined category must be explicitly set to either `block` or `alert` so URL Filtering logs are generated consistently.
-
-Example:
-
-```bash
-python3 scripts/generate_url_filtering_profile_commands.py \
-  --categories-file live-url-categories.txt \
-  --device-group AWS_GWLB_EGRESSCORE_NP \
-  --profile URLF-EGRESS-PROXY-GUARDRAILS \
-  --include-base \
-  > generated-url-filtering-profile-commands.txt
-```
-
-Review the generated commands before applying them. The script blocks the default high-risk guardrail categories and alerts every other discovered predefined category.
