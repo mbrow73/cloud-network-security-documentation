@@ -25,6 +25,19 @@ Future Exception Rule Name: EGRESS-EWP-ALLOW-URL-EXCEPTIONS
 ```
 
 
+
+## Architecture Diagram
+
+The current AWS GWLB egress-core flow diagram is available here:
+
+![AWS GWLB Egress Core Flow](../../diagrams/aws-gwlb-egress-flow.png)
+
+Editable standalone HTML version:
+
+```text
+diagrams/aws-gwlb-egress-flow.html
+```
+
 ## Design Summary
 
 Initial policy structure:
