@@ -80,36 +80,206 @@ set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY
 set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS log-container-page-only yes
 ```
 
-### Allowed-but-Logged Categories
+### Proposed URL Category Action Matrix
 
-These categories are permitted, but logged to **Monitor > Logs > URL Filtering** because their action is `alert`.
+This is the reviewable category/action list for the EWP egress URL Filtering profile. Every listed category should be explicitly configured so URL Filtering logs are generated consistently.
+
+
+Proposed model:
+
+
+- `block`: deny and log in URL Filtering logs
+- `alert`: allow and log in URL Filtering logs
+- Business-approved blocked sites move through the exception process later, not by weakening the baseline profile.
+
+
+| PAN-OS category | Display name | Proposed action | Review note |
+|---|---|---|---|
+| `abortion` | Abortion | `alert` | Allowed but logged; policy/legal preference review. |
+| `abused-drugs` | Abused Drugs | `block` | Legal/liability risk. |
+| `adult` | Adult | `block` | Legal/liability risk. |
+| `alcohol-and-tobacco` | Alcohol and Tobacco | `alert` | Allowed but logged; policy preference. |
+| `ai-code-assistant` | AI Code Assistant | `block` | Data/code exfil risk; approve by exception. |
+| `ai-conversational-assistant` | AI Conversational Assistant | `block` | Data exfil risk; approve by exception. |
+| `ai-data-and-workflow-optimizer` | AI Data and Workflow Optimizer | `block` | Data exfil/workflow risk; approve by exception. |
+| `ai-meeting-assistant` | AI Meeting Assistant | `block` | Meeting/content exfil risk; approve by exception. |
+| `ai-media-service` | AI Media Service | `alert` | Allowed but logged. |
+| `ai-platform-service` | AI Platform Service | `block` | GenAI platform/data exfil risk; approve by exception. |
+| `ai-website-generator` | AI Website Generator | `alert` | Allowed but logged. |
+| `ai-writing-assistant` | AI Writing Assistant | `block` | Data exfil risk; approve by exception. |
+| `auctions` | Auctions | `alert` | Allowed but logged. |
+| `browser-runtime-attack` | Browser Runtime Attack | `block` | Exploit/malicious browser behavior. |
+| `business-and-economy` | Business and Economy | `alert` | Business web allowed and logged. |
+| `command-and-control` | Command and Control | `block` | Known C2. |
+| `compromised-website` | Compromised Website | `block` | Known compromised content. |
+| `computer-and-internet-info` | Computer and Internet Info | `alert` | Business/technical web allowed and logged. |
+| `content-delivery-networks` | Content Delivery Networks | `alert` | Required for SaaS/web dependencies; logged. |
+| `copyright-infringement` | Copyright Infringement | `block` | Legal/liability risk. |
+| `cryptocurrency` | Cryptocurrency | `alert` | Allowed but logged; may be tightened later. |
+| `dating` | Dating | `alert` | Allowed but logged; policy preference. |
+| `dynamic-dns` | Dynamic DNS | `block` | Common abuse/C2 infrastructure. |
+| `educational-institutions` | Educational Institutions | `alert` | Allowed but logged. |
+| `encrypted-dns` | Encrypted DNS | `block` | Prevents DNS control bypass. |
+| `entertainment-and-arts` | Entertainment and Arts | `alert` | Allowed but logged. |
+| `extremism` | Extremism | `block` | Legal/liability risk. |
+| `file-converter` | File Converter | `alert` | Allowed but logged; watch data upload risk. |
+| `financial-services` | Financial Services | `alert` | Allowed but logged. |
+| `gambling` | Gambling | `block` | Legal/liability risk. |
+| `games` | Games | `alert` | Allowed but logged; policy preference. |
+| `government` | Government | `alert` | Allowed but logged. |
+| `grayware` | Grayware | `block` | Unwanted/abusive behavior. |
+| `hacking` | Hacking | `block` | Security risk. |
+| `health-and-medicine` | Health and Medicine | `alert` | Allowed but logged. |
+| `home-and-garden` | Home and Garden | `alert` | Allowed but logged. |
+| `hunting-and-fishing` | Hunting and Fishing | `alert` | Allowed but logged. |
+| `insufficient-content` | Insufficient Content | `block` | Unknown/insufficient signal; approve by exception if needed. |
+| `internet-communications-and-telephony` | Internet Communications and Telephony | `alert` | Allowed but logged. |
+| `internet-portals` | Internet Portals | `alert` | Allowed but logged. |
+| `job-search` | Job Search | `alert` | Allowed but logged. |
+| `legal` | Legal | `alert` | Allowed but logged. |
+| `malware` | Malware | `block` | Known malicious. |
+| `marijuana` | Marijuana | `alert` | Allowed but logged; policy/legal review. |
+| `military` | Military | `alert` | Allowed but logged. |
+| `motor-vehicles` | Motor Vehicles | `alert` | Allowed but logged. |
+| `music` | Music | `alert` | Allowed but logged. |
+| `newly-registered-domain` | Newly Registered Domain | `block` | High abuse likelihood; exception if business-approved. |
+| `news` | News | `alert` | Allowed but logged. |
+| `not-resolved` | Not-Resolved | `block` | Cannot categorize/resolve; exception if required. |
+| `nudity` | Nudity | `alert` | Allowed but logged; policy preference. |
+| `online-storage-and-backup` | Online Storage and Backup | `alert` | Allowed but logged; watch exfil risk. |
+| `parked` | Parked | `block` | Low business value/high abuse. |
+| `peer-to-peer` | Peer-to-peer | `block` | Bypass/data risk. |
+| `personal-sites-and-blogs` | Personal Sites and Blogs | `alert` | Allowed but logged. |
+| `philosophy-and-political-advocacy` | Philosophy and Political Advocacy | `alert` | Allowed but logged. |
+| `phishing` | Phishing | `block` | Known malicious. |
+| `private-ip-addresses` | Private IP Addresses | `block` | Not valid internet egress target; prevent weird bypass. |
+| `proxy-avoidance-and-anonymizers` | Proxy Avoidance and Anonymizers | `block` | Bypass category. |
+| `questionable` | Questionable | `block` | Low business value/high risk. |
+| `ransomware` | Ransomware | `block` | Known malicious. |
+| `real-estate` | Real Estate | `alert` | Allowed but logged. |
+| `real-time-detection` | Real-time Detection | `block` | Advanced URL Filtering real-time malicious verdict. |
+| `recreation-and-hobbies` | Recreation and Hobbies | `alert` | Allowed but logged. |
+| `reference-and-research` | Reference and Research | `alert` | Allowed but logged. |
+| `religion` | Religion | `alert` | Allowed but logged. |
+| `remote-access` | Remote Access | `alert` | Allowed but logged; may need environment-specific block/exception handling. |
+| `scanning-activity` | Scanning Activity | `block` | Recon/scanning behavior. |
+| `search-engines` | Search Engines | `alert` | Allowed but logged. |
+| `sex-education` | Sex Education | `alert` | Allowed but logged. |
+| `shareware-and-freeware` | Shareware and Freeware | `alert` | Allowed but logged; file controls still apply. |
+| `shopping` | Shopping | `alert` | Allowed but logged. |
+| `social-networking` | Social Networking | `alert` | Allowed but logged. |
+| `society` | Society | `alert` | Allowed but logged. |
+| `sports` | Sports | `alert` | Allowed but logged. |
+| `stock-advice-and-tools` | Stock Advice and Tools | `alert` | Allowed but logged. |
+| `streaming-media` | Streaming Media | `alert` | Allowed but logged; bandwidth policy review. |
+| `swimsuits-and-intimate-apparel` | Swimsuits and Intimate Apparel | `alert` | Allowed but logged; policy preference. |
+| `training-and-tools` | Training and Tools | `alert` | Allowed but logged. |
+| `translation` | Translation | `alert` | Allowed but logged. |
+| `travel` | Travel | `alert` | Allowed but logged. |
+| `unknown` | Unknown | `block` | Unknown categorization; exception if business-approved. |
+| `weapons` | Weapons | `block` | Legal/liability risk. |
+| `web-advertisements` | Web Advertisements | `alert` | Allowed but logged; can be blocked later if desired. |
+| `web-based-email` | Web-based Email | `alert` | Allowed but logged; policy preference. |
+| `web-hosting` | Web Hosting | `alert` | Allowed but logged. |
+| `high-risk` | High Risk | `alert` | Risk overlay logged; concrete malicious categories still block. |
+| `medium-risk` | Medium Risk | `alert` | Risk overlay logged. |
+| `low-risk` | Low Risk | `alert` | Risk overlay logged. |
+
+### URL Category Set Commands
+
+Use the reviewed matrix above to build the profile. The current proposed command set is below. If the team changes any category from `alert` to `block` or vice versa, update the matching command before implementation.
 
 ```bash
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert abortion
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block abused-drugs
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block adult
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert alcohol-and-tobacco
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block ai-code-assistant
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block ai-conversational-assistant
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block ai-data-and-workflow-optimizer
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block ai-meeting-assistant
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert ai-media-service
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block ai-platform-service
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert ai-website-generator
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block ai-writing-assistant
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert auctions
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block browser-runtime-attack
 set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert business-and-economy
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block command-and-control
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block compromised-website
 set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert computer-and-internet-info
 set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert content-delivery-networks
-set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert software-update
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block copyright-infringement
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert cryptocurrency
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert dating
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block dynamic-dns
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert educational-institutions
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block encrypted-dns
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert entertainment-and-arts
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block extremism
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert file-converter
 set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert financial-services
-set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert internet-communications-and-telephony
-```
-
-### Blocked Categories
-
-These categories are blocked by the URL Filtering profile and logged to **Monitor > Logs > URL Filtering** with a URL action of `block-url` / blocked equivalent depending on log rendering.
-
-```bash
-set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block malware
-set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block phishing
-set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block command-and-control
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block gambling
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert games
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert government
 set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block grayware
 set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block hacking
-set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block proxy-avoidance-and-anonymizers
-set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block dynamic-dns
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert health-and-medicine
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert home-and-garden
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert hunting-and-fishing
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block insufficient-content
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert internet-communications-and-telephony
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert internet-portals
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert job-search
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert legal
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block malware
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert marijuana
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert military
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert motor-vehicles
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert music
 set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block newly-registered-domain
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert news
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block not-resolved
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert nudity
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert online-storage-and-backup
 set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block parked
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block peer-to-peer
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert personal-sites-and-blogs
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert philosophy-and-political-advocacy
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block phishing
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block private-ip-addresses
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block proxy-avoidance-and-anonymizers
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block questionable
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block ransomware
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert real-estate
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block real-time-detection
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert recreation-and-hobbies
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert reference-and-research
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert religion
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert remote-access
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block scanning-activity
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert search-engines
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert sex-education
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert shareware-and-freeware
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert shopping
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert social-networking
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert society
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert sports
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert stock-advice-and-tools
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert streaming-media
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert swimsuits-and-intimate-apparel
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert training-and-tools
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert translation
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert travel
 set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block unknown
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS block weapons
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert web-advertisements
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert web-based-email
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert web-hosting
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert high-risk
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert medium-risk
+set device-group AWS_GWLB_EGRESSCORE_NP profiles url-filtering URLF-EGRESS-PROXY-GUARDRAILS alert low-risk
 ```
-
 ### Create Security Policy Rule
 
 ```bash
