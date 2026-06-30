@@ -50,10 +50,13 @@ We will document and evaluate two viable patterns:
 
 1. **Option A: Retain Palo Alto custom URL categories as the application-level enforcement point**
 2. **Option B: Move application admission to the GTM / Cequence onboarding control plane and remove per-app Palo Alto URL category requirements**
+3. **Option C: Create a Network Security-owned internet application repository as the transitional control plane**
 
-The recommended direction is **Option B**, provided the GTM / Cequence onboarding control plane is made authoritative, auditable, reversible, and protected by clear guardrails.
+The recommended near-term direction is **Option C** because it codifies the controls Network Security owns today while creating the missing source-of-truth layer needed for either longer-term option.
 
-Option A remains a conservative fallback when Network Security requires independent firewall-level application allowlisting or when upstream admission controls are not yet mature enough to replace the Palo Alto URL-category gate.
+Option B remains the cleaner long-term target if the GTM / Cequence onboarding control plane becomes authoritative, auditable, reversible, and protected by clear guardrails.
+
+Option A remains a conservative implementation model when Network Security requires independent firewall-level application allowlisting or when upstream admission controls are not yet mature enough to replace the Palo Alto URL-category gate.
 
 ## Option A: Palo Alto URL Category as the Application Admission Gate
 
@@ -259,6 +262,142 @@ This option assumes the edge/onboarding control plane can become the authoritati
 - The onboarding controller must support revocation, expiration, and full audit history.
 - Post-admission synthetic validation must test the public path through GTM, Imperva, Cequence, XNLB, Palo Alto, and GKE ILB.
 
+
+## Option C: Network Security Internet Application Repository
+
+### Description
+
+In this model, Network Security creates a dedicated repository that acts as the near-term control plane for internet-facing GKE application admission and firewall-side implementation.
+
+The repository codifies the cluster and application records that are currently implicit or spread across teams. It can use Terraform and the PAN-OS provider to manage the firewall-side controls that Network Security owns today, while optionally referencing or provisioning related cloud-side objects when ownership is clarified.
+
+Example repository structure:
+
+```text
+netsec-internet-apps/
+├── clusters/
+│   ├── gke-prod-usw2-01.yaml
+│   └── gke-prod-use1-01.yaml
+├── apps/
+│   ├── app.example.com.yaml
+│   └── payments.example.com.yaml
+├── terraform/
+│   ├── panos-url-categories/
+│   ├── panos-security-policy/
+│   └── panos-nat-policy/
+└── .github/workflows/
+    ├── validate-app.yml
+    ├── plan-panos.yml
+    └── apply-panos.yml
+```
+
+Example cluster record:
+
+```yaml
+cluster_id: gke-prod-usw2-01
+environment: prod
+origin_name: cluster-prod-usw2-01.ingress.example.net
+xnlb_forwarding_rule: fr-gke-prod-usw2-01
+xnlb_vip: 203.0.113.10
+gke_backend_ilb: 10.10.20.15
+palo_device_group: dg-internet-prod
+palo_url_category: gcp-ingress-prod-usw2-01-approved-apps
+allowed_edge_sources:
+  - imperva_prod_nat
+  - cequence_prod_nat
+state: active
+```
+
+Example application record:
+
+```yaml
+fqdn: app.example.com
+owner: application-team
+environment: prod
+target_cluster: gke-prod-usw2-01
+scan_status: passed
+scan_id: scan-12345
+state: active
+expires_at: null
+```
+
+### Traffic and Control Flow
+
+The runtime traffic path is the same as the current architecture:
+
+```text
+User or scanner
+→ public app hostname
+→ GTM / Imperva
+→ Cequence
+→ XNLB forwarding rule
+→ Palo Alto policy / NAT
+→ GKE ILB
+→ application
+```
+
+The control flow changes from manual requests to pull requests:
+
+```text
+App onboarding request
+→ PR adds or updates apps/app.example.com.yaml
+→ CI validates target cluster, required metadata, scan state, naming, and policy constraints
+→ Terraform plan shows Palo Alto URL category / policy / NAT changes
+→ approval and merge
+→ Terraform apply updates PAN-OS objects
+→ post-change validation confirms public path
+```
+
+Phase 1 should focus on codifying the current Palo Alto URL category process. Later phases can add scanner webhooks, remediation actions, expiration, revocation, and broader edge-control integration.
+
+### Assumptions to Validate
+
+This option assumes Network Security can own a repository-backed interface for the firewall-side and admission-record portions of internet app onboarding, even if other teams continue owning GTM, DDI, Imperva, Cequence, and GKE platform primitives.
+
+| Assumption | Validation Question | Why It Matters |
+|------------|---------------------|----------------|
+| Network Security can own the repo and review process | Is NetSec allowed to be the code owner for app-to-cluster firewall admission records and PAN-OS changes? | Without clear ownership, the repo becomes another unofficial spreadsheet with YAML cosplay. |
+| PAN-OS provider can manage required objects safely | Can Terraform manage custom URL categories, security rules, NAT rules, device groups, and commit/push behavior for the target Panorama/Palo Alto environment? | The repo is only useful if it can reliably implement the firewall-side changes. |
+| Existing Palo Alto state can be imported or reconciled | Can current URL categories, NAT rules, and security policies be imported into Terraform state or represented without destructive drift? | Prevents the first apply from becoming a change-management jump scare. |
+| XNLB forwarding rule ownership is clear | Does NetSec create XNLB VIPs/forwarding rules, or does the repo only reference cluster records created by the GKE/platform team? | Determines whether the repository provisions cloud-side ingress objects or only validates references. |
+| Cluster registration data can be supplied reliably | Who creates the cluster record when a new internet-capable GKE cluster is created? | Solves the current problem where new XNLB/cluster ingress capacity is not evident to NetSec. |
+| App records can require scan/approval metadata | Can CI enforce scan status, scan ID, waiver, owner, environment, and target cluster before allowing a merge? | Allows vulnerability scanning to become a policy gate without requiring direct scanner-to-firewall writes. |
+| Scanner integration can start asynchronous | Can the first version accept scan metadata manually or by PR comment/status, then later integrate webhooks? | Avoids blocking Phase 1 on a full multi-team scanner integration. |
+| Apply permissions and approvals are acceptable | Who can merge, who can apply, and is there a separation between requesters, approvers, and automation credentials? | Prevents app teams from self-approving internet exposure. |
+| Rollback and revocation can be represented as code | Can removing or changing an app record remove the CNAME/category entry and trigger validation? | The repo must handle decommissioning, not only onboarding. |
+| Secrets and provider credentials can be managed securely | Where will Panorama credentials, API keys, and GitHub Actions secrets live, and who can access them? | The automation should not create a new privileged secret sprawl problem. |
+| Change windows and commit timing are compatible with GitOps | Are Panorama commits/pushes allowed from CI, and do they need scheduled windows or manual gates? | Determines whether this can be fully automated or must remain plan-and-approve. |
+| Multi-team dependencies can be represented but not owned | Can the repo validate external prerequisites without pretending to own GTM, DDI, Imperva, Cequence, or scanner systems? | Keeps Phase 1 scoped to NetSec-owned controls instead of turning into a 13-team platform rewrite. |
+
+### Benefits
+
+- Creates the missing source-of-truth layer incrementally
+- Gives Network Security an auditable, reviewable, PR-based workflow for current manual firewall work
+- Reduces immediate toil around Palo Alto URL category membership
+- Supports naming conventions, validation, ownership metadata, scan metadata, and lifecycle state
+- Does not require GTM / Cequence to become a mature admission controller on day one
+- Provides a migration bridge toward Option B if edge-control capabilities mature later
+
+### Drawbacks
+
+- Still relies on Palo Alto URL categories during the transitional phase
+- Adds a new repository and GitOps workflow to operate
+- Requires Terraform state ownership and careful import/reconciliation of existing PAN-OS objects
+- Does not by itself solve GTM, DDI, Imperva, Cequence, or scanner ownership gaps
+- Could become the long-term source of truth by accident if a broader platform owner never emerges
+
+### Guardrails
+
+- Treat the repository as the source of truth for NetSec-owned admission records and firewall-side implementation only.
+- Require CODEOWNERS review from Network Security for production changes.
+- Require app owner, environment, target cluster, scan status or waiver, and lifecycle state on every app record.
+- Run CI validation before plan/apply.
+- Use plan review before production apply, at least during initial rollout.
+- Import or reconcile existing PAN-OS objects before enabling writes.
+- Do not allow app teams to bypass approval by editing app records directly.
+- Log every apply with PR number, approver, commit SHA, Terraform plan, and Panorama commit ID.
+- Keep GTM/DDI/Imperva/Cequence ownership explicit; do not silently make the NetSec repo responsible for systems it cannot enforce.
+
 ## Scanner Path Considerations
 
 The scanner path must be explicit because it changes what the scan result proves.
@@ -413,7 +552,7 @@ app registration exists
 → public-path validation
 ```
 
-This maps to Option A and is likely the safest transitional pattern while origin trust, scanner-only access, and onboarding source-of-truth maturity are still unresolved.
+This maps to Option C implemented with Option A-style enforcement and is likely the safest transitional pattern while origin trust, scanner-only access, and onboarding source-of-truth maturity are still unresolved.
 
 ### Phase 4: Edge-Controlled Admission Pilot
 
@@ -437,7 +576,7 @@ This phase should only proceed after the edge-control pilot proves the model and
 
 ## Near-Term Recommendation
 
-Do not start by wiring vulnerability scanner pass/fail directly to public route activation. The safer near-term program is:
+Do not start by wiring vulnerability scanner pass/fail directly to public route activation. The safer near-term program is to implement Option C and use it to codify the current controls first:
 
 1. Build cluster ingress registration so new XNLB / Palo Alto / GKE ILB mappings are visible.
 2. Build app-to-cluster admission records so application onboarding has an owner, target cluster, scan state, and lifecycle state.
@@ -491,8 +630,9 @@ Use **Option A** when independent Palo Alto app-level allowlisting is required o
 
 | Option | Recommendation | Why |
 |--------|----------------|-----|
-| **Option A: Palo Alto URL category admission** | Conservative fallback | Maintains independent firewall app allowlisting but duplicates state and keeps onboarding operationally heavy. |
-| **Option B: GTM / Cequence admission with cluster-scoped Palo Alto rules** | Preferred target | Simplifies firewall operations and places app admission in the onboarding / edge control plane, provided strong audit and rollback controls exist. |
+| **Option A: Palo Alto URL category admission** | Conservative enforcement model | Maintains independent firewall app allowlisting but duplicates state and keeps onboarding operationally heavy. |
+| **Option B: GTM / Cequence admission with cluster-scoped Palo Alto rules** | Long-term target candidate | Simplifies firewall operations and places app admission in the onboarding / edge control plane, provided strong audit and rollback controls exist. |
+| **Option C: NetSec internet app repository** | Recommended near-term program | Codifies current NetSec-owned controls, creates an incremental source of truth, and enables safer PAN-OS automation without requiring immediate multi-team control-plane maturity. |
 
 ## Open Questions
 
@@ -502,6 +642,9 @@ Use **Option A** when independent Palo Alto app-level allowlisting is required o
 - Can the onboarding API safely generate and preserve the required origin metadata without allowing spoofing?
 - What telemetry will replace Palo Alto URL-category visibility if Option B is selected?
 - What is the retirement / revocation process for decommissioned public applications?
+- Should the NetSec internet app repository provision XNLB forwarding rules, or only reference cluster records produced by the GKE/platform team?
+- Can existing Palo Alto URL categories and policies be safely imported into Terraform state?
+- Who approves production app admission PRs and who is allowed to trigger PAN-OS applies?
 
 ## References
 
