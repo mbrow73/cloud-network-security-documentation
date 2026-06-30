@@ -322,6 +322,131 @@ The following gaps are known or suspected as of this draft and should be treated
 
 These gaps do not automatically eliminate the options, but they materially affect sequencing. Option B should not be selected as the near-term target unless origin trust and source-of-truth ownership are resolved. Option A may still require a source-of-truth layer for safe URL category automation, but it preserves Palo Alto as an independent application-level enforcement point while the upstream control plane matures.
 
+
+## Recommended Automation Program Approach
+
+This should be treated as a phased ingress automation program, not a single vulnerability-scanner-to-firewall integration. The immediate operational pain is broader than scan-gated admission:
+
+- New backend GKE clusters require manual XNLB forwarding rule / public IP work.
+- New applications require cluster-specific CNAME / URL-category policy updates on the internet Palo Alto firewalls.
+- The timing of new cluster creation is not always evident to Network Security.
+- Vulnerability scan status is only one input into whether an application should be admitted to the public ingress path.
+- Several required control-plane capabilities span GTM / DDI, Imperva, Cequence, Palo Alto, GKE platform, AppSec scanning, and observability teams.
+
+The recommended approach is to separate the program into maturity phases.
+
+### Phase 0: Discovery and Ownership Alignment
+
+Goal: define the real systems of record, ownership boundaries, and capability gaps before building automation.
+
+Key outcomes:
+
+- Identify who owns app onboarding metadata.
+- Identify who owns cluster/origin/XNLB lifecycle.
+- Confirm whether clients can spoof or influence origin-selection headers.
+- Confirm whether scanner-only edge access is technically possible.
+- Confirm current Palo Alto policy/category behavior and whether URL categories are reliable app-level controls.
+- Define required audit fields for app exposure decisions.
+
+Deliverable: capability matrix and owner map.
+
+### Phase 1: Cluster Ingress Registration
+
+Goal: make new cluster ingress capacity explicit and reviewable.
+
+Instead of starting with per-app policy automation, first create a cluster registration workflow for internet-capable GKE clusters.
+
+Example cluster registration record:
+
+```yaml
+cluster_id: gke-prod-usw2-01
+environment: prod
+platform_owner: gke-platform-team
+origin_name: cluster-prod-usw2-01.ingress.example.net
+xnlb_forwarding_rule: fr-prod-usw2-01
+xnlb_vip: 203.0.113.10
+gke_backend_ilb: 10.10.20.15
+palo_nat_rule: nat-gke-prod-usw2-01
+palo_security_rule: allow-edge-to-gke-prod-usw2-01
+palo_url_category: gcp-ingress-prod-usw2-01-approved-apps
+allowed_edge_sources:
+  - imperva_nat_pool_prod
+  - cequence_nat_pool_prod
+state: proposed | provisioned | active | deprecated | retired
+```
+
+This phase does not need to solve app admission yet. It creates visibility into which clusters are internet-capable and which Palo Alto / XNLB objects correspond to each cluster.
+
+### Phase 2: App-to-Cluster Admission Registry
+
+Goal: track application onboarding intent before changing firewall or edge policy.
+
+Example application registration record:
+
+```yaml
+app_fqdn: app.example.com
+owner: application-team
+environment: prod
+target_cluster_id: gke-prod-usw2-01
+scan_required: true
+scan_status: not_started | running | passed | failed | waived
+publication_state: requested | scanner_only | approved | active | revoked
+created_by: onboarding-api
+approved_by: appsec-or-netsec
+expires_at: null
+```
+
+This phase creates the missing source of truth. It can initially be lightweight, even if final automation is not ready.
+
+### Phase 3: Transitional Palo Alto Automation
+
+Goal: reduce manual Palo Alto work without removing the existing firewall-level app gate.
+
+Recommended near-term automation:
+
+```text
+app registration exists
+→ scan passes or waiver approved
+→ controller validates app-to-cluster mapping
+→ controller proposes or applies Palo Alto URL category update
+→ Panorama commit/push
+→ public-path validation
+```
+
+This maps to Option A and is likely the safest transitional pattern while origin trust, scanner-only access, and onboarding source-of-truth maturity are still unresolved.
+
+### Phase 4: Edge-Controlled Admission Pilot
+
+Goal: prove whether Option B is viable for a limited scope.
+
+Pilot only after these capabilities are validated:
+
+- Cequence/Imperva can enforce scanner-only access per app.
+- Origin-selection metadata is trusted, overwritten, or validated.
+- App-to-cluster mapping is authoritative and auditable.
+- Public-path scanner validation is available.
+- Revocation works without manual firewall edits.
+
+If successful, Palo Alto can move toward cluster-scoped edge-to-origin rules for selected low-risk clusters/apps.
+
+### Phase 5: Broader Option B Adoption
+
+Goal: make GTM / Imperva / Cequence onboarding the primary app admission control point and remove routine per-app Palo Alto URL category work.
+
+This phase should only proceed after the edge-control pilot proves the model and SecOps telemetry can preserve app-level visibility outside Palo Alto URL categories.
+
+## Near-Term Recommendation
+
+Do not start by wiring vulnerability scanner pass/fail directly to public route activation. The safer near-term program is:
+
+1. Build cluster ingress registration so new XNLB / Palo Alto / GKE ILB mappings are visible.
+2. Build app-to-cluster admission records so application onboarding has an owner, target cluster, scan state, and lifecycle state.
+3. Automate Palo Alto URL category updates as a transitional control, with human approval where needed.
+4. In parallel, run capability discovery for scanner-only edge access and trusted origin selection.
+5. Revisit Option B after the onboarding control plane and edge controls can safely replace firewall-level app allowlisting.
+
+This keeps the program grounded in the current pain while still leaving a path to the cleaner target architecture.
+
 ## Recommendation
 
 Proceed toward **Option B** as the target pattern if the organization is willing to make GTM / Cequence onboarding the authoritative application admission control point.
