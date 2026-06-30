@@ -225,8 +225,8 @@ This option assumes the edge/onboarding control plane can become the authoritati
 | The scanner can test the real public hostname | Can the scanner target `https://app.example.com` through GTM, Imperva, Cequence, XNLB, Palo Alto, and GKE ILB? | A scan against a private/bypass path does not validate the production internet chain. |
 | Scanner-only access can be restricted per app | Can Imperva/Cequence allow only scanner public IPs for one app without opening other apps on the same cluster origin? | Prevents scanner pre-admission access from becoming broad cluster exposure. |
 | Cequence can enforce app-level admission reliably | Can Cequence distinguish app hostnames and promote/revoke a single app without impacting other apps on the same origin? | Option B removes Palo URL categories, so app-level admission must move upstream. |
-| Origin selection metadata is trusted and non-spoofable | Is the X-Forwarded-Origin/origin-selection value inserted or overwritten only by trusted systems? What happens if a client sends its own value? | If clients can influence origin selection, traffic could be routed to unintended clusters. |
-| The onboarding system is a real source of truth | Does an authoritative record exist for `app FQDN -> owner -> environment -> cluster -> origin -> XNLB forwarding rule -> lifecycle state`? | The scanner result only says the app passed; it does not know where the app is allowed to route. |
+| Origin selection metadata is trusted and non-spoofable | Is the X-Forwarded-Origin/origin-selection value inserted or overwritten only by trusted systems? What happens if a client sends its own value? | If clients can influence origin selection, traffic could be routed to unintended clusters. Current understanding: clients may already be able to set X-Forwarded-Origin to an FQDN or IP, so this assumption is not currently validated and may be false. |
+| The onboarding system is a real source of truth | Does an authoritative record exist for `app FQDN -> owner -> environment -> cluster -> origin -> XNLB forwarding rule -> lifecycle state`? | The scanner result only says the app passed; it does not know where the app is allowed to route. Current understanding: no official source of record exists today, so this is a major workstream for Option B. |
 | Palo Alto can be safely reduced to cluster-scoped policy | Are Imperva/Cequence NAT pools stable and complete, and are XNLB VIPs reachable only from those approved sources? | Palo becomes the edge-to-cluster boundary instead of per-app admission control. |
 | App identity remains visible outside Palo Alto URL categories | Can logs from GTM, Imperva, Cequence, Palo Alto, and GKE be correlated by FQDN/app ID? | Removing URL categories should not create an audit/forensics blind spot. |
 | Promotion and rollback are first-class state transitions | Can automation move `scanner_only -> active -> revoked` cleanly and quickly? | Internet exposure must be reversible without emergency manual edits. |
@@ -303,14 +303,24 @@ Before selecting either option, the stakeholder teams should validate the follow
 | Scanner can scan the public application FQDN through the real internet ingress chain | Application Security / Scanner Team | Required for final validation | Required for final admission |
 | Scanner results are signed/trustworthy and tied to a specific onboarding request | Application Security / Platform | Required | Required |
 | GTM / Imperva / Cequence can create scanner-only pre-admission access per app | Edge / WAF / Bot Teams | Helpful | Required |
-| Cequence origin selection is deterministic and protected from client spoofing | Cequence / Edge Team | Required to validate path | Required for admission control |
-| Source-of-truth mapping exists for app FQDN to cluster/origin/XNLB | Platform / DDI / Edge / NetSec | Required for correct category updates | Required for route promotion |
+| Cequence origin selection is deterministic and protected from client spoofing | Cequence / Edge Team | Required to validate path | Required for admission control; currently suspected false if clients can set X-Forwarded-Origin directly |
+| Source-of-truth mapping exists for app FQDN to cluster/origin/XNLB | Platform / DDI / Edge / NetSec | Required for correct category updates | Required for route promotion; currently no official source of record is known |
 | Palo Alto API automation can update URL categories and commit/push safely | Network Security | Required | Not required for app admission |
 | Palo Alto policy can be safely scoped to edge NAT pools and cluster XNLB VIPs | Network Security | Useful | Required |
 | Telemetry can correlate app FQDN across GTM, Imperva, Cequence, Palo Alto, and GKE | SecOps / Observability | Required | Required, especially if URL categories are removed |
 | Revocation/expiration can disable public exposure per app | Platform / Edge / NetSec | Required | Required |
 
 If the staged edge route, origin trust, scanner public-path testing, or onboarding source of truth cannot be validated, Option B should not be selected as the immediate target. In that case, Option A is the safer transitional automation pattern because Palo Alto remains an independent application-level enforcement point.
+
+
+## Current Known Gaps
+
+The following gaps are known or suspected as of this draft and should be treated as primary discussion points with stakeholder teams:
+
+- **Origin header trust is not established.** Current understanding is that clients can set `X-Forwarded-Origin` directly to an FQDN or IP. If true, origin selection cannot be treated as a trusted admission signal unless the edge chain overwrites, strips, signs, or otherwise validates this value before Cequence uses it.
+- **No official onboarding source of record is known.** There does not appear to be a single authoritative system that binds app FQDN, owner, environment, cluster, origin, XNLB forwarding rule, Palo Alto policy/category, scan state, and lifecycle state. Without this, either option requires a source-of-truth workstream before safe automation.
+
+These gaps do not automatically eliminate the options, but they materially affect sequencing. Option B should not be selected as the near-term target unless origin trust and source-of-truth ownership are resolved. Option A may still require a source-of-truth layer for safe URL category automation, but it preserves Palo Alto as an independent application-level enforcement point while the upstream control plane matures.
 
 ## Recommendation
 
