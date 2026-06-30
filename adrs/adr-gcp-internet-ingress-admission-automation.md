@@ -118,6 +118,21 @@ scanner_sources:
 state: requested | scanned_pass | approved | active | expired | revoked
 ```
 
+
+### Assumptions to Validate
+
+This option assumes the organization can safely automate Palo Alto URL category updates without making the vulnerability scanner a direct firewall policy authority.
+
+| Assumption | Validation Question | Why It Matters |
+|------------|---------------------|----------------|
+| A Network Security-owned controller can update Panorama objects safely | Is there an approved API path for adding/removing FQDNs from custom URL categories and committing/pushing changes? | Without this, Option A remains manual or requires brittle automation around firewall operations. |
+| The scanner emits trustworthy pass/fail events | Are scan result webhooks signed, tied to a scan ID, and bound to the exact application FQDN/onboarding request? | Scan success becomes a condition for internet exposure; replayed or ambiguous scan events cannot be accepted. |
+| A source of truth can map app FQDN to the correct firewall object | Can automation resolve `app FQDN -> cluster/origin -> XNLB forwarding rule -> Palo URL category` deterministically? | Prevents the controller from adding the right app to the wrong cluster/category path. |
+| Palo Alto URL category matching is the intended app-level control | Does the policy actually evaluate the hostname/category in the expected traffic leg, and does TLS/SNI/HTTP visibility support that match? | If the firewall cannot reliably evaluate the app identity, URL categories provide false confidence. |
+| Panorama commit/push latency is acceptable for onboarding | How long does an object update and commit/push take, and what happens on partial failure? | Each app promotion depends on firewall control-plane timing and failure handling. |
+| URL category lifecycle can be managed | Can automation remove entries on app retirement, failed scans, expiration, or revocation? | Otherwise categories become stale allowlists. |
+| Post-change validation can prove the public path | Can a synthetic probe confirm `FQDN -> Imperva -> Cequence -> XNLB -> Palo -> GKE ILB` after the category update? | Prevents policy success from being mistaken for end-to-end application reachability. |
+
 ### Benefits
 
 - Preserves independent firewall-level app allowlisting
@@ -199,6 +214,23 @@ Approved public users
 
 The vulnerability scanner should generally test the same public ingress chain that users will hit. A separate private scanner path can validate application behavior earlier in CI/CD, but it does not prove the internet ingress chain is correctly configured.
 
+
+### Assumptions to Validate
+
+This option assumes the edge/onboarding control plane can become the authoritative application admission point, while Palo Alto policy is simplified to cluster-scoped edge-to-origin enforcement.
+
+| Assumption | Validation Question | Why It Matters |
+|------------|---------------------|----------------|
+| GTM / Imperva / Cequence can support a staged application route | Can an app hostname exist in `scanner_only` state before being promoted to normal public access? | Without staged route state, scan-before-general-access is difficult or requires temporary firewall exceptions. |
+| The scanner can test the real public hostname | Can the scanner target `https://app.example.com` through GTM, Imperva, Cequence, XNLB, Palo Alto, and GKE ILB? | A scan against a private/bypass path does not validate the production internet chain. |
+| Scanner-only access can be restricted per app | Can Imperva/Cequence allow only scanner public IPs for one app without opening other apps on the same cluster origin? | Prevents scanner pre-admission access from becoming broad cluster exposure. |
+| Cequence can enforce app-level admission reliably | Can Cequence distinguish app hostnames and promote/revoke a single app without impacting other apps on the same origin? | Option B removes Palo URL categories, so app-level admission must move upstream. |
+| Origin selection metadata is trusted and non-spoofable | Is the X-Forwarded-Origin/origin-selection value inserted or overwritten only by trusted systems? What happens if a client sends its own value? | If clients can influence origin selection, traffic could be routed to unintended clusters. |
+| The onboarding system is a real source of truth | Does an authoritative record exist for `app FQDN -> owner -> environment -> cluster -> origin -> XNLB forwarding rule -> lifecycle state`? | The scanner result only says the app passed; it does not know where the app is allowed to route. |
+| Palo Alto can be safely reduced to cluster-scoped policy | Are Imperva/Cequence NAT pools stable and complete, and are XNLB VIPs reachable only from those approved sources? | Palo becomes the edge-to-cluster boundary instead of per-app admission control. |
+| App identity remains visible outside Palo Alto URL categories | Can logs from GTM, Imperva, Cequence, Palo Alto, and GKE be correlated by FQDN/app ID? | Removing URL categories should not create an audit/forensics blind spot. |
+| Promotion and rollback are first-class state transitions | Can automation move `scanner_only -> active -> revoked` cleanly and quickly? | Internet exposure must be reversible without emergency manual edits. |
+
 ### Benefits
 
 - Removes duplicate per-app allowlist state from Palo Alto
@@ -260,6 +292,25 @@ Scanner network
 ```
 
 This validates the application but does not validate the final internet ingress architecture. It should not be the only gate for public exposure.
+
+
+## Capability Discovery Required Before Selection
+
+Before selecting either option, the stakeholder teams should validate the following high-ticket capabilities. These are gating assumptions, not implementation details.
+
+| Capability | Owner to Confirm | Option A Dependency | Option B Dependency |
+|------------|------------------|---------------------|---------------------|
+| Scanner can scan the public application FQDN through the real internet ingress chain | Application Security / Scanner Team | Required for final validation | Required for final admission |
+| Scanner results are signed/trustworthy and tied to a specific onboarding request | Application Security / Platform | Required | Required |
+| GTM / Imperva / Cequence can create scanner-only pre-admission access per app | Edge / WAF / Bot Teams | Helpful | Required |
+| Cequence origin selection is deterministic and protected from client spoofing | Cequence / Edge Team | Required to validate path | Required for admission control |
+| Source-of-truth mapping exists for app FQDN to cluster/origin/XNLB | Platform / DDI / Edge / NetSec | Required for correct category updates | Required for route promotion |
+| Palo Alto API automation can update URL categories and commit/push safely | Network Security | Required | Not required for app admission |
+| Palo Alto policy can be safely scoped to edge NAT pools and cluster XNLB VIPs | Network Security | Useful | Required |
+| Telemetry can correlate app FQDN across GTM, Imperva, Cequence, Palo Alto, and GKE | SecOps / Observability | Required | Required, especially if URL categories are removed |
+| Revocation/expiration can disable public exposure per app | Platform / Edge / NetSec | Required | Required |
+
+If the staged edge route, origin trust, scanner public-path testing, or onboarding source of truth cannot be validated, Option B should not be selected as the immediate target. In that case, Option A is the safer transitional automation pattern because Palo Alto remains an independent application-level enforcement point.
 
 ## Recommendation
 
