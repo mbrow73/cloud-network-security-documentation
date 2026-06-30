@@ -108,6 +108,7 @@ Known gaps:
 - **Origin selection is not trusted today.** Current understanding is that clients may be able to set `X-Forwarded-Origin` directly to an FQDN or IP.
 - **No official onboarding source of record is known today.** There is no clear authoritative system for `app → owner/env → cluster → origin → XNLB → policy/lifecycle`.
 - **Scanner-only staged access is not confirmed.** It is unknown whether Imperva/Cequence can make one app reachable only by scanner IPs before general availability.
+- **There is a scanner bootstrap problem.** A scan cannot be a prerequisite for opening the same access path if the scanner has no pre-admission path to reach the application. The design must define how scanner traffic is allowed before general access, such as scanner-only edge policy, temporary Palo category membership, a preview/staging hostname, or a manual break-glass approval.
 
 Until those are solved, Option B would move app admission upstream without enough control-plane maturity.
 
@@ -123,7 +124,7 @@ These are the high-ticket items for stakeholder discussion.
 | **Cluster registration** | Who creates a cluster record when a new internet-capable GKE cluster is built? | Solves the current visibility gap. |
 | **Scan gating** | Can CI require scan pass, scan ID, waiver, or manual approval before app activation? | Adds scan status without making the scanner a firewall admin. |
 | **Origin trust** | Can `X-Forwarded-Origin` be stripped, overwritten, signed, or validated before Cequence uses it? | Required before Option B can be considered safe. |
-| **Scanner path** | Can the scanner test the real public FQDN through GTM/Imperva/Cequence/XNLB/Palo/GKE? | A private/bypass scan does not validate the internet path. |
+| **Scanner path** | How does the scanner reach the app before general access is opened? Can it test the real public FQDN through GTM/Imperva/Cequence/XNLB/Palo/GKE using scanner-only access? | A scan cannot be the prerequisite for opening a path the scanner cannot yet use; a private/bypass scan does not validate the internet path. |
 | **Approvals** | Who can request, approve, merge, and apply production app exposure changes? | Prevents app teams from self-approving internet access. |
 | **Revocation** | Can removing/changing an app record revoke access cleanly? | Onboarding automation must also handle decommissioning. |
 | **Secrets/state** | Where do Panorama credentials and Terraform state live, and who can access them? | Avoids creating a new privileged automation risk. |
@@ -144,6 +145,7 @@ These are the high-ticket items for stakeholder discussion.
 - Can existing Palo Alto URL categories and rules be safely imported into Terraform state?
 - Should this repo provision XNLB forwarding rules or only reference platform-owned records?
 - Who owns cluster registration when new internet-capable GKE clusters are created?
+- How does the scanner get pre-admission access without granting general public access?
 - Can Imperva/Cequence enforce scanner-only pre-admission access per app?
 - Can origin-selection headers be made non-client-controllable?
 - What telemetry replaces Palo URL-category visibility if Option B is ever adopted?
