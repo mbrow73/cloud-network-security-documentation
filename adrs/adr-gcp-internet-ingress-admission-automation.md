@@ -120,8 +120,8 @@ These are the high-ticket items for stakeholder discussion.
 |------|----------|----------------|
 | **PAN-OS Terraform** | Can the provider safely manage URL categories, NAT/security policy, device groups, and commit/push? | Determines whether Option C can reduce firewall toil. |
 | **Existing Palo state** | Can current categories/rules be imported or reconciled without destructive drift? | Prevents Terraform adoption from breaking production policy. |
-| **XNLB ownership** | NetSec creates and owns XNLB forwarding rules. Platform should provide/trigger the cluster registration record after building a new internet-capable GKE cluster. | Defines repo scope and team handoff. |
-| **Cluster registration** | Who creates a cluster record when a new internet-capable GKE cluster is built? | Solves the current visibility gap. |
+| **XNLB ownership** | NetSec creates and owns XNLB forwarding rules, and Option C may provision those GCP resources from the same repo that stores app/cluster intent. Platform should trigger the cluster registration workflow after building a new internet-capable GKE cluster. | Defines repo scope and team handoff. |
+| **Cluster registration** | Platform initiates the cluster record after building a new internet-capable GKE cluster; NetSec repo provisions or records the XNLB forwarding rule/public IP and Palo mapping. | Solves the current visibility gap and gives the requestor the origin IP/name required for GTM onboarding. |
 | **Scan gating** | Can CI require scan pass, scan ID, waiver, or manual approval before app activation? | Adds scan status without making the scanner a firewall admin. |
 | **Origin trust** | Can `X-Forwarded-Origin` be stripped, overwritten, signed, or validated before Cequence uses it? | Required before Option B can be considered safe. |
 | **Scanner path** | The scanner likely must test the real public FQDN through GTM/Imperva/Cequence/XNLB/Palo/GKE. If no scanner-only pre-admission path exists, scanning cannot be a strict preventative gate before initial exposure. | In that case, scan integration should start as detective/remediation CI: detect failed scans after exposure, notify owners, open remediation PRs/issues, and optionally remove/revoke Palo category membership after policy-defined failure windows. |
@@ -145,12 +145,28 @@ app access is approved through NetSec repo
 
 This avoids pretending scan pass can be required before the scanner has any route to the application. Preventative scan gating can be revisited later if Imperva/Cequence or another edge layer can provide scanner-only pre-admission access.
 
+## Cluster Onboarding Flow
+
+For new internet-capable GKE clusters, the repository can own the cluster ingress bootstrap instead of only referencing already-created objects.
+
+```text
+1. Platform builds GKE cluster and backend GKE ILB.
+2. Platform opens/merges a cluster intent record with backend ILB details.
+3. NetSec repo provisions or records the XNLB forwarding rule and reserved public IP.
+4. NetSec repo provisions/updates Palo Alto NAT, security policy, and cluster URL category.
+5. Workflow outputs the cluster origin information required for GTM onboarding.
+6. Requestor submits GTM onboarding API payload using the NetSec-provided origin/IP details.
+7. App records can then add CNAME/FQDN membership for that cluster path.
+```
+
+Important boundary: requestors can provide the backend GKE ILB because that is their/platform-owned target, but they should not choose the public XNLB IP directly. The XNLB public IP/forwarding rule should be allocated or returned by the NetSec workflow so the ingress path remains controlled and auditable.
+
 ## Phased Program
 
 | Phase | Goal | Output |
 |-------|------|--------|
 | **0. Discovery** | Confirm owners and capability gaps | Owner map + capability matrix |
-| **1. Cluster registration** | Make internet-capable clusters visible | `clusters/*.yaml` records |
+| **1. Cluster ingress bootstrap** | Create/register internet-capable cluster ingress path | `clusters/*.yaml`, XNLB forwarding rule/public IP, Palo NAT/security/category mapping, GTM origin output |
 | **2. App registration** | Track app-to-cluster admission intent | `apps/*.yaml` records |
 | **3. PAN-OS automation** | Automate current Palo URL category process | Terraform-managed category membership |
 | **4. Scanner integration** | Add scan pass/waiver as a repo gate | CI/webhook/remediation workflow |
@@ -159,7 +175,8 @@ This avoids pretending scan pass can be required before the scanner has any rout
 ## Open Questions
 
 - Can existing Palo Alto URL categories and rules be safely imported into Terraform state?
-- Should this repo provision XNLB forwarding rules or only reference platform-owned records?
+- What exact GCP permissions/project boundaries are required for the NetSec repo to provision XNLB forwarding rules and reserve public IPs?
+- What output format should the NetSec workflow provide to the requestor for the follow-on GTM onboarding API payload?
 - Who owns cluster registration when new internet-capable GKE clusters are created?
 - If no scanner-only pre-admission path exists, should scan integration be detective/remediation first rather than preventative?
 - What SLA/action should occur when a newly exposed app fails scan: notify only, block future changes, remove Palo URL category membership, or require manual exception?
