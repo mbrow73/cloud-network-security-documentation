@@ -42,7 +42,7 @@ Keep Option A as the current enforcement model and Option B as a possible long-t
 |--------|----------------|---------|
 | **A. Automate Palo Alto URL categories** | Current enforcement model | Keep app-level allowlisting on Palo Alto, but automate category membership after scan/approval. |
 | **B. Move admission to GTM/Cequence** | Long-term candidate only | Palo allows edge NATs to cluster VIPs; GTM/Cequence controls app publication. Not safe until origin trust and source-of-truth gaps are solved. |
-| **C. NetSec internet app repo** | **Recommended near-term** | Create a NetSec-owned GitOps repo for cluster/app records and PAN-OS Terraform automation. Builds the missing source of truth incrementally. |
+| **C. NetSec internet app repo** | **Recommended near-term** | Create a NetSec-owned GitOps repo for cluster ingress bootstrap, app admission records, XNLB provisioning, and PAN-OS Terraform automation. Builds the missing source of truth incrementally. |
 
 ## Recommended Near-Term Pattern: Option C
 
@@ -56,48 +56,79 @@ netsec-internet-apps/
 └── .github/workflows/
 ```
 
-### Cluster record example
+### Cluster intent record example
+
+The platform/requestor provides the backend target details. NetSec automation allocates or returns the XNLB public IP / forwarding rule output.
 
 ```yaml
 cluster_id: gke-prod-usw2-01
 environment: prod
-origin_name: cluster-prod-usw2-01.ingress.example.net
-xnlb_forwarding_rule: fr-gke-prod-usw2-01
-xnlb_vip: 203.0.113.10
-gke_backend_ilb: 10.10.20.15
-palo_device_group: dg-internet-prod
-palo_url_category: gcp-ingress-prod-usw2-01-approved-apps
+requestor: gke-platform-team
+backend:
+  gke_ilb_ip: 10.10.20.15
+  gke_ilb_name: ilb-gke-prod-usw2-01
+  gcp_project: app-prod-host-project
+netsec_ingress:
+  xnlb_forwarding_rule: fr-gke-prod-usw2-01   # created by NetSec repo
+  xnlb_vip: allocated_by_terraform           # output, not requester-selected
+  palo_device_group: dg-internet-prod
+  palo_nat_rule: nat-gke-prod-usw2-01
+  palo_security_rule: allow-edge-to-gke-prod-usw2-01
+  palo_url_category: gcp-ingress-prod-usw2-01-approved-apps
 allowed_edge_sources:
   - imperva_prod_nat
   - cequence_prod_nat
-state: active
+gtm_onboarding_output:
+  origin_ip: terraform_output
+  origin_name: optional_generated_name
+state: requested | provisioned | active | deprecated | retired
 ```
 
-### App record example
+### App admission record example
+
+Apps bind to an already-provisioned cluster ingress path. Phase 1 updates the cluster-specific Palo Alto URL category; scan status can start as metadata/manual evidence and later become detective/remediation automation.
 
 ```yaml
 fqdn: app.example.com
 owner: application-team
 environment: prod
 target_cluster: gke-prod-usw2-01
-scan_status: passed
-scan_id: scan-12345
-state: active
+palo_url_category: gcp-ingress-prod-usw2-01-approved-apps
+admission:
+  state: requested | approved | active | revoked
+  approval: netsec-approved
+scan:
+  mode: detective_remediation
+  status: not_started | passed | failed | waived
+  scan_id: null
 ```
 
 ### Flow
 
+**Cluster bootstrap:**
+
 ```text
-App onboarding request
-→ PR adds/updates app record
-→ CI validates target cluster, metadata, scan/waiver, and policy constraints
-→ Terraform plan shows PAN-OS URL category / policy changes
-→ NetSec review + approval
-→ Terraform apply updates Palo Alto
-→ post-change validation confirms public path
+Platform builds GKE cluster + backend ILB
+→ Platform submits cluster intent with backend ILB details
+→ NetSec repo provisions XNLB VIP/forwarding rule
+→ NetSec repo provisions Palo NAT/security/category mapping
+→ workflow outputs XNLB origin IP/name for GTM onboarding
+→ requestor uses that output in GTM onboarding API payload
 ```
 
-Phase 1 should focus on codifying the current Palo Alto URL category workflow. Later phases can add scanner webhooks, remediation actions, expiration, revocation, and broader edge-control integration.
+**App onboarding:**
+
+```text
+App onboarding request
+→ PR adds/updates app record targeting an existing cluster record
+→ CI validates target cluster, metadata, approval/scan/waiver state, and policy constraints
+→ Terraform plan shows Palo Alto URL category membership change
+→ NetSec review + approval
+→ Terraform apply updates Palo Alto
+→ scanner/validation tests real public path after exposure unless scanner-only pre-admission exists
+```
+
+Phase 1 should focus on cluster ingress bootstrap and the current Palo Alto URL category workflow. Later phases can add scanner webhooks, remediation actions, expiration, revocation, and broader edge-control integration.
 
 ## Why Not Start With Option B?
 
@@ -151,10 +182,10 @@ For new internet-capable GKE clusters, the repository can own the cluster ingres
 
 ```text
 1. Platform builds GKE cluster and backend GKE ILB.
-2. Platform opens/merges a cluster intent record with backend ILB details.
-3. NetSec repo provisions or records the XNLB forwarding rule and reserved public IP.
+2. Platform submits a cluster intent record with backend ILB details.
+3. NetSec repo provisions the XNLB forwarding rule and reserved public IP.
 4. NetSec repo provisions/updates Palo Alto NAT, security policy, and cluster URL category.
-5. Workflow outputs the cluster origin information required for GTM onboarding.
+5. Workflow outputs the XNLB origin IP/name required for GTM onboarding.
 6. Requestor submits GTM onboarding API payload using the NetSec-provided origin/IP details.
 7. App records can then add CNAME/FQDN membership for that cluster path.
 ```
@@ -166,7 +197,7 @@ Important boundary: requestors can provide the backend GKE ILB because that is t
 | Phase | Goal | Output |
 |-------|------|--------|
 | **0. Discovery** | Confirm owners and capability gaps | Owner map + capability matrix |
-| **1. Cluster ingress bootstrap** | Create/register internet-capable cluster ingress path | `clusters/*.yaml`, XNLB forwarding rule/public IP, Palo NAT/security/category mapping, GTM origin output |
+| **1. Cluster ingress bootstrap** | Create/register internet-capable cluster ingress path | `clusters/*.yaml`, backend ILB input, XNLB forwarding rule/public IP output, Palo NAT/security/category mapping, GTM onboarding output |
 | **2. App registration** | Track app-to-cluster admission intent | `apps/*.yaml` records |
 | **3. PAN-OS automation** | Automate current Palo URL category process | Terraform-managed category membership |
 | **4. Scanner integration** | Add scan pass/waiver as a repo gate | CI/webhook/remediation workflow |
@@ -177,7 +208,7 @@ Important boundary: requestors can provide the backend GKE ILB because that is t
 - Can existing Palo Alto URL categories and rules be safely imported into Terraform state?
 - What exact GCP permissions/project boundaries are required for the NetSec repo to provision XNLB forwarding rules and reserve public IPs?
 - What output format should the NetSec workflow provide to the requestor for the follow-on GTM onboarding API payload?
-- Who owns cluster registration when new internet-capable GKE clusters are created?
+- What exact handoff does Platform use to submit the post-build cluster intent record?
 - If no scanner-only pre-admission path exists, should scan integration be detective/remediation first rather than preventative?
 - What SLA/action should occur when a newly exposed app fails scan: notify only, block future changes, remove Palo URL category membership, or require manual exception?
 - Can Imperva/Cequence enforce scanner-only pre-admission access per app in the future?
