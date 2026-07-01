@@ -87,17 +87,14 @@ state: requested | provisioned | active | deprecated | retired
 
 ### App admission record example
 
-Apps bind to an already-provisioned cluster ingress path. Phase 1 updates the cluster-specific Palo Alto URL category; scan status can start as metadata/manual evidence and later become detective/remediation automation.
+Apps bind to an already-provisioned cluster ingress path by referencing `target_cluster`. The cluster record determines the Palo Alto URL category and other firewall implementation details. App records should not repeat cluster-derived firewall fields. Scan status can start as metadata/manual evidence and later become detective/remediation automation.
 
 ```yaml
 fqdn: app.example.com
 owner: application-team
 environment: prod
 target_cluster: gke-prod-usw2-01
-palo_url_category: gcp-ingress-prod-usw2-01-approved-apps
-admission:
-  state: requested | approved | active | revoked
-  approval: netsec-approved
+state: proposed | active | revoked
 scan:
   mode: detective_remediation
   status: not_started | passed | failed | waived
@@ -123,7 +120,7 @@ Platform builds GKE cluster + backend ILB
 ```text
 App onboarding request
 → PR adds/updates app record targeting an existing cluster record
-→ CI derives target Palo category from the cluster record and validates metadata, approval/scan/waiver state, and policy constraints
+→ CI derives target Palo category from the cluster record and validates metadata, scan/waiver state, and policy constraints
 → Terraform plan shows Palo Alto URL category membership change
 → NetSec review + approval
 → Terraform apply updates Palo Alto
@@ -159,7 +156,7 @@ These are the high-ticket items for stakeholder discussion.
 | **Scan gating** | Can CI require scan pass, scan ID, waiver, or manual approval before app activation? | Adds scan status without making the scanner a firewall admin. |
 | **Origin trust** | Can `X-Forwarded-Origin` be stripped, overwritten, signed, or validated before Cequence uses it? | Required before Option B can be considered safe. |
 | **Scanner path** | The scanner likely must test the real public FQDN through GTM/Imperva/Cequence/XNLB/Palo/GKE. If no scanner-only pre-admission path exists, scanning cannot be a strict preventative gate before initial exposure. | In that case, scan integration should start as detective/remediation CI: detect failed scans after exposure, notify owners, open remediation PRs/issues, and optionally remove/revoke Palo category membership after policy-defined failure windows. |
-| **Approvals** | Who can request, approve, merge, and apply production app exposure changes? | Prevents app teams from self-approving internet access. |
+| **Approvals** | Who can request, review, merge, and apply production app exposure changes? | The app record is the proposed registration; approval should be represented by PR review/merge controls, not a vague `approval` field in the YAML. |
 | **Revocation** | Can removing/changing an app record revoke access cleanly? | Onboarding automation must also handle decommissioning. |
 | **Secrets/state** | Where do Panorama credentials and Terraform state live, and who can access them? | Avoids creating a new privileged automation risk. |
 
