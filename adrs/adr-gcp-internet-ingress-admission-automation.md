@@ -120,14 +120,30 @@ These are the high-ticket items for stakeholder discussion.
 |------|----------|----------------|
 | **PAN-OS Terraform** | Can the provider safely manage URL categories, NAT/security policy, device groups, and commit/push? | Determines whether Option C can reduce firewall toil. |
 | **Existing Palo state** | Can current categories/rules be imported or reconciled without destructive drift? | Prevents Terraform adoption from breaking production policy. |
-| **XNLB ownership** | Does NetSec create XNLB forwarding rules, or only reference platform-created cluster records? | Defines repo scope and team ownership. |
+| **XNLB ownership** | NetSec creates and owns XNLB forwarding rules. Platform should provide/trigger the cluster registration record after building a new internet-capable GKE cluster. | Defines repo scope and team handoff. |
 | **Cluster registration** | Who creates a cluster record when a new internet-capable GKE cluster is built? | Solves the current visibility gap. |
 | **Scan gating** | Can CI require scan pass, scan ID, waiver, or manual approval before app activation? | Adds scan status without making the scanner a firewall admin. |
 | **Origin trust** | Can `X-Forwarded-Origin` be stripped, overwritten, signed, or validated before Cequence uses it? | Required before Option B can be considered safe. |
-| **Scanner path** | How does the scanner reach the app before general access is opened? Can it test the real public FQDN through GTM/Imperva/Cequence/XNLB/Palo/GKE using scanner-only access? | A scan cannot be the prerequisite for opening a path the scanner cannot yet use; a private/bypass scan does not validate the internet path. |
+| **Scanner path** | The scanner likely must test the real public FQDN through GTM/Imperva/Cequence/XNLB/Palo/GKE. If no scanner-only pre-admission path exists, scanning cannot be a strict preventative gate before initial exposure. | In that case, scan integration should start as detective/remediation CI: detect failed scans after exposure, notify owners, open remediation PRs/issues, and optionally remove/revoke Palo category membership after policy-defined failure windows. |
 | **Approvals** | Who can request, approve, merge, and apply production app exposure changes? | Prevents app teams from self-approving internet access. |
 | **Revocation** | Can removing/changing an app record revoke access cleanly? | Onboarding automation must also handle decommissioning. |
 | **Secrets/state** | Where do Panorama credentials and Terraform state live, and who can access them? | Avoids creating a new privileged automation risk. |
+
+## Scanner Control Model
+
+If the scanner must use the same public FQDN path that application teams are requesting, and no scanner-only pre-admission path exists, vulnerability scanning should not be represented as a strict preventative control for initial access.
+
+Near-term scan integration should be treated as **detective/remediation CI**:
+
+```text
+app access is approved through NetSec repo
+→ public path becomes reachable
+→ scanner tests real FQDN through the production ingress chain
+→ scan result updates app record / PR status / issue
+→ failed scan triggers remediation workflow or access revocation based on policy
+```
+
+This avoids pretending scan pass can be required before the scanner has any route to the application. Preventative scan gating can be revisited later if Imperva/Cequence or another edge layer can provide scanner-only pre-admission access.
 
 ## Phased Program
 
@@ -145,8 +161,9 @@ These are the high-ticket items for stakeholder discussion.
 - Can existing Palo Alto URL categories and rules be safely imported into Terraform state?
 - Should this repo provision XNLB forwarding rules or only reference platform-owned records?
 - Who owns cluster registration when new internet-capable GKE clusters are created?
-- How does the scanner get pre-admission access without granting general public access?
-- Can Imperva/Cequence enforce scanner-only pre-admission access per app?
+- If no scanner-only pre-admission path exists, should scan integration be detective/remediation first rather than preventative?
+- What SLA/action should occur when a newly exposed app fails scan: notify only, block future changes, remove Palo URL category membership, or require manual exception?
+- Can Imperva/Cequence enforce scanner-only pre-admission access per app in the future?
 - Can origin-selection headers be made non-client-controllable?
 - What telemetry replaces Palo URL-category visibility if Option B is ever adopted?
 
