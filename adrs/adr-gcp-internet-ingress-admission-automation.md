@@ -58,7 +58,7 @@ netsec-internet-apps/
 
 ### Cluster intent record example
 
-The platform/requestor provides the backend target details. NetSec automation allocates or returns the XNLB public IP / forwarding rule output.
+The platform/requestor provides only the backend target and required metadata. NetSec automation derives Palo Alto object names, device group, URL category, NAT/security rule names, and XNLB forwarding-rule names from standards. Requestors should not provide firewall object names.
 
 ```yaml
 cluster_id: gke-prod-usw2-01
@@ -69,12 +69,13 @@ backend:
   gke_ilb_name: ilb-gke-prod-usw2-01
   gcp_project: app-prod-host-project
 netsec_ingress:
-  xnlb_forwarding_rule: fr-gke-prod-usw2-01   # created by NetSec repo
-  xnlb_vip: allocated_by_terraform           # output, not requester-selected
-  palo_device_group: dg-internet-prod
-  palo_nat_rule: nat-gke-prod-usw2-01
-  palo_security_rule: allow-edge-to-gke-prod-usw2-01
-  palo_url_category: gcp-ingress-prod-usw2-01-approved-apps
+  # derived by automation from cluster_id, environment, region, and naming standards
+  xnlb_forwarding_rule: generated_by_pipeline
+  xnlb_vip: allocated_by_terraform
+  palo_device_group: generated_by_pipeline
+  palo_nat_rule: generated_by_pipeline
+  palo_security_rule: generated_by_pipeline
+  palo_url_category: generated_by_pipeline
 allowed_edge_sources:
   - imperva_prod_nat
   - cequence_prod_nat
@@ -109,7 +110,8 @@ scan:
 
 ```text
 Platform builds GKE cluster + backend ILB
-→ Platform submits cluster intent with backend ILB details
+→ Platform submits cluster intent with backend ILB details and required metadata
+→ CI derives XNLB and Palo Alto object names from standards
 → NetSec repo provisions XNLB VIP/forwarding rule
 → NetSec repo provisions Palo NAT/security/category mapping
 → workflow outputs XNLB origin IP/name for GTM onboarding
@@ -121,7 +123,7 @@ Platform builds GKE cluster + backend ILB
 ```text
 App onboarding request
 → PR adds/updates app record targeting an existing cluster record
-→ CI validates target cluster, metadata, approval/scan/waiver state, and policy constraints
+→ CI derives target Palo category from the cluster record and validates metadata, approval/scan/waiver state, and policy constraints
 → Terraform plan shows Palo Alto URL category membership change
 → NetSec review + approval
 → Terraform apply updates Palo Alto
@@ -150,6 +152,7 @@ These are the high-ticket items for stakeholder discussion.
 | Area | Question | Why It Matters |
 |------|----------|----------------|
 | **PAN-OS Terraform** | Can the provider safely manage URL categories, NAT/security policy, device groups, and commit/push? | Determines whether Option C can reduce firewall toil. |
+| **Naming/derivation logic** | Can CI derive Palo device group, NAT/security rule names, URL category, XNLB forwarding-rule name, and origin output from cluster metadata? | Requestors should provide intent/backend data, not firewall implementation details. |
 | **Existing Palo state** | Can current categories/rules be imported or reconciled without destructive drift? | Prevents Terraform adoption from breaking production policy. |
 | **XNLB ownership** | NetSec creates and owns XNLB forwarding rules, and Option C may provision those GCP resources from the same repo that stores app/cluster intent. Platform should trigger the cluster registration workflow after building a new internet-capable GKE cluster. | Defines repo scope and team handoff. |
 | **Cluster registration** | Platform initiates the cluster record after building a new internet-capable GKE cluster; NetSec repo provisions or records the XNLB forwarding rule/public IP and Palo mapping. | Solves the current visibility gap and gives the requestor the origin IP/name required for GTM onboarding. |
@@ -190,7 +193,7 @@ For new internet-capable GKE clusters, the repository can own the cluster ingres
 7. App records can then add CNAME/FQDN membership for that cluster path.
 ```
 
-Important boundary: requestors can provide the backend GKE ILB because that is their/platform-owned target, but they should not choose the public XNLB IP directly. The XNLB public IP/forwarding rule should be allocated or returned by the NetSec workflow so the ingress path remains controlled and auditable.
+Important boundary: requestors can provide the backend GKE ILB because that is their/platform-owned target, but they should not choose the public XNLB IP, forwarding-rule name, Palo Alto device group, NAT rule, security rule, or URL category directly. Those values should be derived by the NetSec workflow from approved naming and placement standards so the ingress path remains controlled and auditable.
 
 ## Phased Program
 
