@@ -87,14 +87,14 @@ state: requested | provisioned | active | deprecated | retired
 
 ### App admission record example
 
-Apps bind to an already-provisioned cluster ingress path by referencing `target_cluster`. The cluster record determines the Palo Alto URL category and other firewall implementation details. App records should not repeat cluster-derived firewall fields, and requestors should not choose scanner behavior. Vulnerability scan status should be produced by CI/AppSec integration as an external check or status, not supplied as app intent.
+Apps bind to an already-provisioned cluster ingress path by referencing `target_cluster`. The cluster record determines the Palo Alto URL category and other firewall implementation details. App records should not repeat cluster-derived firewall fields, and requestors should not choose scanner behavior. Vulnerability scan status should be produced by CI/AppSec integration as an external check or status, not supplied as app intent. The app record lifecycle represents desired enforcement state after review/merge: `active` means the FQDN should be admitted for the target cluster, while `revoked` means the FQDN should be removed/disabled.
 
 ```yaml
 fqdn: app.example.com
 owner: application-team
 environment: prod
 target_cluster: gke-prod-usw2-01
-state: proposed | active | revoked
+lifecycle: active | revoked
 ```
 
 ### Flow
@@ -153,7 +153,7 @@ These are the high-ticket items for stakeholder discussion.
 | **Origin trust** | Can `X-Forwarded-Origin` be stripped, overwritten, signed, or validated before Cequence uses it? | Required before Option B can be considered safe. |
 | **Scanner path** | The scanner likely must test the real public FQDN through GTM/Imperva/Cequence/XNLB/Palo/GKE. If no scanner-only pre-admission path exists, scanning cannot be a strict preventative gate before initial exposure. | In that case, scan integration should start as detective/remediation CI: detect failed scans after exposure, notify owners, open remediation PRs/issues, and optionally remove/revoke Palo category membership after policy-defined failure windows. |
 | **Approvals** | Who can request, review, merge, and apply production app exposure changes? | The app record is the proposed registration; approval should be represented by PR review/merge controls, not a vague `approval` field in the YAML. |
-| **Revocation** | Can removing/changing an app record revoke access cleanly? | Onboarding automation must also handle decommissioning. |
+| **Revocation** | Can changing an app record to `lifecycle: revoked` remove access cleanly? Can scanner findings open revocation PRs automatically? | Onboarding automation must also handle decommissioning and vulnerability-driven access removal. |
 | **Secrets/state** | Where do Panorama credentials and Terraform state live, and who can access them? | Avoids creating a new privileged automation risk. |
 
 ## Scanner Control Model
@@ -167,7 +167,7 @@ app access is approved through NetSec repo
 → public path becomes reachable
 → scanner tests real FQDN through the production ingress chain
 → scan result updates PR status / external check / issue
-→ failed scan triggers remediation workflow or access revocation based on policy
+→ failed scan triggers remediation workflow or opens a PR changing lifecycle to `revoked` based on policy
 ```
 
 This avoids pretending scan pass can be required before the scanner has any route to the application. Preventative scan gating can be revisited later if Imperva/Cequence or another edge layer can provide scanner-only pre-admission access.
@@ -206,7 +206,7 @@ Important boundary: requestors can provide the backend GKE ILB because that is t
 - What output format should the NetSec workflow provide to the requestor for the follow-on GTM onboarding API payload?
 - What exact handoff does Platform use to submit the post-build cluster intent record?
 - If no scanner-only pre-admission path exists, should scan integration be detective/remediation first rather than preventative, using external CI/AppSec checks instead of requester-supplied fields?
-- What SLA/action should occur when a newly exposed app fails scan: notify only, block future changes, remove Palo URL category membership, or require manual exception?
+- What SLA/action should occur when a newly exposed app fails scan: notify only, block future changes, open a PR setting `lifecycle: revoked`, remove Palo URL category membership, or require manual exception?
 - Can Imperva/Cequence enforce scanner-only pre-admission access per app in the future?
 - Can origin-selection headers be made non-client-controllable?
 - What telemetry replaces Palo URL-category visibility if Option B is ever adopted?
