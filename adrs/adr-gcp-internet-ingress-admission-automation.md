@@ -87,7 +87,7 @@ state: requested | provisioned | active | deprecated | retired
 
 ### App admission record example
 
-Apps bind to an already-provisioned cluster ingress path by referencing `target_cluster`. The cluster record determines the Palo Alto URL category and other firewall implementation details. App records should not repeat cluster-derived firewall fields. Scan status can start as metadata/manual evidence and later become detective/remediation automation.
+Apps bind to an already-provisioned cluster ingress path by referencing `target_cluster`. The cluster record determines the Palo Alto URL category and other firewall implementation details. App records should not repeat cluster-derived firewall fields, and requestors should not choose scanner behavior. Vulnerability scan status should be produced by CI/AppSec integration as an external check or status, not supplied as app intent.
 
 ```yaml
 fqdn: app.example.com
@@ -95,10 +95,6 @@ owner: application-team
 environment: prod
 target_cluster: gke-prod-usw2-01
 state: proposed | active | revoked
-scan:
-  mode: detective_remediation
-  status: not_started | passed | failed | waived
-  scan_id: null
 ```
 
 ### Flow
@@ -120,7 +116,7 @@ Platform builds GKE cluster + backend ILB
 ```text
 App onboarding request
 → PR adds/updates app record targeting an existing cluster record
-→ CI derives target Palo category from the cluster record and validates metadata, scan/waiver state, and policy constraints
+→ CI derives target Palo category from the cluster record and validates metadata, required checks/waivers, and policy constraints
 → Terraform plan shows Palo Alto URL category membership change
 → NetSec review + approval
 → Terraform apply updates Palo Alto
@@ -153,7 +149,7 @@ These are the high-ticket items for stakeholder discussion.
 | **Existing Palo state** | Can current categories/rules be imported or reconciled without destructive drift? | Prevents Terraform adoption from breaking production policy. |
 | **XNLB ownership** | NetSec creates and owns XNLB forwarding rules, and Option C may provision those GCP resources from the same repo that stores app/cluster intent. Platform should trigger the cluster registration workflow after building a new internet-capable GKE cluster. | Defines repo scope and team handoff. |
 | **Cluster registration** | Platform initiates the cluster record after building a new internet-capable GKE cluster; NetSec repo provisions or records the XNLB forwarding rule/public IP and Palo mapping. | Solves the current visibility gap and gives the requestor the origin IP/name required for GTM onboarding. |
-| **Scan gating** | Can CI require scan pass, scan ID, waiver, or manual approval before app activation? | Adds scan status without making the scanner a firewall admin. |
+| **Scan integration** | Can CI/AppSec publish scan results or waivers as checks/status outside the requester-supplied app YAML? | Adds scan visibility without asking requestors to declare scanner mode/status themselves. |
 | **Origin trust** | Can `X-Forwarded-Origin` be stripped, overwritten, signed, or validated before Cequence uses it? | Required before Option B can be considered safe. |
 | **Scanner path** | The scanner likely must test the real public FQDN through GTM/Imperva/Cequence/XNLB/Palo/GKE. If no scanner-only pre-admission path exists, scanning cannot be a strict preventative gate before initial exposure. | In that case, scan integration should start as detective/remediation CI: detect failed scans after exposure, notify owners, open remediation PRs/issues, and optionally remove/revoke Palo category membership after policy-defined failure windows. |
 | **Approvals** | Who can request, review, merge, and apply production app exposure changes? | The app record is the proposed registration; approval should be represented by PR review/merge controls, not a vague `approval` field in the YAML. |
@@ -170,7 +166,7 @@ Near-term scan integration should be treated as **detective/remediation CI**:
 app access is approved through NetSec repo
 → public path becomes reachable
 → scanner tests real FQDN through the production ingress chain
-→ scan result updates app record / PR status / issue
+→ scan result updates PR status / external check / issue
 → failed scan triggers remediation workflow or access revocation based on policy
 ```
 
@@ -200,7 +196,7 @@ Important boundary: requestors can provide the backend GKE ILB because that is t
 | **1. Cluster ingress bootstrap** | Create/register internet-capable cluster ingress path | `clusters/*.yaml`, backend ILB input, XNLB forwarding rule/public IP output, Palo NAT/security/category mapping, GTM onboarding output |
 | **2. App registration** | Track app-to-cluster admission intent | `apps/*.yaml` records |
 | **3. PAN-OS automation** | Automate current Palo URL category process | Terraform-managed category membership |
-| **4. Scanner integration** | Add scan pass/waiver as a repo gate | CI/webhook/remediation workflow |
+| **4. Scanner integration** | Add scan results/waivers as external repo checks | CI/webhook/remediation workflow |
 | **5. Edge admission pilot** | Test Option B for limited scope | Scanner-only → active route promotion |
 
 ## Open Questions
@@ -209,7 +205,7 @@ Important boundary: requestors can provide the backend GKE ILB because that is t
 - What exact GCP permissions/project boundaries are required for the NetSec repo to provision XNLB forwarding rules and reserve public IPs?
 - What output format should the NetSec workflow provide to the requestor for the follow-on GTM onboarding API payload?
 - What exact handoff does Platform use to submit the post-build cluster intent record?
-- If no scanner-only pre-admission path exists, should scan integration be detective/remediation first rather than preventative?
+- If no scanner-only pre-admission path exists, should scan integration be detective/remediation first rather than preventative, using external CI/AppSec checks instead of requester-supplied fields?
 - What SLA/action should occur when a newly exposed app fails scan: notify only, block future changes, remove Palo URL category membership, or require manual exception?
 - Can Imperva/Cequence enforce scanner-only pre-admission access per app in the future?
 - Can origin-selection headers be made non-client-controllable?
