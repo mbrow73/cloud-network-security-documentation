@@ -30,7 +30,61 @@ The proposed flow is:
 4. The application team creates security group rule resources against that security group.
 5. Sentinel determines whether the rules are allowed and whether the security group can be attached to the resource.
 
-At first glance, this keeps application resource deployment flexible while centralizing firewall policy enforcement in Sentinel. The concern is that Sentinel would need to reconstruct and validate the architecture from Terraform plan data instead of enforcing a simple paved road contract.
+This keeps application resource deployment flexible while centralizing firewall policy enforcement in Sentinel. The concern is that Sentinel would need to reconstruct and validate the architecture from Terraform plan data instead of enforcing a simple paved road contract.
+
+## Potential Advantages of the Custom Security Group Approach
+
+There are valid arguments in favor of the AFT-vended custom security group approach.
+
+### Application teams retain BYOM flexibility
+
+Application teams can continue using their own modules and can expose the AWS provider features they need without waiting for a centrally maintained parent module to support every service option.
+
+This may be valuable for teams with advanced use cases or for AWS services whose Terraform resource schemas change frequently.
+
+### Fewer centrally maintained service wrappers may be required
+
+A full paved-road model can create a large parent module estate. Each parent module may require:
+
+- ongoing AWS provider compatibility work
+- feature additions as service capabilities change
+- version and release management
+- documentation and examples
+- migration support for consuming teams
+
+If the organization did not already maintain these parent modules, this could be a significant implementation and ownership commitment.
+
+### Connectivity policy can be centralized independently of application modules
+
+The custom security group approach allows the firewall rule policy to be updated in Sentinel without requiring each application parent module to release a new version.
+
+This can reduce coupling between connectivity-policy changes and application-module release schedules.
+
+### AFT can establish a consistent account-level starting point
+
+Vending the empty security groups through AFT can provide a predictable security group in every applicable account from the beginning of the account lifecycle.
+
+This could make the expected security group easier to discover and could give the cloud platform a consistent inventory of centrally created security groups.
+
+### Adoption may require fewer immediate application changes
+
+Teams may be able to keep their existing application modules and add references to the vended security groups instead of migrating the full application resource into a new parent module.
+
+That could reduce initial module migration work, especially where application teams already have mature BYOM implementations.
+
+### The ownership boundary may appear simpler
+
+The proposed model creates a straightforward ownership split on paper:
+
+- AFT creates the empty security group
+- the application team owns its service resource and requested rules
+- Sentinel owns policy enforcement
+
+This separation can be attractive if the goal is to avoid central ownership of application-resource implementation.
+
+These benefits are real and should be considered. The remaining concern is whether they reduce total operational complexity or move that complexity into Sentinel catalogs, plan parsing, attachment validation, and cross-workspace state management.
+
+In this environment, centrally maintained parent service modules already exist today. The paved-road proposal therefore extends an existing operating model rather than requiring an entirely new parent module estate. The custom security group approach would still need service-specific Sentinel logic for each supported resource and attachment pattern.
 
 ## Concerns
 
@@ -152,75 +206,9 @@ The parent module:
 
 The resource identity, connectivity decision, security group, and attachment remain in the same Terraform graph.
 
-Sentinel then has a smaller and clearer responsibility:
+Sentinel then has a smaller responsibility centered on approved module provenance and prevention of raw resource, security group rule, and attachment bypasses through governed Terraform pipelines.
 
-- require the root module call to use an approved service parent module source and version
-- verify that the centrally managed connectivity module is called from beneath an approved service parent module
-- reject direct developer calls to the connectivity module
-- allow governed security group rules only when their Terraform module address is beneath the approved parent and nested connectivity module chain
-- reject raw service resources where the paved road is mandatory
-- reject raw security group rules outside the approved module chain
-- reject unmanaged security group attachments
-- fail closed when the full parent and nested module provenance cannot be established
-
-For example, Sentinel can allow a security group rule with module ancestry similar to:
-
-```text
-module.lambda.module.connectivity.aws_vpc_security_group_egress_rule.this
-```
-
-It can reject a direct developer call with ancestry similar to:
-
-```text
-module.connectivity.aws_vpc_security_group_egress_rule.this
-```
-
-Sentinel can make these decisions from Terraform configuration and plan metadata. The module call data includes the declaring module address, source, and version constraint. The resource data includes the module address where each resource was declared. This allows Sentinel to validate the approved caller chain without maintaining an account, environment, and security group ID catalog.
-
-## Sentinel Policy Rollout and Migration
-
-The enforcement should not be introduced as one hard-mandatory policy covering every existing service resource, security group rule, and attachment on day one.
-
-A policy using `tfconfig/v2` evaluates the full Terraform configuration. If an existing workspace contains a raw Lambda function or legacy security group rule, a hard-mandatory policy requiring all resources to use the new parent module can fail the workspace's next run even when the legacy resource is unrelated to the proposed change.
-
-Soft mandatory is not the desired enforcement state for this contract. A soft-mandatory failure allows an authorized user to override the result, while the intended policy decision is binary: if a deployment is required to use the paved road and it is outside the paved road, it is denied.
-
-Advisory enforcement is appropriate only for initial discovery because it reports violations without blocking runs. Migration should then be controlled through policy scope. A workspace or service cohort remains outside the full policy scope while its existing resources are migrated. Once that cohort is ready, the full policy is applied as hard mandatory with no bypass override.
-
-### Policies that can be hard mandatory immediately
-
-The following policies can be hard mandatory when the new module ecosystem is introduced because they apply only when someone attempts to use the new approved module sources:
-
-- reject any direct developer call to the centrally managed connectivity module
-- require the connectivity module to be called from beneath an approved service parent module source
-- require approved parent and connectivity module versions
-- require security group resources created by the connectivity module to have the complete approved parent and nested module ancestry
-- fail closed when a run attempts to use the connectivity module but its caller provenance cannot be established
-
-These policies do not require existing workspaces to already use the paved road. They prevent the new connectivity module from being consumed incorrectly from the beginning.
-
-A separate hard-mandatory policy can also prevent the creation of new raw service resources, security group rules, and unmanaged attachments by evaluating resource creation actions in `tfplan/v2`. This can stop new legacy patterns without immediately rejecting every unchanged legacy resource already present in configuration.
-
-### Policies that require a staged rollout
-
-The following full-configuration policies are likely to identify existing legacy resources and should begin as advisory:
-
-- require every supported service resource to exist beneath its approved service parent module
-- reject every raw security group rule outside the approved parent and connectivity module chain
-- reject every unmanaged security group attachment
-- reject every legacy module source or unsupported parent module version
-
-After inventory and impact analysis, existing resources should be migrated by selected workspace or service cohort. Once a cohort is migrated, the full policies should be applied as hard mandatory for that scope. A deployment inside an enforced scope that is outside the paved road should be denied.
-
-The practical rollout is:
-
-1. Run the full-configuration policies as advisory to inventory violations.
-2. Make caller-chain and connectivity-module provenance policies hard mandatory immediately.
-3. Make no-new-legacy-resource policies hard mandatory using plan actions.
-4. Migrate existing resources by workspace or service cohort.
-5. Apply the full paved-road contract as hard mandatory to each cohort after it is clean.
-
-The AFT-vended custom security group approach has the same migration concern. Existing resources would not already use the new security groups, attachments, or rule ownership model. It would also require temporary exceptions while old and new security group models coexist. Migration risk does not provide an advantage to the custom security group approach.
+Detailed policy behavior, module ancestry checks, enforcement levels, rollout sequencing, and out-of-band control dependencies are covered separately in [AWS Paved Road Sentinel Policy and Rollout Considerations](./aws-paved-road-sentinel-policy-and-rollout-considerations.md).
 
 ## Example Comparison
 
@@ -243,21 +231,7 @@ With the paved road module, the module already knows the resource type, context,
 
 The custom security group approach requires Sentinel to understand and validate the full design. The paved road approach builds the design correctly and uses Sentinel to prevent bypass through the governed Terraform configuration pipelines.
 
-## Additional Enforcement Still Required
-
-The paved road module is not an IAM security boundary.
-
-If developers can create resources, modify security groups, or attach arbitrary security groups through the AWS console, API, CloudFormation, or another role, they can bypass Terraform and Sentinel.
-
-AFT and the cloud platform still need to enforce:
-
-- mandatory Sentinel policy assignment
-- least-privilege Terraform execution roles
-- IAM permission boundaries or SCP controls where appropriate
-- restrictions on alternate deployment paths
-- detective controls for out-of-band changes
-
-The team is actively working on all of these enforcement dependencies as a parallel effort to the automation work. This includes mandatory policy assignment, execution-role restrictions, IAM and SCP controls where appropriate, restrictions on alternate deployment paths, and detection of out-of-band changes.
+Neither the paved-road module nor Sentinel is an IAM security boundary. The companion Sentinel policy document covers the additional controls required for alternate deployment paths and out-of-band changes.
 
 ## Recommendation
 
