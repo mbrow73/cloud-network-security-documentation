@@ -10,6 +10,10 @@
 
 ---
 
+## Important Context Before Review
+
+> I may be missing context from prior planning or decisions related to Sentinel policies, AFT, and the proposed custom security group approach. The concerns and recommendations in this document are based on my current understanding of the proposal and my expectations for how these controls would need to operate. They should be reviewed against any prior requirements, design decisions, or implementation constraints before being treated as final conclusions.
+
 ## Purpose
 
 This document captures concerns with using AFT to vend empty custom service security groups into AWS accounts and then relying on Sentinel to control how application teams add rules and attach those security groups to resources.
