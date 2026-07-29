@@ -179,7 +179,9 @@ The enforcement should not be introduced as one hard-mandatory policy covering e
 
 A policy using `tfconfig/v2` evaluates the full Terraform configuration. If an existing workspace contains a raw Lambda function or legacy security group rule, a hard-mandatory policy requiring all resources to use the new parent module can fail the workspace's next run even when the legacy resource is unrelated to the proposed change.
 
-Soft mandatory also does not guarantee a non-breaking rollout. A soft-mandatory failure still stops the run until a user with the required permission overrides it. Advisory enforcement is the appropriate first phase for discovery because it reports violations without blocking the run.
+Soft mandatory is not the desired enforcement state for this contract. A soft-mandatory failure allows an authorized user to override the result, while the intended policy decision is binary: if a deployment is required to use the paved road and it is outside the paved road, it is denied.
+
+Advisory enforcement is appropriate only for initial discovery because it reports violations without blocking runs. Migration should then be controlled through policy scope. A workspace or service cohort remains outside the full policy scope while its existing resources are migrated. Once that cohort is ready, the full policy is applied as hard mandatory with no bypass override.
 
 ### Policies that can be hard mandatory immediately
 
@@ -204,16 +206,15 @@ The following full-configuration policies are likely to identify existing legacy
 - reject every unmanaged security group attachment
 - reject every legacy module source or unsupported parent module version
 
-After inventory and impact analysis, these policies can move to soft mandatory for selected workspace or service cohorts. Soft-mandatory overrides should be time-bound, documented, and limited to named legacy workspaces. Once a cohort is migrated, the policies can become hard mandatory for that scope.
+After inventory and impact analysis, existing resources should be migrated by selected workspace or service cohort. Once a cohort is migrated, the full policies should be applied as hard mandatory for that scope. A deployment inside an enforced scope that is outside the paved road should be denied.
 
 The practical rollout is:
 
 1. Run the full-configuration policies as advisory to inventory violations.
 2. Make caller-chain and connectivity-module provenance policies hard mandatory immediately.
 3. Make no-new-legacy-resource policies hard mandatory using plan actions.
-4. Move full-configuration policies to soft mandatory by workspace or service cohort.
-5. Migrate existing resources and remove temporary overrides.
-6. Make the full paved-road contract hard mandatory after each cohort is clean.
+4. Migrate existing resources by workspace or service cohort.
+5. Apply the full paved-road contract as hard mandatory to each cohort after it is clean.
 
 The AFT-vended custom security group approach has the same migration concern. Existing resources would not already use the new security groups, attachments, or rule ownership model. It would also require temporary exceptions while old and new security group models coexist. Migration risk does not provide an advantage to the custom security group approach.
 
@@ -250,9 +251,9 @@ AFT and the cloud platform still need to enforce:
 - least-privilege Terraform execution roles
 - IAM permission boundaries or SCP controls where appropriate
 - restrictions on alternate deployment paths
-- detective controls for out-of-band changes[^1]
+- detective controls for out-of-band changes
 
-[^1]: The team is actively working on locking down alternate deployment paths and out-of-band changes as a parallel effort to the automation work.
+The team is actively working on all of these enforcement dependencies as a parallel effort to the automation work. This includes mandatory policy assignment, execution-role restrictions, IAM and SCP controls where appropriate, restrictions on alternate deployment paths, and detection of out-of-band changes.
 
 ## Recommendation
 
