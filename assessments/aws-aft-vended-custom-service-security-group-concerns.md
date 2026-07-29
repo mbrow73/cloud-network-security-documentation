@@ -30,7 +30,61 @@ The proposed flow is:
 4. The application team creates security group rule resources against that security group.
 5. Sentinel determines whether the rules are allowed and whether the security group can be attached to the resource.
 
-At first glance, this keeps application resource deployment flexible while centralizing firewall policy enforcement in Sentinel. The concern is that Sentinel would need to reconstruct and validate the architecture from Terraform plan data instead of enforcing a simple paved road contract.
+This keeps application resource deployment flexible while centralizing firewall policy enforcement in Sentinel. The concern is that Sentinel would need to reconstruct and validate the architecture from Terraform plan data instead of enforcing a simple paved road contract.
+
+## Potential Advantages of the Custom Security Group Approach
+
+There are valid arguments in favor of the AFT-vended custom security group approach.
+
+### Application teams retain BYOM flexibility
+
+Application teams can continue using their own modules and can expose the AWS provider features they need without waiting for a centrally maintained parent module to support every service option.
+
+This may be valuable for teams with advanced use cases or for AWS services whose Terraform resource schemas change frequently.
+
+### Fewer centrally maintained service wrappers may be required
+
+A full paved-road model can create a large parent module estate. Each parent module may require:
+
+- ongoing AWS provider compatibility work
+- feature additions as service capabilities change
+- version and release management
+- documentation and examples
+- migration support for consuming teams
+
+If the organization did not already maintain these parent modules, this could be a significant implementation and ownership commitment.
+
+### Connectivity policy can be centralized independently of application modules
+
+The custom security group approach allows the firewall rule policy to be updated in Sentinel without requiring each application parent module to release a new version.
+
+This can reduce coupling between connectivity-policy changes and application-module release schedules.
+
+### AFT can establish a consistent account-level starting point
+
+Vending the empty security groups through AFT can provide a predictable security group in every applicable account from the beginning of the account lifecycle.
+
+This could make the expected security group easier to discover and could give the cloud platform a consistent inventory of centrally created security groups.
+
+### Adoption may require fewer immediate application changes
+
+Teams may be able to keep their existing application modules and add references to the vended security groups instead of migrating the full application resource into a new parent module.
+
+That could reduce initial module migration work, especially where application teams already have mature BYOM implementations.
+
+### The ownership boundary may appear simpler
+
+The proposed model creates a straightforward ownership split on paper:
+
+- AFT creates the empty security group
+- the application team owns its service resource and requested rules
+- Sentinel owns policy enforcement
+
+This separation can be attractive if the goal is to avoid central ownership of application-resource implementation.
+
+These benefits are real and should be considered. The remaining concern is whether they reduce total operational complexity or move that complexity into Sentinel catalogs, plan parsing, attachment validation, and cross-workspace state management.
+
+In this environment, centrally maintained parent service modules already exist today. The paved-road proposal therefore extends an existing operating model rather than requiring an entirely new parent module estate. The custom security group approach would still need service-specific Sentinel logic for each supported resource and attachment pattern.
 
 ## Concerns
 
