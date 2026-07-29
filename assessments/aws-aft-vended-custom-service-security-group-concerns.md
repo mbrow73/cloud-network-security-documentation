@@ -168,6 +168,38 @@ Adding support for Lambda, EC2, ECS, EKS, RDS, load balancers, and other service
 
 This turns Sentinel policy into a growing AWS resource parser instead of a focused guardrail.
 
+### End-to-end Palo Alto registration needs an explicit design
+
+Cloud security group automation may be only one part of the required connectivity path.
+
+Network Security also operates a continuous registration engine that receives API requests from a Terraform provider, action, or similar integration and registers source IPs with the Palo Alto firewalls for approved destinations.
+
+Based on my current understanding, it is not yet clear how the custom security group and BYOM approach would integrate with this requirement.
+
+Under a BYOM model, each application team may need to:
+
+- know that continuous registration is required
+- add the required provider, module, or pipeline action
+- authenticate to the registration engine
+- submit the correct resource identity and destinations
+- sequence registration with resource deployment
+- update or remove registrations when the resource changes
+
+If any step is missing, the cloud resource and security group deployment may succeed while end-to-end access through the Palo Alto firewalls still fails.
+
+There is also a trust concern. An application-controlled module should not be able to register arbitrary IP addresses and destinations simply because it can call the provider. The registration path would need to validate resource ownership, account or project scope, environment, destination authorization, and registration lifecycle. Sentinel could prevent direct registration resources in governed Terraform pipelines, but the registration API would still need independent authentication and authorization.
+
+The main counterargument is that most current AWS GA services are deployed in non-routable subnets. In those paths, the Palo Alto firewalls may see the NAT gateway IP rather than an individual workload IP. The required NAT identities may be registered once during account deployment instead of requiring per-resource registration.
+
+That reduces the registration problem for those AWS paths, but it does not eliminate it for:
+
+- AWS resources deployed in general routable subnets
+- future AWS service placement changes
+- GCP environments where workload addresses are generally routable
+- flows that require workload-level source identity instead of a shared NAT identity
+
+A paved-road parent module can integrate the cloud security group and registration requirements as one developer-facing operation. It can pass the same approved connectivity intent and resource identity to the registration integration without requiring each application team to assemble the end-to-end workflow independently.
+
 ### Troubleshooting would be harder for developers
 
 A failed Sentinel policy would likely report that a security group ID, rule resource, or attachment relationship did not match a central catalog.

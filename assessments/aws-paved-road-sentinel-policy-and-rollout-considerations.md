@@ -77,6 +77,56 @@ The `tfconfig/v2` module call data includes:
 
 The resource data includes the module address where each resource was declared. This allows Sentinel to validate the approved caller chain without maintaining an account, environment, and security group ID catalog.
 
+## Continuous Registration Engine Enforcement
+
+Some connectivity paths also require Network Security's continuous registration engine to register source IPs with the Palo Alto firewalls for approved destinations.
+
+Where per-resource registration is required, the approved parent module should integrate registration as part of the same service deployment contract:
+
+- the parent creates the service resource
+- the nested connectivity module validates the destination and port
+- the parent attaches the governed and baseline security groups
+- the parent invokes the approved registration integration using the same resource identity and connectivity intent
+
+Sentinel should:
+
+- allow registration resources only beneath an approved service parent module
+- reject direct root-level calls to the registration provider or module
+- require approved registration module or provider versions
+- require the registration resource to share the approved parent ancestry with the service and connectivity resources
+- prevent a second independently supplied destination list from bypassing the connectivity intent already approved by the nested module
+- fail closed when registration provenance cannot be established
+
+For example, Sentinel can allow:
+
+```text
+module.lambda.module.registration.netsec_registration.this
+```
+
+It can reject:
+
+```text
+netsec_registration.this
+```
+
+Sentinel ancestry enforcement protects the governed Terraform pipeline. It does not prove that a registration request is legitimate when the API is called directly through another pipeline, script, or stolen credential.
+
+The registration API should independently:
+
+- authenticate the calling workload or workspace
+- limit the caller to its assigned AWS accounts or GCP projects
+- validate that the resource exists and belongs to the caller's scope
+- derive or verify the current IP addresses from authoritative cloud APIs
+- validate the destination against approved connectivity intent
+- maintain an audit trail
+- expire or remove stale registrations
+
+Terraform is suitable for declaring the resource identity and connectivity intent. The continuous registration engine should reconcile live IP changes after the Terraform run, including ENI replacement, scaling, failover, and resource deletion.
+
+For AWS services in non-routable subnets, AFT may be able to register the account's NAT gateway identities during account deployment. Per-resource registration may not be required when the Palo Alto firewalls see only those NAT identities.
+
+That account-level model should not be assumed for general routable AWS subnets, future placement changes, or GCP environments where workload addresses are routed to the inspection path.
+
 ## Policy Rollout and Migration
 
 The enforcement should not be introduced as one hard-mandatory policy covering every existing service resource, security group rule, and attachment on day one.
@@ -95,6 +145,8 @@ The following policies can be hard mandatory when the new module ecosystem is in
 - require the connectivity module to be called from beneath an approved service parent module source
 - require approved parent and connectivity module versions
 - require security group resources created by the connectivity module to have the complete approved parent and nested module ancestry
+- reject direct calls to the continuous registration provider or module where per-resource registration is required
+- require registration resources to share the approved parent ancestry and connectivity intent
 - fail closed when a run attempts to use the connectivity module but its caller provenance cannot be established
 
 These policies do not require existing workspaces to already use the paved road. They prevent the new connectivity module from being consumed incorrectly from the beginning.
