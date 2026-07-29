@@ -173,6 +173,50 @@ module.connectivity.aws_vpc_security_group_egress_rule.this
 
 Sentinel can make these decisions from Terraform configuration and plan metadata. The module call data includes the declaring module address, source, and version constraint. The resource data includes the module address where each resource was declared. This allows Sentinel to validate the approved caller chain without maintaining an account, environment, and security group ID catalog.
 
+## Sentinel Policy Rollout and Migration
+
+The enforcement should not be introduced as one hard-mandatory policy covering every existing service resource, security group rule, and attachment on day one.
+
+A policy using `tfconfig/v2` evaluates the full Terraform configuration. If an existing workspace contains a raw Lambda function or legacy security group rule, a hard-mandatory policy requiring all resources to use the new parent module can fail the workspace's next run even when the legacy resource is unrelated to the proposed change.
+
+Soft mandatory also does not guarantee a non-breaking rollout. A soft-mandatory failure still stops the run until a user with the required permission overrides it. Advisory enforcement is the appropriate first phase for discovery because it reports violations without blocking the run.
+
+### Policies that can be hard mandatory immediately
+
+The following policies can be hard mandatory when the new module ecosystem is introduced because they apply only when someone attempts to use the new approved module sources:
+
+- reject any direct developer call to the centrally managed connectivity module
+- require the connectivity module to be called from beneath an approved service parent module source
+- require approved parent and connectivity module versions
+- require security group resources created by the connectivity module to have the complete approved parent and nested module ancestry
+- fail closed when a run attempts to use the connectivity module but its caller provenance cannot be established
+
+These policies do not require existing workspaces to already use the paved road. They prevent the new connectivity module from being consumed incorrectly from the beginning.
+
+A separate hard-mandatory policy can also prevent the creation of new raw service resources, security group rules, and unmanaged attachments by evaluating resource creation actions in `tfplan/v2`. This can stop new legacy patterns without immediately rejecting every unchanged legacy resource already present in configuration.
+
+### Policies that require a staged rollout
+
+The following full-configuration policies are likely to identify existing legacy resources and should begin as advisory:
+
+- require every supported service resource to exist beneath its approved service parent module
+- reject every raw security group rule outside the approved parent and connectivity module chain
+- reject every unmanaged security group attachment
+- reject every legacy module source or unsupported parent module version
+
+After inventory and impact analysis, these policies can move to soft mandatory for selected workspace or service cohorts. Soft-mandatory overrides should be time-bound, documented, and limited to named legacy workspaces. Once a cohort is migrated, the policies can become hard mandatory for that scope.
+
+The practical rollout is:
+
+1. Run the full-configuration policies as advisory to inventory violations.
+2. Make caller-chain and connectivity-module provenance policies hard mandatory immediately.
+3. Make no-new-legacy-resource policies hard mandatory using plan actions.
+4. Move full-configuration policies to soft mandatory by workspace or service cohort.
+5. Migrate existing resources and remove temporary overrides.
+6. Make the full paved-road contract hard mandatory after each cohort is clean.
+
+The AFT-vended custom security group approach has the same migration concern. Existing resources would not already use the new security groups, attachments, or rule ownership model. It would also require temporary exceptions while old and new security group models coexist. Migration risk does not provide an advantage to the custom security group approach.
+
 ## Example Comparison
 
 With the custom security group approach, Sentinel must answer:
