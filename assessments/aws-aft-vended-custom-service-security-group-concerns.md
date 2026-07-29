@@ -139,20 +139,39 @@ The parent module:
 
 - establishes that the resource is a Lambda function
 - derives or receives trusted account and environment context
-- passes the connectivity request to the nested policy module
-- validates the destination and port
-- creates or selects the correct security group
-- attaches that security group to the Lambda function
+- calls the centrally managed connectivity module as a nested module
+- passes the connectivity request and hard-coded service identity to the nested connectivity module
+- relies on the nested connectivity module to validate the destination and port
+- relies on the nested connectivity module to create the governed security group and rules
+- receives the security group ID as an output from the nested connectivity module
+- attaches that output security group to the Lambda function
 
 The resource identity, connectivity decision, security group, and attachment remain in the same Terraform graph.
 
 Sentinel then has a smaller and clearer responsibility:
 
-- require the approved service module and an approved version
+- require the root module call to use an approved service parent module source and version
+- verify that the centrally managed connectivity module is called from beneath an approved service parent module
+- reject direct developer calls to the connectivity module
+- allow governed security group rules only when their Terraform module address is beneath the approved parent and nested connectivity module chain
 - reject raw service resources where the paved road is mandatory
-- reject raw security group rules outside approved modules
+- reject raw security group rules outside the approved module chain
 - reject unmanaged security group attachments
-- fail closed when approved module provenance cannot be established
+- fail closed when the full parent and nested module provenance cannot be established
+
+For example, Sentinel can allow a security group rule with module ancestry similar to:
+
+```text
+module.lambda.module.connectivity.aws_vpc_security_group_egress_rule.this
+```
+
+It can reject a direct developer call with ancestry similar to:
+
+```text
+module.connectivity.aws_vpc_security_group_egress_rule.this
+```
+
+Sentinel can make these decisions from Terraform configuration and plan metadata. The module call data includes the declaring module address, source, and version constraint. The resource data includes the module address where each resource was declared. This allows Sentinel to validate the approved caller chain without maintaining an account, environment, and security group ID catalog.
 
 ## Example Comparison
 
@@ -168,11 +187,12 @@ With the custom security group approach, Sentinel must answer:
 
 With the paved road module, the module already knows the resource type, context, policy, security group, and attachment. Sentinel only needs to answer:
 
-1. Did the developer use the approved module?
-2. Is the module version approved?
-3. Did the developer create any raw resource, rule, or attachment outside the module?
+1. Did the developer use an approved service parent module source and version?
+2. Did that approved parent call the approved connectivity module?
+3. Did the developer try to call the connectivity module directly?
+4. Did the developer create any raw resource, rule, or attachment outside the approved module chain?
 
-The custom security group approach requires Sentinel to understand and validate the full design. The paved road approach builds the design correctly and uses Sentinel to detect bypass.
+The custom security group approach requires Sentinel to understand and validate the full design. The paved road approach builds the design correctly and uses Sentinel to prevent bypass through the governed Terraform configuration pipelines.
 
 ## Additional Enforcement Still Required
 
@@ -186,12 +206,14 @@ AFT and the cloud platform still need to enforce:
 - least-privilege Terraform execution roles
 - IAM permission boundaries or SCP controls where appropriate
 - restrictions on alternate deployment paths
-- detective controls for out-of-band changes
+- detective controls for out-of-band changes[^1]
+
+[^1]: The team is actively working on locking down alternate deployment paths and out-of-band changes as a parallel effort to the automation work.
 
 ## Recommendation
 
 Use full-featured developer-facing service modules that include the nested connectivity policy module and attach the governed security group as part of the same operation.
 
-Use Sentinel to verify that the paved road was used correctly and to detect raw resource, security group rule, and attachment bypasses.
+Use Sentinel to verify that the paved road was used correctly and to prevent raw resource, direct connectivity-module, security group rule, and attachment bypasses through the governed Terraform configuration pipelines.
 
 Do not make Sentinel responsible for maintaining application identity, environment-to-security-group mappings, attachment authorization, and firewall rule authorization at the same time. That would make Sentinel a second control plane that must remain synchronized with AFT, Terraform state, and AWS inventory.
