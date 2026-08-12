@@ -10,6 +10,8 @@ AWS workload -> EWP -> TGW -> EWP in egress VPC -> GWLBe -> inspection -> GWLBe 
 
 The firewall policy intent is **not** to be a blind `EWP -> any 443` IPS-only path. The EWP/firewall egress rule should allow web egress, while the attached URL Filtering profile applies category-based guardrails and logs URL decisions.
 
+The targeted App-ID deny controls placed above this rule are documented in [AWS GWLB Egress Core - App-ID Deny Policy](aws-gwlb-egress-app-id-deny-policy.md).
+
 ## Panorama Inputs
 
 ```text
