@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PAN-OS Shared Egress VR — Prod Direct and Nonprod COLO Hairpin</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --fg: #172033;
+      --muted: #5b6475;
+      --zone: #cbd5e1;
+      --input: #dbeafe;
+      --input-border: #2563eb;
+      --process: #e0e7ff;
+      --process-border: #4f46e5;
+      --storage: #ccfbf1;
+      --storage-border: #0f766e;
+      --external: #fef3c7;
+      --external-border: #b45309;
+      --hybrid: #f3e8ff;
+      --hybrid-border: #7c3aed;
+      --risk: #fee2e2;
+      --risk-border: #dc2626;
+      --common: #2563eb;
+      --prod: #0f766e;
+      --nonprod: #7c3aed;
+      --return: #d97706;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 2400px; height: 1350px; overflow: hidden; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main, svg { width: 2400px; height: 1350px; display: block; }
+    .title { font-size: 38px; font-weight: 760; fill: var(--fg); }
+    .subtitle { font-size: 18px; fill: var(--muted); }
+    .zone-title { font-size: 18px; font-weight: 760; fill: var(--fg); letter-spacing: .25px; }
+    .label { font-size: 18px; font-weight: 730; fill: var(--fg); }
+    .body { font-size: 15px; fill: var(--fg); }
+    .small { font-size: 13px; fill: var(--muted); }
+    .edge-label { font-size: 14px; font-weight: 700; fill: var(--fg); }
+    .node { stroke-width: 2; rx: 14; }
+    .input { fill: var(--input); stroke: var(--input-border); }
+    .process { fill: var(--process); stroke: var(--process-border); }
+    .storage { fill: var(--storage); stroke: var(--storage-border); }
+    .external { fill: var(--external); stroke: var(--external-border); }
+    .hybrid { fill: var(--hybrid); stroke: var(--hybrid-border); }
+    .risk { fill: var(--risk); stroke: var(--risk-border); }
+    .zone { fill: none; stroke: var(--zone); stroke-width: 2; stroke-dasharray: 9 7; rx: 18; }
+    .lane-prod { fill: #ecfdf5; stroke: #99f6e4; stroke-width: 2; rx: 18; }
+    .lane-nonprod { fill: #faf5ff; stroke: #d8b4fe; stroke-width: 2; rx: 18; }
+    .common { fill: none; stroke: var(--common); stroke-width: 3.4; marker-end: url(#arrow-common); }
+    .common-thin { fill: none; stroke: var(--common); stroke-width: 2.8; marker-end: url(#arrow-common); }
+    .prod-path { fill: none; stroke: var(--prod); stroke-width: 3.6; marker-end: url(#arrow-prod); }
+    .nonprod-path { fill: none; stroke: var(--nonprod); stroke-width: 3.6; marker-end: url(#arrow-nonprod); }
+    .return-path { fill: none; stroke: var(--return); stroke-width: 3.2; stroke-dasharray: 11 8; marker-end: url(#arrow-return); }
+    .divider { stroke: #cbd5e1; stroke-width: 1.5; }
+    .chip-ok { fill: #dcfce7; stroke: #16a34a; stroke-width: 1.5; rx: 15; }
+    .chip-risk { fill: var(--risk); stroke: var(--risk-border); stroke-width: 1.5; rx: 15; }
+  </style>
+</head>
+<body>
+<main>
+<svg viewBox="0 0 2400 1350" role="img" aria-labelledby="diagram-title diagram-desc">
+  <title id="diagram-title">PAN-OS Shared Egress VR with Prod Direct and Nonprod COLO Hairpin Paths</title>
+  <desc id="diagram-desc">Gateway Load Balancer traffic crosses a tenant virtual router into a shared egress virtual router. Production RDS traffic uses the production transit gateway directly. Nonproduction RDS traffic traverses the production transit gateway, Equinix colocation firewalls, TRCmid2 firewalls, an IPsec VPN, and the separate nonproduction transit gateway because the transit gateways are not peered.</desc>
+
+  <defs>
+    <marker id="arrow-common" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2563eb" />
+    </marker>
+    <marker id="arrow-prod" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0f766e" />
+    </marker>
+    <marker id="arrow-nonprod" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#7c3aed" />
+    </marker>
+    <marker id="arrow-return" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#d97706" />
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="2400" height="1350" fill="#f8fafc" />
+  <text x="55" y="58" class="title">PAN-OS Shared Egress VR — PROD Direct / NONPROD COLO Hairpin</text>
+  <text x="57" y="91" class="subtitle">The firewall path is shared through e1/3; routing diverges after the inspection VPC because the PROD and NONPROD TGWs are not peered.</text>
+  <rect x="2010" y="38" width="330" height="42" class="chip-ok" />
+  <text x="2175" y="65" class="body" text-anchor="middle" font-weight="700">PAN-OS 11.1.4-h15 • shared EGRESS VR</text>
+
+  <!-- Zones and routing lanes -->
+  <rect x="38" y="132" width="420" height="870" class="zone" />
+  <text x="62" y="166" class="zone-title">WORKLOAD / SPOKE VPC</text>
+
+  <rect x="480" y="132" width="930" height="870" class="zone" />
+  <text x="504" y="166" class="zone-title">CENTRAL INSPECTION ACCOUNT — VM-SERIES</text>
+
+  <rect x="1435" y="132" width="245" height="870" class="zone" />
+  <text x="1458" y="166" class="zone-title">EGRESS SUBNET</text>
+
+  <rect x="1705" y="185" width="650" height="380" class="lane-prod" />
+  <text x="1732" y="220" class="zone-title" fill="#0f766e">PROD — DIRECT AWS PATH</text>
+
+  <rect x="1705" y="600" width="650" height="618" class="lane-nonprod" />
+  <text x="1732" y="636" class="zone-title" fill="#7c3aed">NONPROD — COLO HAIRPIN</text>
+  <rect x="2050" y="613" width="272" height="38" class="chip-risk" />
+  <text x="2186" y="638" class="body" text-anchor="middle" font-weight="750">TGWs NOT PEERED — HAIRPIN</text>
+
+  <!-- Connectors drawn before nodes. -->
+  <!-- Common GWLB ingress -->
+  <path d="M220 300 H278" class="common" />
+  <path d="M430 300 H515" class="common" />
+  <path d="M675 300 H735" class="common" />
+
+  <!-- Plugin to tenant VRs -->
+  <path d="M905 300 H935 V246 H970" class="common-thin" />
+  <path d="M935 300 V426 H970" class="common-thin" />
+  <path d="M935 300 V606 H970" class="common-thin" />
+
+  <!-- Tenant VRs to shared EGRESS VR -->
+  <path d="M1150 246 H1172 V428 H1205" class="common-thin" />
+  <path d="M1150 426 H1205" class="common-thin" />
+  <path d="M1150 606 H1172 V548 H1205" class="common-thin" />
+
+  <!-- Shared native egress -->
+  <path d="M1385 448 H1418 V302 H1470" class="common" />
+  <path d="M1510 382 V505" class="common" />
+  <path d="M1635 565 H1735 V414 H1770" class="common" />
+
+  <!-- PROD direct branch -->
+  <path d="M1940 414 H2050 V335 H2160" class="prod-path" />
+
+  <!-- NONPROD branch from PROD TGW through hybrid network -->
+  <path d="M1810 480 V690" class="nonprod-path" />
+  <path d="M1900 750 H1950" class="nonprod-path" />
+  <path d="M2120 750 H2160" class="nonprod-path" />
+  <path d="M2220 795 V875" class="nonprod-path" />
+  <path d="M2220 995 V1060" class="nonprod-path" />
+
+  <!-- PROD return -->
+  <path d="M2160 385 H2078 V458 H1940" class="return-path" />
+
+  <!-- NONPROD return reverses the entire hairpin -->
+  <path d="M2290 1060 V995" class="return-path" />
+  <path d="M2290 875 V815 H2250 V795" class="return-path" />
+  <path d="M2160 780 H2120" class="return-path" />
+  <path d="M1950 780 H1900" class="return-path" />
+  <path d="M1860 690 V500 H1900 V480" class="return-path" />
+
+  <!-- Shared return to the same firewall / NAT session -->
+  <path d="M1770 458 H1710 V610 H1635" class="return-path" />
+  <path d="M1595 505 V382" class="return-path" />
+  <path d="M1470 352 H1432 V720 H1295 V598" class="return-path" />
+  <path d="M1205 598 H1160 V930 H820 V382" class="return-path" />
+  <path d="M735 350 H675" class="return-path" />
+  <path d="M515 350 H430" class="return-path" />
+  <path d="M278 350 H220" class="return-path" />
+
+  <!-- Common nodes -->
+  <rect x="70" y="255" width="150" height="100" class="node input" />
+  <text x="145" y="288" class="label" text-anchor="middle">Application</text>
+  <text x="145" y="316" class="body" text-anchor="middle">Client IP</text>
+  <text x="145" y="340" class="small" text-anchor="middle">connects to DNAT VIP</text>
+
+  <rect x="278" y="255" width="152" height="100" class="node process" />
+  <text x="354" y="288" class="label" text-anchor="middle">GWLBe</text>
+  <text x="354" y="316" class="body" text-anchor="middle">Spoke endpoint</text>
+  <text x="354" y="340" class="small" text-anchor="middle">tuple unchanged</text>
+
+  <rect x="515" y="255" width="160" height="100" class="node external" />
+  <text x="595" y="288" class="label" text-anchor="middle">GWLB</text>
+  <text x="595" y="316" class="body" text-anchor="middle">GENEVE flow</text>
+  <text x="595" y="340" class="small" text-anchor="middle">tuple + Flow Cookie</text>
+
+  <rect x="735" y="230" width="170" height="152" class="node process" />
+  <text x="820" y="267" class="label" text-anchor="middle">Overlay Plugin</text>
+  <line x1="760" y1="286" x2="880" y2="286" class="divider" />
+  <text x="820" y="315" class="body" text-anchor="middle">e1/1.x mapping</text>
+  <text x="820" y="340" class="small" text-anchor="middle">saves GENEVE metadata</text>
+  <text x="820" y="360" class="small" text-anchor="middle">with the firewall session</text>
+
+  <!-- Tenant VRs -->
+  <rect x="970" y="196" width="180" height="100" class="node input" />
+  <text x="1060" y="230" class="label" text-anchor="middle">TEST VR</text>
+  <text x="1060" y="256" class="body" text-anchor="middle">e1/1.1</text>
+  <text x="1060" y="280" class="small" text-anchor="middle">RDS CIDRs → Next VR</text>
+
+  <rect x="970" y="376" width="180" height="100" class="node input" />
+  <text x="1060" y="410" class="label" text-anchor="middle">DEV VR</text>
+  <text x="1060" y="436" class="body" text-anchor="middle">e1/1.2</text>
+  <text x="1060" y="460" class="small" text-anchor="middle">RDS CIDRs → Next VR</text>
+
+  <rect x="970" y="556" width="180" height="100" class="node input" />
+  <text x="1060" y="590" class="label" text-anchor="middle">PROD VR</text>
+  <text x="1060" y="616" class="body" text-anchor="middle">e1/1.3</text>
+  <text x="1060" y="640" class="small" text-anchor="middle">RDS CIDRs → Next VR</text>
+
+  <rect x="1205" y="342" width="180" height="256" class="node process" />
+  <text x="1295" y="380" class="label" text-anchor="middle">EGRESS VR</text>
+  <line x1="1230" y1="398" x2="1360" y2="398" class="divider" />
+  <text x="1295" y="430" class="body" text-anchor="middle">Owns ethernet1/3</text>
+  <text x="1295" y="462" class="body" text-anchor="middle">All RDS CIDRs</text>
+  <text x="1295" y="486" class="small" text-anchor="middle">interface e1/3</text>
+  <text x="1295" y="507" class="small" text-anchor="middle">next hop subnet .1</text>
+  <rect x="1230" y="535" width="130" height="36" class="chip-ok" />
+  <text x="1295" y="559" class="small" text-anchor="middle" font-weight="700">one inter-VR hop</text>
+
+  <!-- Egress subnet nodes -->
+  <rect x="1470" y="282" width="165" height="100" class="node process" />
+  <text x="1552" y="315" class="label" text-anchor="middle">e1/3 ENI</text>
+  <text x="1552" y="342" class="body" text-anchor="middle">DIPP SNAT IP</text>
+  <text x="1552" y="366" class="small" text-anchor="middle">unique per firewall</text>
+
+  <rect x="1470" y="505" width="165" height="120" class="node external" />
+  <text x="1552" y="540" class="label" text-anchor="middle">VPC Router</text>
+  <text x="1552" y="568" class="body" text-anchor="middle">subnet .1</text>
+  <text x="1552" y="594" class="small" text-anchor="middle">RDS CIDRs → PROD TGW</text>
+
+  <!-- PROD lane nodes -->
+  <rect x="1770" y="348" width="170" height="132" class="node external" />
+  <text x="1855" y="383" class="label" text-anchor="middle">PROD TGW</text>
+  <line x1="1794" y1="401" x2="1916" y2="401" class="divider" />
+  <text x="1855" y="430" class="small" text-anchor="middle">PROD CIDRs → AWS VPCs</text>
+  <text x="1855" y="453" class="small" text-anchor="middle">NONPROD CIDRs → COLO</text>
+
+  <rect x="2160" y="255" width="170" height="165" class="node storage" />
+  <text x="2245" y="292" class="label" text-anchor="middle">PROD RDS</text>
+  <text x="2245" y="320" class="body" text-anchor="middle">cluster endpoint</text>
+  <line x1="2184" y1="340" x2="2306" y2="340" class="divider" />
+  <text x="2245" y="370" class="small" text-anchor="middle">direct via PROD TGW</text>
+  <text x="2245" y="393" class="small" text-anchor="middle">no COLO hairpin</text>
+
+  <!-- NONPROD hairpin nodes -->
+  <rect x="1725" y="690" width="175" height="120" class="node hybrid" />
+  <text x="1812" y="728" class="label" text-anchor="middle">Equinix COLO</text>
+  <text x="1812" y="756" class="body" text-anchor="middle">firewalls</text>
+  <text x="1812" y="782" class="small" text-anchor="middle">hybrid transit path</text>
+
+  <rect x="1950" y="690" width="170" height="120" class="node hybrid" />
+  <text x="2035" y="728" class="label" text-anchor="middle">TRCmid2</text>
+  <text x="2035" y="756" class="body" text-anchor="middle">firewalls</text>
+  <text x="2035" y="782" class="small" text-anchor="middle">policy / transit</text>
+
+  <rect x="2160" y="705" width="120" height="90" class="node external" />
+  <text x="2220" y="739" class="label" text-anchor="middle">IPsec VPN</text>
+  <text x="2220" y="768" class="small" text-anchor="middle">back into AWS</text>
+
+  <rect x="2135" y="875" width="170" height="120" class="node external" />
+  <text x="2220" y="912" class="label" text-anchor="middle">NONPROD TGW</text>
+  <text x="2220" y="940" class="body" text-anchor="middle">separate TGW</text>
+  <text x="2220" y="966" class="small" text-anchor="middle">NONPROD VPC routes</text>
+
+  <rect x="2135" y="1060" width="170" height="130" class="node storage" />
+  <text x="2220" y="1098" class="label" text-anchor="middle">NONPROD RDS</text>
+  <text x="2220" y="1126" class="body" text-anchor="middle">cluster endpoints</text>
+  <text x="2220" y="1154" class="small" text-anchor="middle">reached after VPN/TGW</text>
+
+  <!-- NAT/session card -->
+  <rect x="650" y="760" width="710" height="152" class="node process" />
+  <text x="682" y="798" class="label">Same stateful NAT behavior for both branches</text>
+  <line x1="1002" y1="815" x2="1002" y2="884" class="divider" />
+  <text x="682" y="838" class="body" font-weight="700">Forward</text>
+  <text x="682" y="863" class="small">DNAT VIP → environment-specific RDS FQDN</text>
+  <text x="682" y="886" class="small">DIPP SNAT client → this firewall's e1/3 IP</text>
+  <text x="1030" y="838" class="body" font-weight="700">Return</text>
+  <text x="1030" y="863" class="small">Must return to the exact e1/3 SNAT IP</text>
+  <text x="1030" y="886" class="small">Reverse NAT + saved GWLB Flow Cookie</text>
+
+  <!-- Route labels -->
+  <text x="1172" y="390" class="edge-label" text-anchor="middle">Next VR</text>
+  <text x="1420" y="266" class="edge-label" text-anchor="middle">native egress</text>
+  <text x="2020" y="300" class="edge-label" text-anchor="middle" fill="#0f766e">PROD CIDRs: direct</text>
+  <text x="1840" y="596" class="edge-label" text-anchor="middle" fill="#7c3aed">NONPROD CIDRs: route back to COLO</text>
+  <text x="2080" y="676" class="edge-label" text-anchor="middle" fill="#7c3aed">firewalls → VPN → NONPROD TGW</text>
+
+  <!-- Footer legend / callout -->
+  <line x1="58" y1="1284" x2="130" y2="1284" class="common" />
+  <text x="146" y="1290" class="body">Common inspected path</text>
+  <line x1="370" y1="1284" x2="442" y2="1284" class="prod-path" />
+  <text x="458" y="1290" class="body">PROD direct</text>
+  <line x1="650" y1="1284" x2="722" y2="1284" class="nonprod-path" />
+  <text x="738" y="1290" class="body">NONPROD hairpin</text>
+  <line x1="990" y1="1284" x2="1062" y2="1284" class="return-path" />
+  <text x="1078" y="1290" class="body">Return path</text>
+  <text x="1360" y="1290" class="small">The network path diverges after e1/3; both replies still have to land on the same firewall SNAT session.</text>
+</svg>
+</main>
+</body>
+</html>
