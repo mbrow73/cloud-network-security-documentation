@@ -272,3 +272,5 @@ Use full-featured developer-facing service modules that include the nested conne
 Use Sentinel to verify that the paved road was used correctly and to prevent raw resource, direct connectivity-module, security group rule, and attachment bypasses through the governed Terraform configuration pipelines.
 
 Do not make Sentinel responsible for maintaining application identity, environment-to-security-group mappings, attachment authorization, and firewall rule authorization at the same time. That would make Sentinel a second control plane that must remain synchronized with AFT, Terraform state, and AWS inventory.
+
+Based on my current understanding and the operating model already in place, I have high confidence that the paved-road parent module approach is the better option and recommend it over the AFT-vended custom security group approach unless missing prior context materially changes the requirements.
