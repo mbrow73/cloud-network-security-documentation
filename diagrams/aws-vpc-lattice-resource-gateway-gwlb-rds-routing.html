@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VPC Lattice Resource Gateway to GWLB to RDS — Subnet Routing</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --fg: #172033;
+      --muted: #5b6475;
+      --line: #64748b;
+      --light-line: #cbd5e1;
+      --blue: #2563eb;
+      --blue-soft: #dbeafe;
+      --indigo: #4f46e5;
+      --indigo-soft: #e0e7ff;
+      --teal: #0f766e;
+      --teal-soft: #ccfbf1;
+      --amber: #b45309;
+      --amber-soft: #fef3c7;
+      --green: #15803d;
+      --green-soft: #dcfce7;
+      --red: #b91c1c;
+      --red-soft: #fee2e2;
+      --return: #d97706;
+      --white: #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 2600px; height: 1800px; overflow: hidden; }
+    body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    main, svg { width: 2600px; height: 1800px; display: block; }
+    .title { font-size: 39px; font-weight: 780; fill: var(--fg); }
+    .subtitle { font-size: 18px; fill: var(--muted); }
+    .zone-title { font-size: 18px; font-weight: 780; fill: var(--fg); letter-spacing: .2px; }
+    .lane-title { font-size: 16px; font-weight: 780; fill: var(--fg); }
+    .label { font-size: 19px; font-weight: 760; fill: var(--fg); }
+    .body { font-size: 15px; fill: var(--fg); }
+    .small { font-size: 13px; fill: var(--muted); }
+    .tiny { font-size: 12px; fill: var(--muted); }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 14px; fill: var(--fg); }
+    .mono-small { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; fill: var(--fg); }
+    .edge-label { font-size: 14px; font-weight: 740; fill: var(--fg); }
+    .node { stroke-width: 2; rx: 14; }
+    .input { fill: var(--blue-soft); stroke: var(--blue); }
+    .process { fill: var(--indigo-soft); stroke: var(--indigo); }
+    .storage { fill: var(--teal-soft); stroke: var(--teal); }
+    .external { fill: var(--amber-soft); stroke: var(--amber); }
+    .success { fill: var(--green-soft); stroke: var(--green); }
+    .risk { fill: var(--red-soft); stroke: var(--red); }
+    .muted-node { fill: #f1f5f9; stroke: #94a3b8; }
+    .zone-consumer { fill: #f8fbff; stroke: #93c5fd; stroke-width: 2.2; stroke-dasharray: 10 7; rx: 20; }
+    .zone-fabric { fill: #fffdf5; stroke: #fbbf24; stroke-width: 2.2; stroke-dasharray: 10 7; rx: 20; }
+    .zone-provider { fill: #f7fffd; stroke: #5eead4; stroke-width: 2.2; stroke-dasharray: 10 7; rx: 20; }
+    .zone-inspection { fill: #fafaff; stroke: #a5b4fc; stroke-width: 2.2; stroke-dasharray: 10 7; rx: 20; }
+    .az-lane { fill: #ffffff; stroke: #d6dee8; stroke-width: 1.6; rx: 16; }
+    .subnet { fill: #f8fafc; stroke: #94a3b8; stroke-width: 1.5; stroke-dasharray: 7 5; rx: 13; }
+    .forward { fill: none; stroke: var(--blue); stroke-width: 4; marker-end: url(#arrow-forward); }
+    .inspect { fill: none; stroke: var(--indigo); stroke-width: 4; marker-end: url(#arrow-inspect); }
+    .return { fill: none; stroke: var(--return); stroke-width: 3.4; stroke-dasharray: 12 8; marker-end: url(#arrow-return); }
+    .alternate { fill: none; stroke: #94a3b8; stroke-width: 2; stroke-dasharray: 7 6; marker-end: url(#arrow-muted); }
+    .association { fill: none; stroke: #94a3b8; stroke-width: 1.8; stroke-dasharray: 6 6; }
+    .divider { stroke: var(--light-line); stroke-width: 1.3; }
+    .chip { stroke-width: 1.5; rx: 18; }
+    .step { fill: var(--blue); }
+    .step-indigo { fill: var(--indigo); }
+    .step-orange { fill: var(--return); }
+    .step-text { font-size: 14px; font-weight: 800; fill: white; }
+    .route-card { fill: var(--white); stroke: #94a3b8; stroke-width: 1.6; rx: 14; }
+    .route-head-blue { fill: #eff6ff; }
+    .route-head-indigo { fill: #eef2ff; }
+    .route-head-teal { fill: #f0fdfa; }
+    .route-head-amber { fill: #fffbeb; }
+    .route-row { stroke: #e2e8f0; stroke-width: 1; }
+    .note-card { fill: #fff7ed; stroke: #fb923c; stroke-width: 1.6; rx: 12; }
+  </style>
+</head>
+<body>
+<main>
+<svg viewBox="0 0 2600 1800" role="img" aria-labelledby="diagram-title diagram-desc">
+  <title id="diagram-title">VPC Lattice Resource Gateway to Gateway Load Balancer inspection to Amazon RDS with subnet route tables</title>
+  <desc id="diagram-desc">A consumer account reaches a shared RDS resource through a resource endpoint or service network. VPC Lattice lands the connection on a Resource Gateway ENI in a dedicated provider subnet and source-NATs it. Each Resource Gateway subnet route table replaces its VPC-local route target and its IPv4 default route with the AZ-selected Gateway Load Balancer endpoint, forcing all routable Resource Gateway data-plane egress through inspection. Reciprocal destination-subnet routes preserve the same endpoint in both directions.</desc>
+
+  <defs>
+    <marker id="arrow-forward" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2563eb" />
+    </marker>
+    <marker id="arrow-inspect" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4f46e5" />
+    </marker>
+    <marker id="arrow-return" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#d97706" />
+    </marker>
+    <marker id="arrow-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#94a3b8" />
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="2600" height="1800" fill="#f8fafc" />
+  <text x="52" y="58" class="title">Resource Gateway → GWLBe / GWLB / Palo → Amazon RDS</text>
+  <text x="54" y="94" class="subtitle">All RGW-originated data is untrusted • replace VPC-local + default targets with GWLBe • generic placeholder CIDRs • symmetric return routing</text>
+  <rect x="1732" y="30" width="390" height="52" class="chip external" />
+  <text x="1927" y="62" class="body" text-anchor="middle" font-weight="780">GENERIC CIDRS — REPLACE BEFORE USE</text>
+  <rect x="2142" y="30" width="400" height="52" class="chip risk" />
+  <text x="2342" y="62" class="body" text-anchor="middle" font-weight="780">PROPOSED — LAB + AWS TAM VALIDATION</text>
+
+  <!-- Ownership zones -->
+  <rect x="40" y="140" width="600" height="760" class="zone-consumer" />
+  <text x="66" y="177" class="zone-title">CONSUMER ACCOUNT — VPC 10.1.0.0/16 (PLACEHOLDER)</text>
+  <text x="66" y="202" class="small">Account-B: client and one of three supported Lattice access methods</text>
+
+  <rect x="670" y="140" width="330" height="760" class="zone-fabric" />
+  <text x="696" y="177" class="zone-title">AWS-MANAGED FABRIC</text>
+  <text x="696" y="202" class="small">PrivateLink / VPC Lattice</text>
+
+  <rect x="1030" y="140" width="1520" height="760" class="zone-provider" />
+  <text x="1056" y="177" class="zone-title">RESOURCE PROVIDER / RDS ACCOUNT — VPC 10.2.0.0/16 (PLACEHOLDER)</text>
+  <text x="1056" y="202" class="small">Account-A: dedicated Resource Gateway, GWLBe, and RDS subnets in each AZ</text>
+
+  <rect x="1130" y="945" width="1330" height="260" class="zone-inspection" />
+  <text x="1156" y="982" class="zone-title">CENTRAL INSPECTION ACCOUNT — GWLB + PALO ALTO VM-SERIES</text>
+  <text x="1156" y="1007" class="small">GENEVE / UDP 6081 outside; original SNATed database tuple remains unchanged inside</text>
+
+  <!-- AZ lanes and subnet boundaries -->
+  <rect x="1060" y="220" width="1460" height="292" class="az-lane" />
+  <text x="1082" y="249" class="lane-title">AVAILABILITY ZONE A — active example flow</text>
+  <rect x="1090" y="270" width="390" height="204" class="subnet" />
+  <text x="1110" y="295" class="small">RGW subnet A • 10.2.1.0/24</text>
+  <rect x="1540" y="270" width="360" height="204" class="subnet" />
+  <text x="1560" y="295" class="small">GWLBe subnet A • 10.2.2.0/24</text>
+  <rect x="1960" y="270" width="520" height="204" class="subnet" />
+  <text x="1980" y="295" class="small">RDS subnet A • 10.2.3.0/24</text>
+
+  <rect x="1060" y="545" width="1460" height="292" class="az-lane" />
+  <text x="1082" y="574" class="lane-title">AVAILABILITY ZONE B — mirrored / failover-capable</text>
+  <rect x="1090" y="595" width="390" height="204" class="subnet" />
+  <text x="1110" y="620" class="small">RGW subnet B • 10.2.4.0/24</text>
+  <rect x="1540" y="595" width="360" height="204" class="subnet" />
+  <text x="1560" y="620" class="small">GWLBe subnet B • 10.2.5.0/24</text>
+  <rect x="1960" y="595" width="520" height="204" class="subnet" />
+  <text x="1980" y="620" class="small">RDS subnet B • 10.2.6.0/24</text>
+
+  <!-- Connectors are drawn before nodes. -->
+  <!-- Consumer main path -->
+  <path d="M260 350 H355" class="forward" />
+  <path d="M585 325 H700" class="forward" />
+  <path d="M970 360 H1130" class="forward" />
+
+  <!-- Alternative consumer access methods converge on the same fabric -->
+  <path d="M585 485 H655 V435 H700" class="alternate" />
+  <path d="M585 635 H655 V510 H700" class="alternate" />
+
+  <!-- Provider forward path: RGW ENI -> GWLBe -> RDS -->
+  <path d="M1440 356 H1580" class="forward" />
+  <path d="M1860 356 H2030" class="forward" />
+
+  <!-- GWLBe detour through centralized inspection -->
+  <path d="M1655 425 V505 H1510 V915 H1320 V1025" class="inspect" />
+  <path d="M1540 1080 H1670" class="inspect" />
+  <path d="M2020 1080 H2160" class="inspect" />
+  <path d="M2280 1025 V915 H1930 V505 H1800 V425" class="inspect" />
+
+  <!-- Symmetric return path on provider leg -->
+  <path d="M2030 416 H1860" class="return" />
+  <path d="M1580 416 H1440" class="return" />
+  <path d="M1130 425 H970" class="return" />
+  <path d="M700 545 H655 V390 H585" class="return" />
+  <path d="M355 390 H260" class="return" />
+
+  <!-- Mirrored AZ relationship -->
+  <path d="M1285 474 V595" class="association" />
+  <path d="M1720 474 V595" class="association" />
+  <path d="M2220 474 V595" class="association" />
+
+  <!-- Connector labels -->
+  <rect x="291" y="315" width="37" height="25" fill="#f8fafc" />
+  <text x="309" y="333" class="edge-label" text-anchor="middle">TCP</text>
+
+  <rect x="612" y="286" width="86" height="26" fill="#f8fafc" />
+  <text x="655" y="305" class="edge-label" text-anchor="middle">PrivateLink</text>
+
+  <rect x="995" y="320" width="130" height="27" fill="#f8fafc" />
+  <text x="1060" y="339" class="edge-label" text-anchor="middle">Lattice handoff</text>
+
+  <rect x="1450" y="321" width="122" height="25" fill="#f8fafc" />
+  <text x="1511" y="339" class="edge-label" text-anchor="middle">forced RGW egress</text>
+
+  <rect x="1871" y="321" width="148" height="25" fill="#f8fafc" />
+  <text x="1945" y="339" class="edge-label" text-anchor="middle">post-inspection local</text>
+
+  <rect x="1514" y="884" width="156" height="27" fill="#f8fafc" />
+  <text x="1592" y="903" class="edge-label" text-anchor="middle">GENEVE / UDP 6081</text>
+
+  <rect x="1855" y="884" width="156" height="27" fill="#f8fafc" />
+  <text x="1933" y="903" class="edge-label" text-anchor="middle">same zonal GWLBe</text>
+
+  <rect x="1735" y="446" width="216" height="28" fill="#ffffff" />
+  <text x="1843" y="466" class="edge-label" text-anchor="middle" fill="#d97706">return repeats inspection loop</text>
+
+  <!-- Consumer nodes -->
+  <rect x="70" y="240" width="220" height="220" class="subnet" />
+  <text x="90" y="267" class="small">App subnet • 10.1.1.0/24</text>
+  <rect x="100" y="300" width="160" height="110" class="node input" />
+  <circle cx="123" cy="323" r="17" class="step" />
+  <text x="123" y="328" class="step-text" text-anchor="middle">1</text>
+  <text x="180" y="340" class="label" text-anchor="middle">Client</text>
+  <text x="180" y="369" class="body" text-anchor="middle">database driver</text>
+  <text x="180" y="393" class="small" text-anchor="middle">connects to shared DNS</text>
+
+  <rect x="330" y="220" width="280" height="520" class="subnet" />
+  <text x="350" y="247" class="small">Supported consumer access choices</text>
+
+  <rect x="355" y="270" width="230" height="110" class="node input" />
+  <circle cx="378" cy="293" r="17" class="step" />
+  <text x="378" y="298" class="step-text" text-anchor="middle">2</text>
+  <text x="470" y="311" class="label" text-anchor="middle">Resource VPCE</text>
+  <text x="470" y="340" class="small" text-anchor="middle">main path shown</text>
+  <text x="470" y="363" class="mono-small" text-anchor="middle">ENI 10.1.2.x</text>
+
+  <rect x="355" y="435" width="230" height="100" class="node muted-node" />
+  <text x="470" y="473" class="body" text-anchor="middle" font-weight="740">Service-network VPCE</text>
+  <text x="470" y="501" class="small" text-anchor="middle">endpoint ENI alternative</text>
+
+  <rect x="355" y="570" width="230" height="130" class="node muted-node" />
+  <text x="470" y="608" class="body" text-anchor="middle" font-weight="740">Service-network association</text>
+  <text x="470" y="636" class="mono-small" text-anchor="middle">129.224.x.y / resource</text>
+  <text x="470" y="660" class="small" text-anchor="middle">AWS-managed consumer route</text>
+  <text x="470" y="682" class="tiny" text-anchor="middle">does not enter provider RTs</text>
+
+  <rect x="82" y="520" width="220" height="175" class="note-card" />
+  <text x="102" y="550" class="body" font-weight="780">Consumer boundary</text>
+  <text x="102" y="580" class="small">Access choice changes only</text>
+  <text x="102" y="603" class="small">how Account-B enters Lattice.</text>
+  <text x="102" y="634" class="small">All three converge on the same</text>
+  <text x="102" y="657" class="small">provider Resource Gateway leg.</text>
+
+  <!-- AWS-managed fabric -->
+  <rect x="700" y="275" width="270" height="300" class="node external" />
+  <circle cx="723" cy="298" r="17" class="step" />
+  <text x="723" y="303" class="step-text" text-anchor="middle">3</text>
+  <text x="835" y="321" class="label" text-anchor="middle">VPC Lattice</text>
+  <text x="835" y="353" class="body" text-anchor="middle">resource transport</text>
+  <line x1="732" y1="375" x2="938" y2="375" class="divider" />
+  <text x="835" y="405" class="small" text-anchor="middle">consumer endpoint / association</text>
+  <text x="835" y="429" class="small" text-anchor="middle">→ provider Resource Gateway</text>
+  <rect x="730" y="455" width="210" height="42" class="chip external" />
+  <text x="835" y="482" class="body" text-anchor="middle" font-weight="760">no customer route insertion</text>
+  <text x="835" y="529" class="small" text-anchor="middle">AWS-managed segment</text>
+  <text x="835" y="551" class="tiny" text-anchor="middle">original client IP not preserved</text>
+
+  <!-- Provider AZ A nodes -->
+  <rect x="1130" y="315" width="310" height="110" class="node process" />
+  <circle cx="1153" cy="338" r="17" class="step" />
+  <text x="1153" y="343" class="step-text" text-anchor="middle">4</text>
+  <text x="1285" y="346" class="label" text-anchor="middle">Resource Gateway ENI-A</text>
+  <text x="1285" y="377" class="mono-small" text-anchor="middle">10.2.1.x + SNAT pool</text>
+  <text x="1285" y="401" class="small" text-anchor="middle">all data-plane egress = untrusted</text>
+
+  <rect x="1580" y="315" width="280" height="110" class="node process" />
+  <circle cx="1603" cy="338" r="17" class="step-indigo" />
+  <text x="1603" y="343" class="step-text" text-anchor="middle">5</text>
+  <text x="1720" y="346" class="label" text-anchor="middle">GWLBe-A</text>
+  <text x="1720" y="377" class="body" text-anchor="middle">vpce-gwlb-A</text>
+  <text x="1720" y="401" class="small" text-anchor="middle">transparent inspection hop</text>
+
+  <rect x="2030" y="315" width="380" height="110" class="node storage" />
+  <circle cx="2053" cy="338" r="17" class="step" />
+  <text x="2053" y="343" class="step-text" text-anchor="middle">7</text>
+  <text x="2220" y="346" class="label" text-anchor="middle">Amazon RDS</text>
+  <text x="2220" y="377" class="mono-small" text-anchor="middle">10.2.3.x:5432</text>
+  <text x="2220" y="401" class="small" text-anchor="middle">sees Resource Gateway source IP</text>
+
+  <!-- Provider AZ B mirrored nodes -->
+  <rect x="1130" y="640" width="310" height="110" class="node muted-node" />
+  <text x="1285" y="675" class="label" text-anchor="middle">Resource Gateway ENI-B</text>
+  <text x="1285" y="706" class="mono-small" text-anchor="middle">10.2.4.x + SNAT pool</text>
+  <text x="1285" y="730" class="small" text-anchor="middle">all data-plane egress = untrusted</text>
+
+  <rect x="1580" y="640" width="280" height="110" class="node muted-node" />
+  <text x="1720" y="675" class="label" text-anchor="middle">GWLBe-B</text>
+  <text x="1720" y="706" class="body" text-anchor="middle">vpce-gwlb-B</text>
+  <text x="1720" y="730" class="small" text-anchor="middle">same-AZ RGW entry</text>
+
+  <rect x="2030" y="640" width="380" height="110" class="node muted-node" />
+  <text x="2220" y="675" class="label" text-anchor="middle">RDS failover subnet</text>
+  <text x="2220" y="706" class="mono-small" text-anchor="middle">10.2.6.0/24</text>
+  <text x="2220" y="730" class="small" text-anchor="middle">route matrix survives IP changes</text>
+
+  <rect x="1110" y="770" width="1380" height="46" class="chip success" />
+  <text x="1800" y="799" class="body" text-anchor="middle" font-weight="760">Palo sees one stable inner flow: RGW-IP:ephemeral → RDS-IP:5432 • transparent firewall • no Palo NAT</text>
+
+  <!-- Central inspection nodes -->
+  <rect x="1200" y="1025" width="340" height="110" class="node external" />
+  <circle cx="1223" cy="1048" r="17" class="step-indigo" />
+  <text x="1223" y="1053" class="step-text" text-anchor="middle">6</text>
+  <text x="1370" y="1058" class="label" text-anchor="middle">AWS GWLB</text>
+  <text x="1370" y="1089" class="body" text-anchor="middle">flow distribution</text>
+  <text x="1370" y="1113" class="small" text-anchor="middle">symmetric flow hashing</text>
+
+  <rect x="1670" y="1005" width="350" height="150" class="node process" />
+  <text x="1845" y="1042" class="label" text-anchor="middle">Palo Alto VM-Series</text>
+  <text x="1845" y="1074" class="body" text-anchor="middle">allow / deny / log / security profiles</text>
+  <line x1="1702" y1="1092" x2="1988" y2="1092" class="divider" />
+  <text x="1845" y="1120" class="small" text-anchor="middle">no DNAT • no SNAT • unchanged inner tuple</text>
+  <text x="1845" y="1142" class="tiny" text-anchor="middle">TLS payload visibility still requires decryption</text>
+
+  <rect x="2160" y="1025" width="240" height="110" class="node external" />
+  <text x="2280" y="1058" class="label" text-anchor="middle">AWS GWLB</text>
+  <text x="2280" y="1089" class="body" text-anchor="middle">return to GWLBe-A</text>
+  <text x="2280" y="1113" class="small" text-anchor="middle">same flow / appliance</text>
+
+  <!-- Route tables -->
+  <text x="42" y="1240" class="zone-title">ROUTE TABLES — example logic using the generic placeholder CIDRs above</text>
+
+  <!-- Consumer route card -->
+  <rect x="40" y="1260" width="500" height="410" class="route-card" />
+  <rect x="40" y="1260" width="500" height="58" rx="14" class="route-head-blue" />
+  <text x="66" y="1297" class="label">Consumer app subnet RT</text>
+  <text x="66" y="1342" class="small">DESTINATION</text>
+  <text x="326" y="1342" class="small">TARGET</text>
+  <line x1="60" y1="1354" x2="520" y2="1354" class="route-row" />
+  <text x="66" y="1382" class="mono">10.1.0.0/16</text>
+  <text x="326" y="1382" class="mono">local</text>
+  <line x1="60" y1="1398" x2="520" y2="1398" class="route-row" />
+  <text x="66" y="1426" class="mono">129.224.x.y/32</text>
+  <text x="326" y="1426" class="body">AWS-managed Lattice*</text>
+  <line x1="60" y1="1442" x2="520" y2="1442" class="route-row" />
+  <text x="66" y="1475" class="body" font-weight="760">Main path shown:</text>
+  <text x="66" y="1502" class="small">DNS resolves to Resource VPCE ENI;</text>
+  <text x="66" y="1525" class="small">the VPC-local route reaches that ENI.</text>
+  <text x="66" y="1564" class="body" font-weight="760">Association alternative:</text>
+  <text x="66" y="1591" class="small">*129.224/17 per-resource routes exist only</text>
+  <text x="66" y="1614" class="small">in Account-B and terminate at Lattice.</text>
+  <rect x="65" y="1630" width="450" height="28" class="chip external" />
+  <text x="290" y="1649" class="tiny" text-anchor="middle" font-weight="760">NOT THE PROVIDER-SIDE INSPECTION ROUTE</text>
+
+  <!-- Resource Gateway route card -->
+  <rect x="570" y="1260" width="720" height="410" class="route-card" />
+  <rect x="570" y="1260" width="720" height="58" rx="14" class="route-head-indigo" />
+  <text x="596" y="1297" class="label">Dedicated RGW subnet RTs — force all egress</text>
+  <text x="596" y="1342" class="body" font-weight="780">RT-RGW-A — associated to 10.2.1.0/24</text>
+  <text x="596" y="1372" class="mono-small">10.2.0.0/16  →  vpce-gwlb-A  (replaces local)</text>
+  <text x="596" y="1398" class="mono-small">0.0.0.0/0     →  vpce-gwlb-A</text>
+  <text x="596" y="1424" class="small">No more-specific data routes may bypass inspection.</text>
+  <line x1="596" y1="1442" x2="1264" y2="1442" class="route-row" />
+  <text x="596" y="1474" class="body" font-weight="780">RT-RGW-B — associated to 10.2.4.0/24</text>
+  <text x="596" y="1504" class="mono-small">10.2.0.0/16  →  vpce-gwlb-B  (replaces local)</text>
+  <text x="596" y="1530" class="mono-small">0.0.0.0/0     →  vpce-gwlb-B</text>
+  <text x="596" y="1556" class="small">No more-specific data routes may bypass inspection.</text>
+  <rect x="596" y="1585" width="668" height="60" class="chip success" />
+  <text x="930" y="1609" class="small" text-anchor="middle" font-weight="760">VPC-CIDR replacement catches local destinations;</text>
+  <text x="930" y="1632" class="small" text-anchor="middle">quad-zero catches non-VPC destinations. Both use the RGW's AZ-selected GWLBe.</text>
+
+  <!-- GWLBe route card -->
+  <rect x="1320" y="1260" width="470" height="410" class="route-card" />
+  <rect x="1320" y="1260" width="470" height="58" rx="14" class="route-head-amber" />
+  <text x="1346" y="1297" class="label">GWLBe subnet RTs</text>
+  <text x="1346" y="1342" class="body" font-weight="780">RT-GWLBE-A / RT-GWLBE-B</text>
+  <text x="1346" y="1381" class="small">DESTINATION</text>
+  <text x="1592" y="1381" class="small">TARGET</text>
+  <line x1="1346" y1="1393" x2="1764" y2="1393" class="route-row" />
+  <text x="1346" y="1424" class="mono">10.2.0.0/16</text>
+  <text x="1592" y="1424" class="mono">local</text>
+  <line x1="1346" y1="1444" x2="1764" y2="1444" class="route-row" />
+  <text x="1346" y="1466" class="tiny">Add normal TGW/NAT routes here for</text>
+  <text x="1346" y="1485" class="tiny">destinations outside the provider VPC.</text>
+  <text x="1346" y="1515" class="body" font-weight="760">After inspection:</text>
+  <text x="1346" y="1542" class="small">This RT sends the restored packet to</text>
+  <text x="1346" y="1565" class="small">its real local or external next hop.</text>
+  <rect x="1346" y="1590" width="418" height="55" class="chip external" />
+  <text x="1555" y="1613" class="small" text-anchor="middle" font-weight="760">GWLBe is the route target;</text>
+  <text x="1555" y="1634" class="small" text-anchor="middle">GWLB/Palo live behind its endpoint service.</text>
+
+  <!-- RDS route card -->
+  <rect x="1820" y="1260" width="730" height="410" class="route-card" />
+  <rect x="1820" y="1260" width="730" height="58" rx="14" class="route-head-teal" />
+  <text x="1846" y="1297" class="label">RDS subnet route tables — symmetric return</text>
+  <text x="1846" y="1342" class="body" font-weight="780">RT-RDS-A and RT-RDS-B</text>
+  <text x="1846" y="1381" class="small">RETURN DESTINATION</text>
+  <text x="2180" y="1381" class="small">TARGET</text>
+  <line x1="1846" y1="1393" x2="2524" y2="1393" class="route-row" />
+  <text x="1846" y="1424" class="mono">10.2.1.0/24</text>
+  <text x="2180" y="1424" class="mono">vpce-gwlb-A</text>
+  <line x1="1846" y1="1444" x2="2524" y2="1444" class="route-row" />
+  <text x="1846" y="1475" class="mono">10.2.4.0/24</text>
+  <text x="2180" y="1475" class="mono">vpce-gwlb-B</text>
+  <line x1="1846" y1="1495" x2="2524" y2="1495" class="route-row" />
+  <text x="1846" y="1526" class="mono">10.2.0.0/16</text>
+  <text x="2180" y="1526" class="mono">local</text>
+  <rect x="1846" y="1560" width="678" height="85" class="chip success" />
+  <text x="2185" y="1585" class="small" text-anchor="middle" font-weight="760">The RGW source subnet identifies the exact return GWLBe.</text>
+  <text x="2185" y="1608" class="small" text-anchor="middle">RGW-A source → GWLBe-A both ways; RGW-B source → GWLBe-B both ways.</text>
+  <text x="2185" y="1631" class="tiny" text-anchor="middle">A cross-AZ resource pair can create an inter-AZ hop; validate cost and AZ behavior.</text>
+
+  <!-- Footer notes -->
+  <rect x="40" y="1700" width="2510" height="70" class="note-card" />
+  <text x="66" y="1727" class="body" font-weight="780">Hard requirements:</text>
+  <text x="235" y="1727" class="small">dedicated RGW / GWLBe / destination subnets • replace local only in RGW RTs • RGW default to same GWLBe • reciprocal RGW-subnet routes in every destination RT</text>
+  <text x="66" y="1755" class="small">Security: RGW SG egress and RDS SG ingress must allow the DB port; use RGW subnet CIDRs across the middlebox. Palo sees the Resource Gateway source, not the original consumer IP.</text>
+</svg>
+</main>
+</body>
+</html>
