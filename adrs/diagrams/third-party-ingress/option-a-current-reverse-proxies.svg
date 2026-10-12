@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1510" viewBox="0 0 1800 1510" role="img" aria-labelledby="title desc">
+<title id="title">A / Keep the current reverse proxies</title>
+<desc id="desc">Existing architecture: passthrough frontends, VM-based regional steering, Palo inspection.. Blue lines show application traffic; green dashed lines show return traffic; amber dotted lines show native health checks; gray dotted lines show resource or policy references. Purple lines show policy-directed inspection. Red lines show rejected or bypass paths. See adjacent ADR option for requirements.</desc>
+<defs><marker id="ink" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#172b4d"/></marker><marker id="ink-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#172b4d"/></marker><marker id="muted" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#526581"/></marker><marker id="muted-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#526581"/></marker><marker id="data" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#1769aa"/></marker><marker id="data-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#1769aa"/></marker><marker id="return" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#07816e"/></marker><marker id="return-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#07816e"/></marker><marker id="health" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#a86b08"/></marker><marker id="health-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#a86b08"/></marker><marker id="inspect" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#7454b1"/></marker><marker id="inspect-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#7454b1"/></marker><marker id="risk" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#b23b39"/></marker><marker id="risk-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#b23b39"/></marker><marker id="control" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#738197"/></marker><marker id="control-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#738197"/></marker></defs>
+<rect width="1800" height="1510" fill="#ffffff"/>
+<g font-family="Liberation Sans, Arial, sans-serif">
+<rect x="44" y="204" width="270" height="730" rx="12" fill="#eef4fc" stroke="#9bacbf" stroke-width="1.5" stroke-dasharray="7 5"/>
+<rect x="334" y="204" width="800" height="730" rx="12" fill="#f0f5ff" stroke="#9bacbf" stroke-width="1.5" stroke-dasharray="7 5"/>
+<rect x="1154" y="204" width="260" height="730" rx="12" fill="#fff7e8" stroke="#9bacbf" stroke-width="1.5" stroke-dasharray="7 5"/>
+<rect x="1434" y="204" width="322" height="730" rx="12" fill="#eef8f5" stroke="#9bacbf" stroke-width="1.5" stroke-dasharray="7 5"/>
+<path d="M 44,180 L 102,180" fill="none" stroke="#1769aa" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#data)"/>
+<path d="M 440,180 L 498,180" fill="none" stroke="#07816e" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="9 6" marker-end="url(#return)"/>
+<path d="M 830,180 L 888,180" fill="none" stroke="#a86b08" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="5 6" marker-end="url(#health)"/>
+<path d="M 1240,180 L 1298,180" fill="none" stroke="#738197" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="3 5" marker-end="url(#control)"/>
+<path d="M 296,376 L 352,376" fill="none" stroke="#1769aa" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#data)"/>
+<path d="M 576,376 L 602,376" fill="none" stroke="#1769aa" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#data)"/>
+<path d="M 830,376 L 856,376" fill="none" stroke="#1769aa" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#data)"/>
+<path d="M 1114,376 L 1172,376" fill="none" stroke="#1769aa" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#data)"/>
+<path d="M 1396,376 L 1452,376" fill="none" stroke="#1769aa" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#data)"/>
+<path d="M 1595,468 L 1595,513 L 179,513 L 179,468" fill="none" stroke="#07816e" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="9 6" marker-end="url(#return)"/>
+<path d="M 296,704 L 352,704" fill="none" stroke="#1769aa" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#data)"/>
+<path d="M 576,704 L 602,704" fill="none" stroke="#1769aa" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#data)"/>
+<path d="M 830,704 L 856,704" fill="none" stroke="#1769aa" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#data)"/>
+<path d="M 1114,704 L 1172,704" fill="none" stroke="#1769aa" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#data)"/>
+<path d="M 1396,704 L 1452,704" fill="none" stroke="#1769aa" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#data)"/>
+<path d="M 1595,796 L 1595,841 L 179,841 L 179,796" fill="none" stroke="#07816e" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="9 6" marker-end="url(#return)"/>
+<text x="64" y="234" font-size="21" font-weight="700" fill="#172b4d">Third-party VPCs</text>
+<text x="64" y="261" font-size="18" font-weight="400" fill="#526581">PSC endpoint consumers</text>
+<text x="354" y="234" font-size="21" font-weight="700" fill="#172b4d">Shared third-party ingress VPC</text>
+<text x="354" y="261" font-size="18" font-weight="400" fill="#526581">One VPC spanning both regional ingress environments</text>
+<text x="1174" y="234" font-size="21" font-weight="700" fill="#172b4d">PA transit paths</text>
+<text x="1174" y="261" font-size="18" font-weight="400" fill="#526581">Placement is not specified</text>
+<text x="1454" y="234" font-size="21" font-weight="700" fill="#172b4d">Intranet workload VPC</text>
+<text x="1454" y="261" font-size="18" font-weight="400" fill="#526581">Native VM / pod endpoints</text>
+<rect x="62" y="302" width="234" height="166" rx="12" fill="#eef4fc" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="86" y="332" font-size="20" font-weight="700" fill="#172b4d">Client + PSC</text>
+<text x="86" y="356" font-size="20" font-weight="700" fill="#172b4d">endpoint</text>
+<text x="86" y="384" font-size="18" font-weight="400" fill="#526581">us-central1</text>
+<text x="86" y="406" font-size="18" font-weight="400" fill="#526581">MariaDB / TCP client</text>
+<rect x="352" y="302" width="224" height="166" rx="12" fill="#f0f5ff" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="376" y="332" font-size="20" font-weight="700" fill="#172b4d">PSC service</text>
+<text x="376" y="356" font-size="20" font-weight="700" fill="#172b4d">attachment</text>
+<text x="376" y="384" font-size="18" font-weight="400" fill="#526581">Producer NAT subnet</text>
+<text x="376" y="406" font-size="18" font-weight="400" fill="#526581">Publishes regional</text>
+<text x="376" y="428" font-size="18" font-weight="400" fill="#526581">frontend</text>
+<rect x="602" y="302" width="228" height="166" rx="12" fill="#f0f5ff" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="626" y="332" font-size="20" font-weight="700" fill="#172b4d">Passthrough NLB</text>
+<text x="626" y="360" font-size="18" font-weight="400" fill="#526581">Frontend and RP</text>
+<text x="626" y="382" font-size="18" font-weight="400" fill="#526581">backends in the same</text>
+<text x="626" y="404" font-size="18" font-weight="400" fill="#526581">VPC</text>
+<rect x="856" y="302" width="258" height="166" rx="12" fill="#f0f5ff" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="880" y="332" font-size="20" font-weight="700" fill="#172b4d">Reverse proxy VM</text>
+<text x="880" y="360" font-size="18" font-weight="400" fill="#526581">Backend connection</text>
+<text x="880" y="382" font-size="18" font-weight="400" fill="#526581">starts at the RP.</text>
+<text x="880" y="404" font-size="18" font-weight="400" fill="#526581">VM tags can select</text>
+<text x="880" y="426" font-size="18" font-weight="400" fill="#526581">routes.</text>
+<rect x="1172" y="302" width="224" height="166" rx="12" fill="#fff7e8" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="1196" y="332" font-size="20" font-weight="700" fill="#172b4d">Regional PA path</text>
+<text x="1196" y="360" font-size="18" font-weight="400" fill="#526581">us-central1</text>
+<text x="1196" y="382" font-size="18" font-weight="400" fill="#526581">Existing security</text>
+<text x="1196" y="404" font-size="18" font-weight="400" fill="#526581">controls</text>
+<rect x="1452" y="302" width="286" height="166" rx="12" fill="#eef8f5" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="1476" y="332" font-size="20" font-weight="700" fill="#172b4d">Workload endpoint</text>
+<text x="1476" y="360" font-size="18" font-weight="400" fill="#526581">Direct VM / pod target</text>
+<text x="1476" y="382" font-size="18" font-weight="400" fill="#526581">MariaDB or application</text>
+<text x="1476" y="404" font-size="18" font-weight="400" fill="#526581">listener</text>
+<rect x="62" y="630" width="234" height="166" rx="12" fill="#eef4fc" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="86" y="660" font-size="20" font-weight="700" fill="#172b4d">Client + PSC</text>
+<text x="86" y="684" font-size="20" font-weight="700" fill="#172b4d">endpoint</text>
+<text x="86" y="712" font-size="18" font-weight="400" fill="#526581">Second region</text>
+<text x="86" y="734" font-size="18" font-weight="400" fill="#526581">MariaDB / TCP client</text>
+<rect x="352" y="630" width="224" height="166" rx="12" fill="#f0f5ff" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="376" y="660" font-size="20" font-weight="700" fill="#172b4d">PSC service</text>
+<text x="376" y="684" font-size="20" font-weight="700" fill="#172b4d">attachment</text>
+<text x="376" y="712" font-size="18" font-weight="400" fill="#526581">Producer NAT subnet</text>
+<text x="376" y="734" font-size="18" font-weight="400" fill="#526581">Publishes regional</text>
+<text x="376" y="756" font-size="18" font-weight="400" fill="#526581">frontend</text>
+<rect x="602" y="630" width="228" height="166" rx="12" fill="#f0f5ff" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="626" y="660" font-size="20" font-weight="700" fill="#172b4d">Passthrough NLB</text>
+<text x="626" y="688" font-size="18" font-weight="400" fill="#526581">Frontend and RP</text>
+<text x="626" y="710" font-size="18" font-weight="400" fill="#526581">backends in the same</text>
+<text x="626" y="732" font-size="18" font-weight="400" fill="#526581">VPC</text>
+<rect x="856" y="630" width="258" height="166" rx="12" fill="#f0f5ff" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="880" y="660" font-size="20" font-weight="700" fill="#172b4d">Reverse proxy VM</text>
+<text x="880" y="688" font-size="18" font-weight="400" fill="#526581">Backend connection</text>
+<text x="880" y="710" font-size="18" font-weight="400" fill="#526581">starts at the RP.</text>
+<text x="880" y="732" font-size="18" font-weight="400" fill="#526581">VM tags can select</text>
+<text x="880" y="754" font-size="18" font-weight="400" fill="#526581">routes.</text>
+<rect x="1172" y="630" width="224" height="166" rx="12" fill="#fff7e8" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="1196" y="660" font-size="20" font-weight="700" fill="#172b4d">Regional PA path</text>
+<text x="1196" y="688" font-size="18" font-weight="400" fill="#526581">Second region</text>
+<text x="1196" y="710" font-size="18" font-weight="400" fill="#526581">Existing security</text>
+<text x="1196" y="732" font-size="18" font-weight="400" fill="#526581">controls</text>
+<rect x="1452" y="630" width="286" height="166" rx="12" fill="#eef8f5" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="1476" y="660" font-size="20" font-weight="700" fill="#172b4d">Workload endpoint</text>
+<text x="1476" y="688" font-size="18" font-weight="400" fill="#526581">Direct VM / pod target</text>
+<text x="1476" y="710" font-size="18" font-weight="400" fill="#526581">MariaDB or application</text>
+<text x="1476" y="732" font-size="18" font-weight="400" fill="#526581">listener</text>
+<rect x="44" y="972" width="540" height="215" rx="12" fill="#f0f5ff" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="68" y="1002" font-size="20" font-weight="700" fill="#172b4d">Why the RPs are here</text>
+<text x="68" y="1030" font-size="18" font-weight="400" fill="#526581">The passthrough NLB cannot attach native backends from</text>
+<text x="68" y="1052" font-size="18" font-weight="400" fill="#526581">the intranet VPC.</text>
+<text x="68" y="1074" font-size="18" font-weight="400" fill="#526581">RPs provide an allowed local backend and initiate the</text>
+<text x="68" y="1096" font-size="18" font-weight="400" fill="#526581">cross-VPC connection.</text>
+<rect x="612" y="972" width="564" height="215" rx="12" fill="#f4f6f9" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="636" y="1002" font-size="20" font-weight="700" fill="#172b4d">What the RPs preserve</text>
+<text x="636" y="1030" font-size="18" font-weight="400" fill="#526581">A VM source that can use tagged routes.</text>
+<text x="636" y="1052" font-size="18" font-weight="400" fill="#526581">Current regional PA selection and configured return routing.</text>
+<text x="636" y="1074" font-size="18" font-weight="400" fill="#526581">Any RP DNS, TLS and application behavior still needs an</text>
+<text x="636" y="1096" font-size="18" font-weight="400" fill="#526581">inventory.</text>
+<rect x="1204" y="972" width="552" height="215" rx="12" fill="#fff7e8" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="1228" y="1002" font-size="20" font-weight="700" fill="#172b4d">Health checks are not full-path proof</text>
+<text x="1228" y="1030" font-size="18" font-weight="400" fill="#526581">Native NLB probes reach RP backends.</text>
+<text x="1228" y="1052" font-size="18" font-weight="400" fill="#526581">They do not prove RP-to-PA-to-database reachability.</text>
+<text x="1228" y="1074" font-size="18" font-weight="400" fill="#526581">Use a consumer-side application transaction.</text>
+<rect x="44" y="1220" width="835" height="211" rx="12" fill="#f4f6f9" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="68" y="1250" font-size="20" font-weight="700" fill="#172b4d">Traffic and encryption boundaries</text>
+<text x="68" y="1278" font-size="18" font-weight="400" fill="#526581">PSC performs producer-side NAT. The RP starts a separate backend connection.</text>
+<text x="68" y="1300" font-size="18" font-weight="400" fill="#526581">Do not assume the original client packet source reaches the database.</text>
+<text x="68" y="1322" font-size="18" font-weight="400" fill="#526581">Actual RP TLS termination and PA decryption depend on the existing configuration.</text>
+<rect x="907" y="1220" width="849" height="211" rx="12" fill="#fff1ef" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="931" y="1250" font-size="20" font-weight="700" fill="#172b4d">Operational result</text>
+<text x="931" y="1278" font-size="18" font-weight="400" fill="#526581">No routing redesign and no RP removal. This remains the rollback path.</text>
+<text x="931" y="1300" font-size="18" font-weight="400" fill="#526581">RP patching, capacity, availability and configuration ownership remain.</text>
+<text x="931" y="1322" font-size="18" font-weight="400" fill="#526581">Database health and writer selection must be tested above simple TCP reachability.</text>
+<text x="44" y="1476" font-size="17" font-weight="400" fill="#526581">GCP third-party ingress | Reverse proxy removal | Architecture options | 2026-10-12</text>
+<text x="44" y="64" font-size="34" font-weight="700" fill="#172b4d">A / Keep the current reverse proxies</text>
+<text x="44" y="104" font-size="21" font-weight="400" fill="#526581">Existing architecture: passthrough frontends, VM-based regional steering, Palo inspection.</text>
+<rect x="44" y="126" width="337.453125" height="30" rx="6" fill="#f4f6f9" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="57" y="147" font-size="17" font-weight="700" fill="#172b4d">CURRENT BASELINE / RPs RETAINED</text>
+<text x="116" y="187" font-size="18" font-weight="400" fill="#526581">Application traffic</text>
+<text x="512" y="187" font-size="18" font-weight="400" fill="#526581">Return traffic</text>
+<text x="902" y="187" font-size="18" font-weight="400" fill="#526581">Native health checks</text>
+<text x="1312" y="187" font-size="18" font-weight="400" fill="#526581">Resource / policy reference</text>
+<rect x="860" y="267" width="179.1875" height="28" rx="3" fill="#ffffff" stroke="none" stroke-width="1.5"/>
+<text x="868" y="285" font-size="18" font-weight="400" fill="#1769aa">Untagged 10.0.0.0/8</text>
+<rect x="672" y="489" width="499.734375" height="28" rx="3" fill="#ffffff" stroke="none" stroke-width="1.5"/>
+<text x="680" y="507" font-size="18" font-weight="400" fill="#07816e">Configured return path through the existing RP / PA sessions</text>
+<rect x="860" y="595" width="174.140625" height="28" rx="3" fill="#ffffff" stroke="none" stroke-width="1.5"/>
+<text x="868" y="613" font-size="18" font-weight="400" fill="#1769aa">VM-tagged override</text>
+<rect x="672" y="817" width="499.734375" height="28" rx="3" fill="#ffffff" stroke="none" stroke-width="1.5"/>
+<text x="680" y="835" font-size="18" font-weight="400" fill="#07816e">Configured return path through the existing RP / PA sessions</text>
+</g>
+</svg>

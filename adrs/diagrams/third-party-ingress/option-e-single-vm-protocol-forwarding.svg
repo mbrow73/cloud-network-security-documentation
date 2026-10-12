@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1720" viewBox="0 0 1800 1720" role="img" aria-labelledby="title desc">
+<title id="title">E / PSC protocol forwarding to one workload VM</title>
+<desc id="desc">No reverse proxy and no backend pool. Availability is tied to one target VM per publication.. Blue lines show application traffic; green dashed lines show return traffic; amber dotted lines show native health checks; gray dotted lines show resource or policy references. Purple lines show policy-directed inspection. Red lines show rejected or bypass paths. See adjacent ADR option for requirements.</desc>
+<defs><marker id="ink" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#172b4d"/></marker><marker id="ink-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#172b4d"/></marker><marker id="muted" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#526581"/></marker><marker id="muted-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#526581"/></marker><marker id="data" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#1769aa"/></marker><marker id="data-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#1769aa"/></marker><marker id="return" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#07816e"/></marker><marker id="return-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#07816e"/></marker><marker id="health" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#a86b08"/></marker><marker id="health-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#a86b08"/></marker><marker id="inspect" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#7454b1"/></marker><marker id="inspect-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#7454b1"/></marker><marker id="risk" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#b23b39"/></marker><marker id="risk-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#b23b39"/></marker><marker id="control" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#738197"/></marker><marker id="control-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#738197"/></marker></defs>
+<rect width="1800" height="1720" fill="#ffffff"/>
+<g font-family="Liberation Sans, Arial, sans-serif">
+<rect x="44" y="204" width="283" height="826" rx="12" fill="#eef4fc" stroke="#9bacbf" stroke-width="1.5" stroke-dasharray="7 5"/>
+<rect x="351" y="204" width="1405" height="826" rx="12" fill="#eef8f5" stroke="#9bacbf" stroke-width="1.5" stroke-dasharray="7 5"/>
+<path d="M 44,180 L 102,180" fill="none" stroke="#1769aa" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#data)"/>
+<path d="M 440,180 L 498,180" fill="none" stroke="#07816e" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="9 6" marker-end="url(#return)"/>
+<path d="M 830,180 L 888,180" fill="none" stroke="#a86b08" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="5 6" marker-end="url(#health)"/>
+<path d="M 1240,180 L 1298,180" fill="none" stroke="#738197" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="3 5" marker-end="url(#control)"/>
+<path d="M 305,460 L 375,460" fill="none" stroke="#1769aa" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#data)"/>
+<path d="M 694,460 L 751,460" fill="none" stroke="#1769aa" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#data)"/>
+<path d="M 1101,460 L 1431,460" fill="none" stroke="#1769aa" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#data)"/>
+<path d="M 926,553 L 926,671" fill="none" stroke="#738197" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="3 5" marker-end="url(#control)"/>
+<path d="M 1101,760 L 1300,760 L 1300,523 L 1431,523" fill="none" stroke="#738197" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="3 5" marker-end="url(#control)"/>
+<path d="M 1580,553 L 1580,671" fill="none" stroke="#7454b1" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" marker-end="url(#inspect)" marker-start="url(#inspect-start)"/>
+<path d="M 694,860 L 1370,860 L 1370,553 L 1460,553" fill="none" stroke="#738197" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="3 5" marker-end="url(#control)"/>
+<path d="M 1730,480 L 1744,480 L 1744,1074 L 185,1074 L 185,553" fill="none" stroke="#07816e" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="9 6" marker-end="url(#return)"/>
+<text x="64" y="234" font-size="21" font-weight="700" fill="#172b4d">Third-party VPC</text>
+<text x="64" y="261" font-size="18" font-weight="400" fill="#526581">PSC endpoint consumer</text>
+<text x="371" y="234" font-size="21" font-weight="700" fill="#172b4d">Workload VPC becomes the producer</text>
+<text x="371" y="261" font-size="18" font-weight="400" fill="#526581">Forwarding rule and target VM must use the supported same-VPC / same-region placement</text>
+<rect x="66" y="367" width="239" height="186" rx="12" fill="#eef4fc" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="90" y="397" font-size="20" font-weight="700" fill="#172b4d">Client + PSC</text>
+<text x="90" y="421" font-size="20" font-weight="700" fill="#172b4d">endpoint</text>
+<text x="90" y="449" font-size="18" font-weight="400" fill="#526581">Native TCP / MariaDB</text>
+<text x="90" y="471" font-size="18" font-weight="400" fill="#526581">Endpoint consumer</text>
+<text x="90" y="493" font-size="18" font-weight="400" fill="#526581">support is the scoped</text>
+<text x="90" y="515" font-size="18" font-weight="400" fill="#526581">case.</text>
+<rect x="375" y="367" width="319" height="186" rx="12" fill="#f0f5ff" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="399" y="397" font-size="20" font-weight="700" fill="#172b4d">PSC service attachment</text>
+<text x="399" y="425" font-size="18" font-weight="400" fill="#526581">Producer NAT subnet</text>
+<text x="399" y="447" font-size="18" font-weight="400" fill="#526581">Published regional forwarding</text>
+<text x="399" y="469" font-size="18" font-weight="400" fill="#526581">rule</text>
+<rect x="751" y="367" width="350" height="186" rx="12" fill="#f0f5ff" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="775" y="397" font-size="20" font-weight="700" fill="#172b4d">Internal forwarding rule</text>
+<text x="775" y="425" font-size="18" font-weight="400" fill="#526581">Protocol forwarding frontend</text>
+<text x="775" y="447" font-size="18" font-weight="400" fill="#526581">No backend service or</text>
+<text x="775" y="469" font-size="18" font-weight="400" fill="#526581">healthy-backend selector</text>
+<rect x="1431" y="367" width="299" height="186" rx="12" fill="#eef8f5" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="1455" y="397" font-size="20" font-weight="700" fill="#172b4d">One target workload VM</text>
+<text x="1455" y="425" font-size="18" font-weight="400" fill="#526581">Accepts forwarding-rule IP</text>
+<text x="1455" y="447" font-size="18" font-weight="400" fill="#526581">MariaDB / TCP listener</text>
+<text x="1455" y="469" font-size="18" font-weight="400" fill="#526581">Protected workload NIC</text>
+<rect x="751" y="671" width="350" height="178" rx="12" fill="#f4f6f9" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="775" y="701" font-size="20" font-weight="700" fill="#172b4d">Target-instance resource</text>
+<text x="775" y="729" font-size="18" font-weight="400" fill="#526581">References exactly one VM.</text>
+<text x="775" y="751" font-size="18" font-weight="400" fill="#526581">Control-plane reference, not an extra</text>
+<text x="775" y="773" font-size="18" font-weight="400" fill="#526581">packet hop.</text>
+<rect x="1398" y="671" width="332" height="178" rx="12" fill="#f6f0fc" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="1422" y="701" font-size="20" font-weight="700" fill="#172b4d">Zonal NGFW endpoint</text>
+<text x="1422" y="729" font-size="18" font-weight="400" fill="#526581">Enterprise profile action at NIC</text>
+<text x="1422" y="751" font-size="18" font-weight="400" fill="#526581">Inspection is policy-directed.</text>
+<rect x="375" y="671" width="319" height="269" rx="12" fill="#f6f0fc" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="399" y="701" font-size="20" font-weight="700" fill="#172b4d">Global / hierarchical policy</text>
+<text x="399" y="729" font-size="18" font-weight="400" fill="#526581">Scope the workload interface.</text>
+<text x="399" y="751" font-size="18" font-weight="400" fill="#526581">Match PSC NAT source and</text>
+<text x="399" y="773" font-size="18" font-weight="400" fill="#526581">forwarding VIP destination.</text>
+<text x="399" y="795" font-size="18" font-weight="400" fill="#526581">Associate the zonal endpoint.</text>
+<rect x="44" y="1120" width="545" height="242" rx="12" fill="#fff1ef" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="68" y="1150" font-size="20" font-weight="700" fill="#172b4d">No native health selection</text>
+<text x="68" y="1178" font-size="18" font-weight="400" fill="#526581">No backend-service health checks.</text>
+<text x="68" y="1200" font-size="18" font-weight="400" fill="#526581">No automatic move to a healthy replica.</text>
+<text x="68" y="1222" font-size="18" font-weight="400" fill="#526581">If the target fails, forwarding still targets it.</text>
+<text x="68" y="1244" font-size="18" font-weight="400" fill="#526581">External recovery / retargeting requires its own tested</text>
+<text x="68" y="1266" font-size="18" font-weight="400" fill="#526581">workflow.</text>
+<rect x="617" y="1120" width="545" height="242" rx="12" fill="#fff1ef" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="641" y="1150" font-size="20" font-weight="700" fill="#172b4d">Database availability</text>
+<text x="641" y="1178" font-size="18" font-weight="400" fill="#526581">TCP forwarding is not database writer election.</text>
+<text x="641" y="1200" font-size="18" font-weight="400" fill="#526581">For primary / replica databases, failover ownership and client</text>
+<text x="641" y="1222" font-size="18" font-weight="400" fill="#526581">reconnect behavior must be defined.</text>
+<text x="641" y="1244" font-size="18" font-weight="400" fill="#526581">Not a replacement for a health-managed multi-backend</text>
+<text x="641" y="1266" font-size="18" font-weight="400" fill="#526581">producer.</text>
+<rect x="1190" y="1120" width="566" height="242" rx="12" fill="#f6f0fc" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="1214" y="1150" font-size="20" font-weight="700" fill="#172b4d">Security and source identity</text>
+<text x="1214" y="1178" font-size="18" font-weight="400" fill="#526581">Producer PSC NAT address is the source.</text>
+<text x="1214" y="1200" font-size="18" font-weight="400" fill="#526581">Forwarding-rule VIP is the destination at the VM.</text>
+<text x="1214" y="1222" font-size="18" font-weight="400" fill="#526581">NGFW does not decrypt database TLS automatically.</text>
+<text x="1214" y="1244" font-size="18" font-weight="400" fill="#526581">Profile parity and TLS support have the same gates as C.</text>
+<rect x="44" y="1394" width="835" height="233" rx="12" fill="#f4f6f9" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="68" y="1424" font-size="20" font-weight="700" fill="#172b4d">Publication change</text>
+<text x="68" y="1452" font-size="18" font-weight="400" fill="#526581">Place the publication and target VM in the workload VPC.</text>
+<text x="68" y="1474" font-size="18" font-weight="400" fill="#526581">Plan a new service publication / consumer migration for the VPC change.</text>
+<text x="68" y="1496" font-size="18" font-weight="400" fill="#526581">Validate PSC endpoint compatibility; do not generalize to consumer LB / PSC NEG combinations.</text>
+<rect x="907" y="1394" width="849" height="233" rx="12" fill="#fff1ef" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="931" y="1424" font-size="20" font-weight="700" fill="#172b4d">Operating model</text>
+<text x="931" y="1452" font-size="18" font-weight="400" fill="#526581">Assign owners for target VM, application, endpoint policy and recovery.</text>
+<text x="931" y="1474" font-size="18" font-weight="400" fill="#526581">Monitor actual client transactions, not just VM status.</text>
+<text x="931" y="1496" font-size="18" font-weight="400" fill="#526581">Use only when the service can accept this availability model.</text>
+<text x="931" y="1518" font-size="18" font-weight="400" fill="#526581">Retain the RP path until rollback and failure tests pass.</text>
+<text x="44" y="1686" font-size="17" font-weight="400" fill="#526581">GCP third-party ingress | Reverse proxy removal | Architecture options | 2026-10-12</text>
+<text x="44" y="64" font-size="34" font-weight="700" fill="#172b4d">E / PSC protocol forwarding to one workload VM</text>
+<text x="44" y="104" font-size="21" font-weight="400" fill="#526581">No reverse proxy and no backend pool. Availability is tied to one target VM per publication.</text>
+<rect x="44" y="126" width="475.625" height="30" rx="6" fill="#f4f6f9" stroke="#cad4e1" stroke-width="1.5"/>
+<text x="57" y="147" font-size="17" font-weight="700" fill="#172b4d">NARROW CANDIDATE / NO NATIVE HEALTH FAILOVER</text>
+<text x="116" y="187" font-size="18" font-weight="400" fill="#526581">Application traffic</text>
+<text x="512" y="187" font-size="18" font-weight="400" fill="#526581">Return traffic</text>
+<text x="902" y="187" font-size="18" font-weight="400" fill="#526581">Native health checks</text>
+<text x="1312" y="187" font-size="18" font-weight="400" fill="#526581">Resource / policy reference</text>
+<rect x="1134" y="424" width="183.09375" height="28" rx="3" fill="#ffffff" stroke="none" stroke-width="1.5"/>
+<text x="1142" y="442" font-size="18" font-weight="400" fill="#1769aa">Packets to target VM</text>
+<rect x="1112" y="902" width="268.1875" height="28" rx="3" fill="#ffffff" stroke="none" stroke-width="1.5"/>
+<text x="1120" y="920" font-size="18" font-weight="400" fill="#7454b1">No static firewall next-hop route</text>
+<rect x="438" y="1048" width="392.328125" height="28" rx="3" fill="#ffffff" stroke="none" stroke-width="1.5"/>
+<text x="446" y="1066" font-size="18" font-weight="400" fill="#07816e">Return through the published PSC service path</text>
+</g>
+</svg>
