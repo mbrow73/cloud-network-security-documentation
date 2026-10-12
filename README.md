@@ -2,6 +2,11 @@
 
 Cloud network security documentation, runbooks, and operational guides
 
+## Architecture decision records
+
+- [GCP third-party ingress reverse-proxy removal](adrs/adr-gcp-third-party-ingress-reverse-proxy-removal.md) — proposed options, regional Palo routing constraints, and Cloud NGFW inspection gaps
+- [GCP internet egress architecture](adrs/adr-gcp-internet-egress-architecture.md)
+
 ## AWS diagrams
 
 - [VPC Lattice Resource Gateway → GWLBe / GWLB / Palo → Amazon RDS](diagrams/aws-vpc-lattice-resource-gateway-gwlb-rds-routing.png)
