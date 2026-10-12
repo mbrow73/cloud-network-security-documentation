@@ -164,7 +164,7 @@
 <text x="1214" y="1894" font-size="18" font-weight="400" fill="#526581">Return routing is confirmed, not an open item.</text>
 <text x="1214" y="1916" font-size="18" font-weight="400" fill="#526581">If the PA next hop is a passthrough ILB, check cross-region</text>
 <text x="1214" y="1938" font-size="18" font-weight="400" fill="#526581">global access.</text>
-<text x="1214" y="1960" font-size="18" font-weight="400" fill="#526581">Peering alone is not a transitive appliance fabric.</text>
+<text x="1214" y="1960" font-size="18" font-weight="400" fill="#526581">Backend connectivity needs a supported design.</text>
 <text x="44" y="2216" font-size="17" font-weight="400" fill="#526581">GCP third-party ingress | Reverse proxy removal | Architecture options | 2026-10-12</text>
 <text x="44" y="64" font-size="34" font-weight="700" fill="#172b4d">B / TCP proxy NLB with Palo inspection</text>
 <text x="44" y="104" font-size="21" font-weight="400" fill="#526581">Managed TCP proxying can reach supported cross-VPC backends, but cannot inherit VM route tags.</text>

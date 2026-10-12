@@ -44,8 +44,6 @@ Option D is only for separate HTTP(S) services. It is excluded for native MariaD
 
 No replacement has been selected for production.
 
-Option H records VPC peering alone as a rejected shortcut. It broadens network reachability beyond the intended service boundary without fixing passthrough backend eligibility or preserving mandatory inline Palo inspection. Address feasibility, managed-endpoint controls, acquired-network egress posture and coupled capacity must be evaluated before any separate peering redesign.
-
 ## Option summary
 
 | Option | Removes RPs | MariaDB transport | Inspection | Main constraint |
@@ -57,7 +55,6 @@ Option H records VPC peering alone as a rejected shortcut. It broadens network r
 | E. Single-VM variant of C using protocol forwarding | Yes | TCP-capable; validate listener and TLS behavior | Workload-side Cloud NGFW Enterprise | No backend pool, native health checks or automatic healthy-target selection |
 | F. PA-backed PSC publication with DNAT | Yes, if remaining RP functions are replaced | TCP forwarding; database/TLS behavior needs proof | Regional PA backends apply security policy and service NAT | Inferred PSC/PAN composition; requires eligible producer-VPC PA interfaces and service NAT ownership |
 | G. Workload-side PSC with Palo NSI Packet Intercept | Yes, if remaining RP functions are replaced | Candidate PSC/MariaDB combination needs qualification | Policy diversion to own VM-Series appliances | Moves publication; adds GENEVE/intercept deployment and appliance operations, with explicit failure acceptance |
-| H. VPC peering alone | Not a valid standalone replacement | Peering is connectivity, not a database proxy | No automatic PA chokepoint; destination enforcement is a separate design | Whole-VPC reachability, overlap, endpoint/egress posture, backend restrictions and coupled quota headroom |
 
 The diagrams show architecture and packet behavior, not production resource names. The second region is labeled as such because its name was not supplied. PA paths are shown separately from VPC boundaries because the actual PA interface and next-hop resource layout is not specified here. Solid blue lines are application traffic, dashed green lines are returns, dotted amber lines are native health checks, dotted gray lines are resource or policy references, and purple lines are policy-directed inspection. Red marks identify rejected or bypass paths. Return lines summarize response direction on the same service connections; they do not represent a bypass around inspection. Open an SVG at full size to read the packet and operational notes.
 
@@ -98,7 +95,7 @@ The untagged `10/8` baseline can apply to both proxy regions. Where it wins rout
 There are two designs to evaluate:
 
 - **B1: Centralized inspection.** Keep the shared ingress VPC and deliberately send both regions through the `us-central1` PA path. Size it for both regions and accept the additional latency and shared failure boundary. If the next hop is an internal passthrough NLB, verify that global access permits the other region's traffic. [Next-hop requirements](https://docs.cloud.google.com/vpc/docs/static-routes#considerations_for_internal_passthrough_network_load_balancer_next_hops).
-- **B2: Separate regional routing domains.** Put each regional ingress source in a routing domain with its own untagged PA route. Separate ingress VPCs are one design to investigate. They need supported backend ownership, PSC publication and connectivity. VPC peering alone does not provide transitive forwarding through an appliance.
+- **B2: Separate regional routing domains.** Put each regional ingress source in a routing domain with its own untagged PA route. Separate ingress VPCs are one design to investigate. They need supported backend ownership, PSC publication and connectivity.
 
 Two untagged routes with different priorities do not select a PA based on the source region. Source-based or policy-based steering is not a solution until its applicability to the managed proxy and proposed topology is established.
 
@@ -299,63 +296,6 @@ GENEVE carries the original packet to the VM-Series service and returns permitte
 - Use end-to-end transactions to prove inspection. Application backend health and inspection appliance health are separate signals. TCP interception must observe a session from its SYN; plan session draining and cutover accordingly.
 
 G keeps the VM-Series enforcement surface rather than accepting the managed threat-profile engine's feature gaps. It still requires appliance lifecycle, policy, integration, licensing and publication-migration ownership. This candidate uses standard in-band round-trip inspection; the separate direct internet-egress overlay extension is not assumed or required.
-
-## Option H: VPC peering alone
-
-[![Option H: Whole-VPC scope, overlap, Palo bypass, endpoint exposure and enforcement redesign](diagrams/third-party-ingress/option-h-vpc-peering-alone.svg)](diagrams/third-party-ingress/option-h-vpc-peering-alone.svg)
-
-[Open the full-size SVG](diagrams/third-party-ingress/option-h-vpc-peering-alone.svg)
-
-Rejected as a standalone RP-removal solution. Peering can connect VPCs. The rejection is that connectivity alone does not meet the backend-placement and inspection requirements of this design.
-
-The intended requirement is service-specific third-party access, not general integration of two address spaces. Peering is a network-level relationship. It must not be presented as a like-for-like substitute for a PSC service publication just because both can provide private connectivity.
-
-### H0: Establish whether peering is feasible at all
-
-Peering feasibility is unproven for these networks. Their actual address ranges and existing peering-route inventories have not been audited. Google rejects peering when subnet ranges overlap, including exact matches and containment. Check primary and secondary private IPv4 subnet ranges in both VPCs, including GKE Pod and Service secondary ranges, plus existing imported peering subnet routes that could conflict. Private IPv4 subnet routes are always exchanged; disabling custom static/dynamic route exchange does not hide overlapping private subnets. Peering adds no NAT to resolve address overlap. If a conflict exists, address remediation or a different connectivity model is required before considering H1/H2. Overlap is a potential hard blocker, not a confirmed property of the current networks. [Subnet overlap restrictions](https://docs.cloud.google.com/vpc/docs/vpc-peering#subnet-ip-ranges-cant-overlap-across-peered-vpc-networks), [Subnet route exchange](https://docs.cloud.google.com/vpc/docs/vpc-peering#options-for-exchanging-subnet-routes).
-
-This is whole-VPC peering, not selective peering of database subnets. All primary and secondary private IPv4 subnet routes across regions are exchanged automatically, without a per-subnet allowlist. Later subnet additions or expansions remain subject to overlap checks. Firewall rules can limit connections, but do not suppress the route exchange or solve conflicting addresses. Network growth now requires cross-network address coordination. [Route exchange scope](https://docs.cloud.google.com/vpc/docs/vpc-peering#route-exchange-options).
-
-### H1: Peer the VPCs and keep the current passthrough frontend
-
-The current internal passthrough NLB requires its frontend and native backends to use the same VPC. Adding peering does not make a native intranet-VPC NEG eligible behind the ingress-VPC frontend. The RP is currently an eligible local backend that starts the routed connection to the workload. Removing it leaves that function unfilled. [Passthrough NLB backend requirements](https://docs.cloud.google.com/load-balancing/docs/internal#backends).
-
-### H2: Switch to a TCP proxy and peer the VPCs
-
-A regional internal TCP proxy NLB can use supported native backends in a connected VPC, subject to the product's project, region and resource rules. This is a load-balancer redesign, not a peering toggle. [TCP proxy backend networks](https://docs.cloud.google.com/load-balancing/docs/tcp/internal-proxy#backends_and_vpc_networks).
-
-For ordinary peering subnet routes, the proxy's connection to a workload in the imported subnet follows that subnet route before custom static routes are evaluated. The broad `10.0.0.0/8` route toward PA does not win by changing its priority. The result can be working database connectivity without the required inline Palo inspection. Managed proxies also cannot inherit the RP VMs' tagged regional overrides. Return routing remains confirmed; this objection concerns forward-path inspection. [Route selection](https://docs.cloud.google.com/vpc/docs/routes#routing_order), [Static route applicability](https://docs.cloud.google.com/vpc/docs/static-routes).
-
-This does not establish that every peering-plus-inspection design is impossible. A separately qualified interception or routing redesign would be another proposal, such as B or workload-side C/G, not peering alone. Peering does not share firewall policies or supply transitive connectivity. [Peering overview](https://docs.cloud.google.com/vpc/docs/vpc-peering).
-
-### H3: Broader reachability does not establish a safe trust boundary
-
-The owner reports that the acquired environment has manually configured `0.0.0.0/0`, all-port egress allow rules. This is design context, not an independently audited effective-policy result. The rule targets, priorities and hierarchical controls still need readback. The risk is that `0.0.0.0/0` includes private destinations too: newly reachable peered addresses can already match broad source egress permissions, without a new source-side rule. An earlier applicable deny can still prevent access. Google also documents implied egress allow when no earlier rule decides the traffic. [Effective evaluation and implied actions](https://docs.cloud.google.com/firewall/docs/firewall-policies-rule-eval-order).
-
-Do not assume every reachable destination has VM-style ingress deny protection. Google documents implied ingress deny for VM interfaces, but implied ingress allow for internal Application Load Balancer and internal proxy Network Load Balancer frontends when no applicable rule decides the connection. Those managed frontends need explicit, supported policy controls. Other managed services require their own endpoint, connectivity and access-control assessment; this is not a claim that every managed service permits every peer. Application authentication and authorization remain separate from network reachability. [Target-specific ingress defaults](https://docs.cloud.google.com/firewall/docs/firewall-policies-rule-eval-order#after_classic_firewall_network_firewall_policy_enforcement_order).
-
-In this setting, adding broad reachability before proving the acquired network's controls and destination coverage can expand exposure beyond the requested database service. That is a security-boundary change, not merely RP fleet simplification. Peering does not automatically permit every connection, but existing policies cannot be assumed to provide least-privilege containment.
-
-### H4: Where would mandatory Palo enforcement live?
-
-There is no inherent firewall border at the peering connection. Ordinary imported subnet routes can deliver the application connection without selecting the existing PA transit path, as H2 shows. The design must identify an actual enforcement point rather than draw Palo next to a peering link.
-
-- **Controlled source-side routing:** Policy-based routes can steer eligible VM-originated traffic to a PA-backed internal passthrough NLB before subnet routes. They are not exchanged across peering and are not a generic receiving-VPC hook for peering ingress. Their documented VM/VPN/Interconnect applicability does not establish managed Envoy source support. This would require a qualified routing design and source-side ownership, not just a different static-route priority. [PBR scope and precedence](https://docs.cloud.google.com/vpc/docs/policy-based-routes).
-- **Destination-side NSI:** A separately scoped firewall-policy rule can redirect inbound traffic at covered workload interfaces through Palo NSI inspection. Inbound interception occurs after route delivery; GENEVE transports the original packet for inspection and returns a permitted packet to its original flow. This is policy-directed interception, not an inline routed peering hop. It requires matching endpoint associations, zone coverage and an inspection action that is not preempted by an earlier allow. [NSI packet processing](https://docs.cloud.google.com/network-security-integration/docs/in-band/in-band-integration-overview), [NSI policy actions](https://docs.cloud.google.com/network-security-integration/docs/in-band/firewall-policies-overview).
-
-For NSI, match the actual packet source: direct peer workload ranges, PSC producer NAT ranges for passthrough delivery, or proxy-only ranges for a managed backend connection. Do not treat originating VPC identity as an automatic packet selector. Covered workload interfaces do not imply coverage of every managed-service endpoint in the VPC. Incomplete interception configuration has a documented allow fallback; test and accept the actual failure behavior. Peering plus NSI would be a distinct connectivity-and-enforcement redesign, not evidence that peering alone meets the requirement. Option G retains service publication through PSC; adding whole-network peering is not required by that option.
-
-### Capacity and growth coupling
-
-Applicable peering-group quotas count resources in the local network and its direct peers. Subnet ranges, static routes and regional dynamic routes are relevant examples. Their effective limits are not automatically the sum of the networks' independent allowances. [Peering-group quotas and effective limits](https://docs.cloud.google.com/vpc/docs/quota#effective-limits).
-
-For illustration only, if two independent networks each have capacity N and the effective group limit for that resource is also N, peering gives N combined rather than 2N. Planning equal growth leaves N/2 each; Google does not enforce a 50/50 allocation. This is quota coupling, not universal halving. VM-instance and alias-IP peering-group quotas are deprecated; those remain per-network. Actual project limits and usage have not been inspected, so capacity is a scaling concern, not a demonstrated quota blocker. [Deprecated quotas](https://docs.cloud.google.com/vpc/docs/quota#deprecated_quotas).
-
-### Disposition and leadership rationale
-
-Reject peering alone for this migration. Removing reverse proxies should simplify service delivery, not silently replace service-scoped access with network integration. Peering remains a possible tool for deliberately coordinated networks, but is not a shortcut around address compatibility, destination controls or inspection placement.
-
-Before revisiting a separate peering design, require an address/route inventory, effective source egress and destination-policy readback, a managed-endpoint exposure assessment, an explicit PA enforcement design with coverage and failure evidence, and a capacity/change-ownership plan. Existing return routing remains confirmed. No production peering, posture audit or replacement selection is implied by this ADR.
 
 ## Palo controls versus Cloud NGFW
 
