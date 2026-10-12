@@ -26,7 +26,7 @@ Third-party client
 
 Both regional ingress environments are in the same VPC. The untagged `10.0.0.0/8` static route points toward the PA path in `us-central1`. Selected VMs use tagged routes to reach the other regional PA path. The route is VPC-wide; the regional next hop does not restrict it to traffic from that region.
 
-The current ILB is passthrough. Return routes are configured for the current RP/PA path. Those are confirmed facts, not open questions. The passthrough frontend cannot attach native backends in the other VPC, which is why the RPs sit behind it and start the intranet connection.
+The current ILB is passthrough. Palo is an inline routed hop in the current path. Return routes are configured for the current RP/PA path. Those are confirmed facts, not open questions. The passthrough frontend cannot attach native backends in the other VPC, which is why the RPs sit behind it and start the intranet connection.
 
 The replacement would target native workload VM or pod endpoints, not another load balancer VIP. The exact project ownership and Shared VPC arrangement need to be checked against the replacement product's rules. Changing the traffic source from an RP to a managed proxy also requires validating the replacement's forward and return routes.
 
@@ -97,11 +97,13 @@ There are two designs to evaluate:
 
 Two untagged routes with different priorities do not select a PA based on the source region. Source-based or policy-based steering is not a solution until its applicability to the managed proxy and proposed topology is established.
 
-A direct subnet or peering subnet route can take precedence over the broad PA static route. Inspect the effective route to each backend. The existence of a `10/8` route is not proof that Palo is inline. [Route selection](https://docs.cloud.google.com/vpc/docs/routes#routing_order).
+Palo is already an inline routed hop in the current RP path. The routing check for Option B is whether the replacement's proxy-only sources retain that hop. Verify the effective forward and return routes for those new source ranges. In the replacement design, a direct subnet or peering subnet route can take precedence over the broad PA static route; that is a design check for the new connection, not a claim that the current RP path bypasses Palo. [Route selection](https://docs.cloud.google.com/vpc/docs/routes#routing_order).
 
 ### Health checks, return traffic and TLS
 
-Native VM/NEG probes use Google's special health-check paths to the workload. They do not follow the frontend VPC's PA next-hop route. The backend can report healthy while the proxy-to-PA path is broken. Test an actual client transaction and a PA-path failure independently of backend health. [Health-check paths](https://docs.cloud.google.com/load-balancing/docs/health-check-concepts).
+For native `GCE_VM_IP_PORT` backends, health checks originate from Google probers using `35.191.0.0/16` for IPv4 or `2600:2d00:1:b029::/64` for IPv6. These are not Envoy probes from the proxy-only subnet. Google delivers them through its special health-check routing to the backend VM in the intranet VPC, rather than through the frontend VPC's routed PA hop. Selecting a native endpoint in another VPC does not change this probe model. Backend firewall rules must permit the probes. [Probe sources](https://docs.cloud.google.com/load-balancing/docs/health-check-concepts), [Special health-check routing](https://docs.cloud.google.com/vpc/docs/routes#health-check-paths).
+
+Application traffic is separate: Envoy opens its backend connection from the proxy-only subnet and uses the replacement's VPC-routed path. The distributed Envoy health-check rows in Google's table apply to hybrid and regional internet NEGs, not native GCE VM endpoints. A native backend can report healthy while the proxy-to-PA data path is broken. Test an actual client transaction and a PA-path failure independently of backend health.
 
 The replacement's return destination is the proxy-only source range, not the old RP address. Existing RP return routes are configured; the new proxy sources still need a valid, symmetric inspected path. Any PA NAT behavior must be accounted for in that test.
 

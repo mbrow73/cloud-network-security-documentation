@@ -129,8 +129,9 @@
 <text x="68" y="1460" font-size="19" font-weight="400" fill="#526581">A healthy backend does not prove PSC, proxy-only-subnet or PA transit.</text>
 <rect x="68" y="1492" width="352" height="169" rx="12" fill="#fff7e8" stroke="#cad4e1" stroke-width="1.5"/>
 <text x="92" y="1522" font-size="20" font-weight="700" fill="#172b4d">Google probe infrastructure</text>
-<text x="92" y="1550" font-size="18" font-weight="400" fill="#526581">Native backend health checks</text>
-<text x="92" y="1572" font-size="18" font-weight="400" fill="#526581">Google special routing path</text>
+<text x="92" y="1550" font-size="18" font-weight="400" fill="#526581">35.191.0.0/16 (IPv4)</text>
+<text x="92" y="1572" font-size="18" font-weight="400" fill="#526581">2600:2d00:1:b029::/64 (IPv6)</text>
+<text x="92" y="1594" font-size="18" font-weight="400" fill="#526581">Google probers, not Envoy</text>
 <rect x="638" y="1492" width="449" height="169" rx="12" fill="#fff1ef" stroke="#cad4e1" stroke-width="1.5"/>
 <text x="662" y="1522" font-size="20" font-weight="700" fill="#172b4d">Frontend PA path</text>
 <text x="662" y="1550" font-size="18" font-weight="400" fill="#526581">Not the native health-check path</text>
@@ -157,14 +158,15 @@
 <text x="641" y="1938" font-size="18" font-weight="400" fill="#526581">PSC TCP producer support does not list regional internet</text>
 <text x="641" y="1960" font-size="18" font-weight="400" fill="#526581">NEGs.</text>
 <rect x="1190" y="1770" width="566" height="362" rx="12" fill="#fff1ef" stroke="#cad4e1" stroke-width="1.5"/>
-<text x="1214" y="1800" font-size="20" font-weight="700" fill="#172b4d">Routing checks before removal</text>
-<text x="1214" y="1828" font-size="18" font-weight="400" fill="#526581">Direct subnet / peering routes can bypass a broad static PA</text>
-<text x="1214" y="1850" font-size="18" font-weight="400" fill="#526581">route.</text>
-<text x="1214" y="1872" font-size="18" font-weight="400" fill="#526581">Validate return routing for the new proxy sources. Current RP</text>
-<text x="1214" y="1894" font-size="18" font-weight="400" fill="#526581">returns are configured.</text>
-<text x="1214" y="1916" font-size="18" font-weight="400" fill="#526581">If the PA next hop is a passthrough ILB, check cross-region</text>
-<text x="1214" y="1938" font-size="18" font-weight="400" fill="#526581">global access.</text>
-<text x="1214" y="1960" font-size="18" font-weight="400" fill="#526581">Peering alone is not a transitive appliance fabric.</text>
+<text x="1214" y="1800" font-size="20" font-weight="700" fill="#172b4d">Routing checks for proxy sources</text>
+<text x="1214" y="1828" font-size="18" font-weight="400" fill="#526581">PA is inline in the current RP path.</text>
+<text x="1214" y="1850" font-size="18" font-weight="400" fill="#526581">Verify the new proxy sources retain that hop; check route</text>
+<text x="1214" y="1872" font-size="18" font-weight="400" fill="#526581">precedence.</text>
+<text x="1214" y="1894" font-size="18" font-weight="400" fill="#526581">Validate return routing for the new proxy sources. Current RP</text>
+<text x="1214" y="1916" font-size="18" font-weight="400" fill="#526581">returns are configured.</text>
+<text x="1214" y="1938" font-size="18" font-weight="400" fill="#526581">If the PA next hop is a passthrough ILB, check cross-region</text>
+<text x="1214" y="1960" font-size="18" font-weight="400" fill="#526581">global access.</text>
+<text x="1214" y="1982" font-size="18" font-weight="400" fill="#526581">Peering alone is not a transitive appliance fabric.</text>
 <text x="44" y="2216" font-size="17" font-weight="400" fill="#526581">GCP third-party ingress | Reverse proxy removal | Architecture options | 2026-10-12</text>
 <text x="44" y="64" font-size="34" font-weight="700" fill="#172b4d">B / TCP proxy NLB with Palo inspection</text>
 <text x="44" y="104" font-size="21" font-weight="400" fill="#526581">Managed TCP proxying can reach supported cross-VPC backends, but cannot inherit VM route tags.</text>

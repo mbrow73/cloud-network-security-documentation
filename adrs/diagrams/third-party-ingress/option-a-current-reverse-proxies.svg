@@ -55,10 +55,9 @@
 <text x="880" y="404" font-size="18" font-weight="400" fill="#526581">VM tags can select</text>
 <text x="880" y="426" font-size="18" font-weight="400" fill="#526581">routes.</text>
 <rect x="1172" y="302" width="224" height="166" rx="12" fill="#fff7e8" stroke="#cad4e1" stroke-width="1.5"/>
-<text x="1196" y="332" font-size="20" font-weight="700" fill="#172b4d">Regional PA path</text>
+<text x="1196" y="332" font-size="20" font-weight="700" fill="#172b4d">Inline PA path</text>
 <text x="1196" y="360" font-size="18" font-weight="400" fill="#526581">us-central1</text>
-<text x="1196" y="382" font-size="18" font-weight="400" fill="#526581">Existing security</text>
-<text x="1196" y="404" font-size="18" font-weight="400" fill="#526581">controls</text>
+<text x="1196" y="382" font-size="18" font-weight="400" fill="#526581">Existing routed hop</text>
 <rect x="1452" y="302" width="286" height="166" rx="12" fill="#eef8f5" stroke="#cad4e1" stroke-width="1.5"/>
 <text x="1476" y="332" font-size="20" font-weight="700" fill="#172b4d">Workload endpoint</text>
 <text x="1476" y="360" font-size="18" font-weight="400" fill="#526581">Direct VM / pod target</text>
@@ -87,10 +86,9 @@
 <text x="880" y="732" font-size="18" font-weight="400" fill="#526581">VM tags can select</text>
 <text x="880" y="754" font-size="18" font-weight="400" fill="#526581">routes.</text>
 <rect x="1172" y="630" width="224" height="166" rx="12" fill="#fff7e8" stroke="#cad4e1" stroke-width="1.5"/>
-<text x="1196" y="660" font-size="20" font-weight="700" fill="#172b4d">Regional PA path</text>
+<text x="1196" y="660" font-size="20" font-weight="700" fill="#172b4d">Inline PA path</text>
 <text x="1196" y="688" font-size="18" font-weight="400" fill="#526581">Second region</text>
-<text x="1196" y="710" font-size="18" font-weight="400" fill="#526581">Existing security</text>
-<text x="1196" y="732" font-size="18" font-weight="400" fill="#526581">controls</text>
+<text x="1196" y="710" font-size="18" font-weight="400" fill="#526581">Existing routed hop</text>
 <rect x="1452" y="630" width="286" height="166" rx="12" fill="#eef8f5" stroke="#cad4e1" stroke-width="1.5"/>
 <text x="1476" y="660" font-size="20" font-weight="700" fill="#172b4d">Workload endpoint</text>
 <text x="1476" y="688" font-size="18" font-weight="400" fill="#526581">Direct VM / pod target</text>
