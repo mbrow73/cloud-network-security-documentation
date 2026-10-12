@@ -308,6 +308,10 @@ G keeps the VM-Series enforcement surface rather than accepting the managed thre
 
 Rejected as a standalone RP-removal solution. Peering can connect VPCs. The rejection is that connectivity alone does not meet the backend-placement and inspection requirements of this design.
 
+### H0: Establish whether peering is feasible at all
+
+Peering feasibility is unproven for these networks. Their actual address ranges and existing peering-route inventories have not been audited. Google rejects peering when subnet ranges overlap, including exact matches and containment. Check primary and secondary private IPv4 subnet ranges in both VPCs, including GKE Pod and Service secondary ranges, plus existing imported peering subnet routes that could conflict. Private IPv4 subnet routes are always exchanged; disabling custom static/dynamic route exchange does not hide overlapping private subnets. Peering adds no NAT to resolve address overlap. If a conflict exists, address remediation or a different connectivity model is required before considering H1/H2. Overlap is a potential hard blocker, not a confirmed property of the current networks. [Subnet overlap restrictions](https://docs.cloud.google.com/vpc/docs/vpc-peering#subnet-ip-ranges-cant-overlap-across-peered-vpc-networks), [Subnet route exchange](https://docs.cloud.google.com/vpc/docs/vpc-peering#options-for-exchanging-subnet-routes).
+
 ### H1: Peer the VPCs and keep the current passthrough frontend
 
 The current internal passthrough NLB requires its frontend and native backends to use the same VPC. Adding peering does not make a native intranet-VPC NEG eligible behind the ingress-VPC frontend. The RP is currently an eligible local backend that starts the routed connection to the workload. Removing it leaves that function unfilled. [Passthrough NLB backend requirements](https://docs.cloud.google.com/load-balancing/docs/internal#backends).
@@ -326,7 +330,7 @@ Applicable peering-group quotas count resources in the local network and its dir
 
 For illustration only, if two independent networks each have capacity N and the effective group limit for that resource is also N, peering gives N combined rather than 2N. Planning equal growth leaves N/2 each; Google does not enforce a 50/50 allocation. This is quota coupling, not universal halving. VM-instance and alias-IP peering-group quotas are deprecated; those remain per-network. Actual project limits and usage have not been inspected, so capacity is a scaling concern, not a demonstrated quota blocker. [Deprecated quotas](https://docs.cloud.google.com/vpc/docs/quota#deprecated_quotas).
 
-Leadership rationale: peering buys reachability while coupling growth headroom. It does not remove passthrough backend restrictions, preserve inline Palo enforcement or replace RP service behavior. It is not a standalone shortcut to this migration.
+Leadership rationale: peering first requires an address-overlap feasibility check. Where feasible, it buys reachability while coupling growth headroom. It does not remove passthrough backend restrictions, preserve inline Palo enforcement or replace RP service behavior. It is not a standalone shortcut to this migration.
 
 ## Palo controls versus Cloud NGFW
 

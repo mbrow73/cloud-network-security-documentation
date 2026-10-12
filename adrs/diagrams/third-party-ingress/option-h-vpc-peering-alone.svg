@@ -40,7 +40,7 @@
 <text x="1194" y="452" font-size="18" font-weight="400" fill="#526581">Cross-VPC backend attachment is ineligible.</text>
 <text x="1194" y="474" font-size="18" font-weight="400" fill="#526581">No valid application path is created.</text>
 <text x="68" y="708" font-size="24" font-weight="700" fill="#172b4d">H2. Change to a supported internal TCP proxy NLB and add peering</text>
-<text x="68" y="740" font-size="19" font-weight="400" fill="#526581">Hypothetical redesign: eligible backend ownership and firewall permission are still required.</text>
+<text x="68" y="740" font-size="19" font-weight="400" fill="#526581">Hypothetical only: address-overlap feasibility is UNPROVEN; eligible backend ownership and firewall permission required.</text>
 <text x="88" y="792" font-size="21" font-weight="700" fill="#172b4d">Shared ingress VPC</text>
 <text x="88" y="819" font-size="18" font-weight="400" fill="#526581">Proxy-only sources are managed Envoy, not tagged RP VMs</text>
 <text x="1210" y="792" font-size="21" font-weight="700" fill="#172b4d">Intranet workload VPC</text>
@@ -87,15 +87,16 @@
 <text x="68" y="1448" font-size="18" font-weight="400" fill="#526581">VM-instance and alias-IP peering-group quotas are deprecated; those quotas remain per-network.</text>
 <text x="68" y="1470" font-size="18" font-weight="400" fill="#526581">Actual limits and usage were not read.</text>
 <rect x="902" y="1302" width="854" height="328" rx="12" fill="#f4f6f9" stroke="#cad4e1" stroke-width="1.5"/>
-<text x="926" y="1332" font-size="20" font-weight="700" fill="#172b4d">What leadership needs to decide</text>
-<text x="926" y="1360" font-size="18" font-weight="400" fill="#526581">Peering adds connectivity, not security enforcement or RP service functions. It does not share firewall</text>
-<text x="926" y="1382" font-size="18" font-weight="400" fill="#526581">policy or create transitive connectivity.</text>
-<text x="926" y="1404" font-size="18" font-weight="400" fill="#526581">A separate qualified inspection design would change the proposal: evaluate B routing redesign or</text>
-<text x="926" y="1426" font-size="18" font-weight="400" fill="#526581">C/G workload interception, not peering alone.</text>
-<text x="926" y="1448" font-size="18" font-weight="400" fill="#526581">Packet source: PSC NAT on the frontend leg; proxy-only IP on the backend leg. Database TLS can</text>
-<text x="926" y="1470" font-size="18" font-weight="400" fill="#526581">remain end-to-end. No decryption is implied.</text>
-<text x="926" y="1492" font-size="18" font-weight="400" fill="#526581">Logical regional pattern repeats in us-central1 and the second region; no new deployment is</text>
-<text x="926" y="1514" font-size="18" font-weight="400" fill="#526581">asserted.</text>
+<text x="926" y="1332" font-size="20" font-weight="700" fill="#172b4d">H0 comes first: is peering feasible at all?</text>
+<text x="926" y="1360" font-size="18" font-weight="400" fill="#526581">Actual subnet ranges and existing imported peering routes have NOT been audited. Overlap is a</text>
+<text x="926" y="1382" font-size="18" font-weight="400" fill="#526581">potential hard blocker, not a confirmed conflict.</text>
+<text x="926" y="1404" font-size="18" font-weight="400" fill="#526581">Check primary and secondary private IPv4 ranges, including GKE Pod/Service ranges. Matching or</text>
+<text x="926" y="1426" font-size="18" font-weight="400" fill="#526581">contained subnet ranges can prevent peering.</text>
+<text x="926" y="1448" font-size="18" font-weight="400" fill="#526581">Private IPv4 subnet routes are always exchanged. Disabling custom-route exchange does not hide</text>
+<text x="926" y="1470" font-size="18" font-weight="400" fill="#526581">conflicts; peering adds no NAT.</text>
+<text x="926" y="1492" font-size="18" font-weight="400" fill="#526581">If feasible, peering still adds no inspection or RP functions. Packet source: PSC NAT frontend leg,</text>
+<text x="926" y="1514" font-size="18" font-weight="400" fill="#526581">proxy-only IP backend leg; database TLS can pass unchanged.</text>
+<text x="926" y="1536" font-size="18" font-weight="400" fill="#526581">Pattern repeats in us-central1 and the second region; no deployment is asserted.</text>
 <text x="44" y="1716" font-size="17" font-weight="400" fill="#526581">GCP third-party ingress | Reverse proxy removal | Architecture options | 2026-10-12</text>
 <text x="44" y="64" font-size="34" font-weight="700" fill="#172b4d">H / VPC peering alone is not an RP replacement</text>
 <text x="44" y="104" font-size="21" font-weight="400" fill="#526581">Peering provides reachability, not backend eligibility, mandatory Palo insertion or independent quota headroom.</text>
