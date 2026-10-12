@@ -111,8 +111,7 @@
 <rect x="431" y="1070" width="400" height="184" rx="12" fill="#fff7e8" stroke="#cad4e1" stroke-width="1.5"/>
 <text x="455" y="1100" font-size="20" font-weight="700" fill="#172b4d">PA in us-central1</text>
 <text x="455" y="1128" font-size="18" font-weight="400" fill="#526581">Both regions share inspection capacity.</text>
-<text x="455" y="1150" font-size="18" font-weight="400" fill="#526581">Backend return routes must reach</text>
-<text x="455" y="1172" font-size="18" font-weight="400" fill="#526581">proxy-only source ranges.</text>
+<text x="455" y="1150" font-size="18" font-weight="400" fill="#526581">Return routing is confirmed.</text>
 <text x="927" y="946" font-size="24" font-weight="700" fill="#172b4d">2B. B2: Separate regional routing domains</text>
 <text x="927" y="978" font-size="19" font-weight="400" fill="#526581">New ingress VPCs and supported end-to-end connectivity. Not just extra routes.</text>
 <text x="947" y="1037" font-size="21" font-weight="700" fill="#172b4d">Ingress VPC: us-central1</text>
@@ -162,11 +161,10 @@
 <text x="1214" y="1828" font-size="18" font-weight="400" fill="#526581">PA is inline in the current RP path.</text>
 <text x="1214" y="1850" font-size="18" font-weight="400" fill="#526581">Verify the new proxy sources retain that hop; check route</text>
 <text x="1214" y="1872" font-size="18" font-weight="400" fill="#526581">precedence.</text>
-<text x="1214" y="1894" font-size="18" font-weight="400" fill="#526581">Validate return routing for the new proxy sources. Current RP</text>
-<text x="1214" y="1916" font-size="18" font-weight="400" fill="#526581">returns are configured.</text>
-<text x="1214" y="1938" font-size="18" font-weight="400" fill="#526581">If the PA next hop is a passthrough ILB, check cross-region</text>
-<text x="1214" y="1960" font-size="18" font-weight="400" fill="#526581">global access.</text>
-<text x="1214" y="1982" font-size="18" font-weight="400" fill="#526581">Peering alone is not a transitive appliance fabric.</text>
+<text x="1214" y="1894" font-size="18" font-weight="400" fill="#526581">Return routing is confirmed, not an open item.</text>
+<text x="1214" y="1916" font-size="18" font-weight="400" fill="#526581">If the PA next hop is a passthrough ILB, check cross-region</text>
+<text x="1214" y="1938" font-size="18" font-weight="400" fill="#526581">global access.</text>
+<text x="1214" y="1960" font-size="18" font-weight="400" fill="#526581">Peering alone is not a transitive appliance fabric.</text>
 <text x="44" y="2216" font-size="17" font-weight="400" fill="#526581">GCP third-party ingress | Reverse proxy removal | Architecture options | 2026-10-12</text>
 <text x="44" y="64" font-size="34" font-weight="700" fill="#172b4d">B / TCP proxy NLB with Palo inspection</text>
 <text x="44" y="104" font-size="21" font-weight="400" fill="#526581">Managed TCP proxying can reach supported cross-VPC backends, but cannot inherit VM route tags.</text>
@@ -179,8 +177,8 @@
 <path d="M 1208,724 L 1232,748 M 1208,748 L 1232,724" fill="none" stroke="#b23b39" stroke-width="5"/>
 <rect x="1245" y="619" width="144.171875" height="27" rx="3" fill="#ffffff" stroke="none" stroke-width="1.5"/>
 <text x="1253" y="636" font-size="17" font-weight="400" fill="#b23b39">NOT region-local</text>
-<rect x="378" y="826" width="499.015625" height="28" rx="3" fill="#ffffff" stroke="none" stroke-width="1.5"/>
-<text x="386" y="844" font-size="18" font-weight="400" fill="#07816e">Candidate return to proxy-only source; validate PA symmetry</text>
+<rect x="378" y="826" width="386.296875" height="28" rx="3" fill="#ffffff" stroke="none" stroke-width="1.5"/>
+<text x="386" y="844" font-size="18" font-weight="400" fill="#07816e">Return to proxy-only source; routing confirmed</text>
 <rect x="718" y="1441" width="357.28125" height="28" rx="3" fill="#ffffff" stroke="none" stroke-width="1.5"/>
 <text x="726" y="1459" font-size="18" font-weight="400" fill="#a86b08">Special health-check path to backend VPC</text>
 </g>

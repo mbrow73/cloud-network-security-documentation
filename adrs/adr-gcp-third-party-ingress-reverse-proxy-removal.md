@@ -26,9 +26,9 @@ Third-party client
 
 Both regional ingress environments are in the same VPC. The untagged `10.0.0.0/8` static route points toward the PA path in `us-central1`. Selected VMs use tagged routes to reach the other regional PA path. The route is VPC-wide; the regional next hop does not restrict it to traffic from that region.
 
-The current ILB is passthrough. Palo is an inline routed hop in the current path. Return routes are configured for the current RP/PA path. Those are confirmed facts, not open questions. The passthrough frontend cannot attach native backends in the other VPC, which is why the RPs sit behind it and start the intranet connection.
+The current ILB is passthrough. Palo is an inline routed hop in the current path. Return routing is configured and confirmed for the path under discussion. It is not an open prerequisite. The passthrough type and inline PA placement are also confirmed. The passthrough frontend cannot attach native backends in the other VPC, which is why the RPs sit behind it and start the intranet connection.
 
-The replacement would target native workload VM or pod endpoints, not another load balancer VIP. The exact project ownership and Shared VPC arrangement need to be checked against the replacement product's rules. Changing the traffic source from an RP to a managed proxy also requires validating the replacement's forward and return routes.
+The replacement would target native workload VM or pod endpoints, not another load balancer VIP. The exact project ownership and Shared VPC arrangement need to be checked against the replacement product's rules. Changing the traffic source from an RP to a managed proxy changes which forward routes are applicable. Regional PA selection remains the routing issue; return routing is already resolved.
 
 Native MariaDB connections use a database protocol over TCP, with or without TLS. An HTTP(S) Application Load Balancer cannot carry that protocol.
 
@@ -40,7 +40,7 @@ If regional Palo inspection and the existing Palo controls must stay, pursue Opt
 
 If replacing Palo for this traffic is acceptable, test Option C. Publishing PSC in the workload VPC with Cloud NGFW Enterprise removes the need for an RP or a central PA transit path. It also changes the security model, publication ownership and consumer migration plan.
 
-Option D is only for separate HTTP(S) services. It is excluded for native MariaDB access. Option E is limited to services that can accept a single target VM without native health-based failover. Option A remains the baseline and rollback path.
+Option D is only for separate HTTP(S) services. It is excluded for native MariaDB access. Option E is a single-VM variant of C for services that can accept no native health-based failover. Option A remains the baseline and rollback path.
 
 No replacement has been selected for production.
 
@@ -52,7 +52,7 @@ No replacement has been selected for production.
 | B. Internal TCP proxy NLB with Palo | Yes, once RP functions are replaced | TCP-capable; validate database connection behavior | Palo on the routed backend connection | Managed proxies cannot use the current VM-tagged regional overrides |
 | C. Workload-side PSC, passthrough NLB and Cloud NGFW Enterprise | Yes | TCP-capable; validate database health and TLS inspection separately | Policy interception at the workload interface | Moves publication and replaces the Palo enforcement point for this traffic |
 | D. Internal HTTPS Application Load Balancer | HTTP(S) services only | Not supported | Routed Palo backend leg or a separate workload-side NGFW model | Wrong protocol for MariaDB; same tagged-route problem as B |
-| E. Workload-side PSC and protocol forwarding to one VM | Yes | TCP-capable; validate listener and TLS behavior | Workload-side Cloud NGFW Enterprise | No backend pool, native health checks or automatic healthy-target selection |
+| E. Single-VM variant of C using protocol forwarding | Yes | TCP-capable; validate listener and TLS behavior | Workload-side Cloud NGFW Enterprise | No backend pool, native health checks or automatic healthy-target selection |
 
 The diagrams show architecture and packet behavior, not production resource names. The second region is labeled as such because its name was not supplied. PA paths are shown separately from VPC boundaries because the actual PA interface and next-hop resource layout is not specified here. Solid blue lines are application traffic, dashed green lines are returns, dotted amber lines are native health checks, dotted gray lines are resource or policy references, and purple lines are policy-directed inspection. Red marks identify rejected or bypass paths. Return lines summarize response direction on the same service connections; they do not represent a bypass around inspection. Open an SVG at full size to read the packet and operational notes.
 
@@ -93,11 +93,11 @@ The untagged `10/8` baseline can apply to both proxy regions. Where it wins rout
 There are two designs to evaluate:
 
 - **B1: Centralized inspection.** Keep the shared ingress VPC and deliberately send both regions through the `us-central1` PA path. Size it for both regions and accept the additional latency and shared failure boundary. If the next hop is an internal passthrough NLB, verify that global access permits the other region's traffic. [Next-hop requirements](https://docs.cloud.google.com/vpc/docs/static-routes#considerations_for_internal_passthrough_network_load_balancer_next_hops).
-- **B2: Separate regional routing domains.** Put each regional ingress source in a routing domain with its own untagged PA route. Separate ingress VPCs are one design to investigate. They need supported backend ownership, PSC publication, connectivity and return routing. VPC peering alone does not provide transitive forwarding through an appliance.
+- **B2: Separate regional routing domains.** Put each regional ingress source in a routing domain with its own untagged PA route. Separate ingress VPCs are one design to investigate. They need supported backend ownership, PSC publication and connectivity. VPC peering alone does not provide transitive forwarding through an appliance.
 
 Two untagged routes with different priorities do not select a PA based on the source region. Source-based or policy-based steering is not a solution until its applicability to the managed proxy and proposed topology is established.
 
-Palo is already an inline routed hop in the current RP path. The routing check for Option B is whether the replacement's proxy-only sources retain that hop. Verify the effective forward and return routes for those new source ranges. In the replacement design, a direct subnet or peering subnet route can take precedence over the broad PA static route; that is a design check for the new connection, not a claim that the current RP path bypasses Palo. [Route selection](https://docs.cloud.google.com/vpc/docs/routes#routing_order).
+Palo is already an inline routed hop in the current RP path. The routing check for Option B is whether the replacement's proxy-only sources retain that hop. Verify the effective forward route for those new source ranges. Return routing is confirmed. In the replacement design, a direct subnet or peering subnet route can take precedence over the broad PA static route; that is a design check for the new connection, not a claim that the current RP path bypasses Palo. [Route selection](https://docs.cloud.google.com/vpc/docs/routes#routing_order).
 
 ### Health checks, return traffic and TLS
 
@@ -105,7 +105,7 @@ For native `GCE_VM_IP_PORT` backends, health checks originate from Google prober
 
 Application traffic is separate: Envoy opens its backend connection from the proxy-only subnet and uses the replacement's VPC-routed path. The distributed Envoy health-check rows in Google's table apply to hybrid and regional internet NEGs, not native GCE VM endpoints. A native backend can report healthy while the proxy-to-PA data path is broken. Test an actual client transaction and a PA-path failure independently of backend health.
 
-The replacement's return destination is the proxy-only source range, not the old RP address. Existing RP return routes are configured; the new proxy sources still need a valid, symmetric inspected path. Any PA NAT behavior must be accounted for in that test.
+Responses on the managed proxy's backend connection return to the proxy-only source range, not the old RP address. Return routing is confirmed and is not an open item in this proposal.
 
 TCP termination does not imply TLS termination. The managed proxy can forward encrypted MariaDB bytes while TLS remains between the client and database. Palo only gains payload visibility if the traffic is plaintext or a compatible decryption policy is actually applied. Validate client identity, PROXY protocol if proposed, long-lived connections, timeouts and reconnect behavior with the real database listener.
 
@@ -123,7 +123,7 @@ Option B is the candidate when Palo must stay. It requires a routing design, not
 
 [Open the full-size SVG](diagrams/third-party-ingress/option-c-workload-psc-ngfw.svg)
 
-Move PSC publication into the workload VPC. Use an internal passthrough NLB with native backends in that VPC. Apply Cloud NGFW Enterprise inspection at the protected workload interfaces.
+Move PSC publication into the workload VPC. Use an internal passthrough NLB with a backend service and native backend pool in that VPC. Apply Cloud NGFW Enterprise inspection at the protected workload interfaces. The NLB provides health checks and backend selection; Option E replaces that delivery layer with protocol forwarding to one VM.
 
 ```text
 PSC -> workload-VPC service attachment -> passthrough NLB -> protected workload
@@ -153,7 +153,13 @@ This option is excluded for native MariaDB ingress. An Application Load Balancer
 
 For separate HTTP(S) services, an internal HTTPS ALB can replace HTTP reverse-proxy functions. It terminates the client TLS connection and opens a new backend connection from the proxy-only subnet. An HTTP backend leg is plaintext. An HTTPS backend leg is separately encrypted.
 
-Palo inspection is possible only when the effective backend route puts PA inline:
+### Regional internal Envoy versus global/classic external GFE
+
+Option D is a regional internal ALB, not a GFE-based global/classic external ALB. Its managed Envoy proxies use the VPC's proxy-only subnet as the source of native backend connections. Untagged static routes apply to those proxies; VM-tagged routes do not. A supported applicable route can therefore send the backend connection through an inline PA hop. The PA does not need to be deployed inside the managed proxy subnet. [Internal ALB proxy-only subnet](https://docs.cloud.google.com/load-balancing/docs/l7-internal#proxy-only_subnet), [Static route applicability](https://docs.cloud.google.com/vpc/docs/static-routes#route_parameters).
+
+For GFE-based global/classic external ALBs with native backends, Google uses service-source ranges such as `35.191.0.0/16` and `130.211.0.0/22` and special routing to the backend VPC. That is a different backend path and must not be used to describe the regional internal ALB in this option. Both use Google's infrastructure, but that does not make their source addresses and route selection the same. Native health-check probes remain separate from either application-data path. [GFE backend routing](https://docs.cloud.google.com/vpc/docs/routes#paths_between_google_front_ends_and_backends).
+
+The regional internal ALB backend path can include Palo when the applicable forward route retains the existing inspection hop:
 
 ```text
 PSC -> HTTPS ALB -> proxy-only subnet -> effective route -> PA -> HTTP(S) workload
@@ -167,13 +173,13 @@ The regional ALB PSC producer support list includes regional internet NEGs. That
 
 Any HTTP migration must assign certificate ownership and preserve the required client authentication, application behavior and backend trust. Option D remains an HTTP-only design, with no automatic fix for PA placement.
 
-## Option E: PSC protocol forwarding to one workload VM
+## Option E: Single-VM variant of C using PSC protocol forwarding
 
 [![Option E: Single target VM, resource references, NGFW interception and availability limits](diagrams/third-party-ingress/option-e-single-vm-protocol-forwarding.svg)](diagrams/third-party-ingress/option-e-single-vm-protocol-forwarding.svg)
 
 [Open the full-size SVG](diagrams/third-party-ingress/option-e-single-vm-protocol-forwarding.svg)
 
-Publish internal protocol forwarding from the workload VPC. A regional forwarding rule references a target-instance resource, which identifies one workload VM. The target instance is a control-plane reference, not another packet-processing hop.
+E uses the same workload-side PSC publication and NGFW inspection model as C. It is a single-VM delivery variant, not a different security architecture. Replace C's passthrough NLB/backend service with internal protocol forwarding. A regional forwarding rule references a target-instance resource, which identifies one workload VM. The target instance is a control-plane reference, not another packet-processing hop.
 
 PSC endpoint consumers can use this producer type. The forwarding rule and target VM must meet the same-VPC/same-region requirements, and the VM must accept traffic addressed to the forwarding-rule IP. This does not provide an arbitrary cross-VPC target. PSC consumer load balancers and PSC NEGs have different compatibility rules from endpoint consumers. [Protocol forwarding](https://docs.cloud.google.com/load-balancing/docs/protocol-forwarding), [PSC endpoint producer support](https://docs.cloud.google.com/vpc/docs/about-vpc-hosted-services#producer-configuration).
 
@@ -181,7 +187,20 @@ There is no backend service, backend pool, native backend health check or automa
 
 Apply workload-side Cloud NGFW Enterprise as in Option C. The packet source is the producer PSC NAT address and the destination is the forwarding VIP. Inspection is policy-directed at the protected interface. Database TLS is not decrypted just because NGFW is present.
 
-This removes the RP with fewer load-balancing resources, but it trades away the health-managed backend model. Use it only if that availability model is acceptable for the service. Publication migration and the Cloud NGFW acceptance work are still required.
+### C versus E
+
+| Detail | C: Passthrough NLB | E: Protocol forwarding |
+| --- | --- | --- |
+| Publication and inspection | Workload-side PSC and NGFW Enterprise | Same as C |
+| Forwarding-rule target | Backend service | Target-instance resource |
+| Workload targets | Backend pool; can contain multiple eligible VMs | One referenced VM |
+| Native health checks | Supported by the backend service | Not supported |
+| Backend selection | Load balancer selects eligible backends according to its configured health/distribution behavior | Always forwards to the referenced VM; no health-based alternate selection |
+| Availability ownership | NLB backend health plus the application's database/service failover design | Separate monitoring and VM recovery/retargeting workflow |
+
+A C deployment can start with one backend, but it still has the backend-service and health-check model. An E deployment removes that model entirely. Neither option elects a MariaDB primary just by forwarding TCP.
+
+This removes the RP with fewer load-balancing resources, but it trades away C's health-managed backend model. Use it only if that availability model is acceptable for the service. Publication migration and the Cloud NGFW acceptance work are still required.
 
 ## Palo controls versus Cloud NGFW
 
@@ -222,7 +241,7 @@ Google documents TLS-inspection exclusions for HTTP/2, QUIC/HTTP/3 and PROXY pro
 
 1. Inventory RP functions per service: protocol, DNS target selection, TLS and mTLS, authentication, client identity, connection pooling, headers where relevant, timeouts and logs.
 2. Confirm the candidate resource layout: frontend/backend VPCs, projects, regions, NEG type, Shared VPC ownership and PSC consumer type. Check the actual producer/backend combination against the support matrix.
-3. Validate forward and return routing for the replacement source addresses. Use the configured RP return path as the baseline. Check route precedence, PA next-hop type, applicable global-access settings, NAT and regional failure behavior.
+3. Verify forward-route applicability and regional PA selection for the replacement source addresses. Check route precedence, PA next-hop type, applicable global-access settings and regional failure behavior. Return routing is confirmed; retain the established return configuration rather than treating it as unfinished work.
 4. Compare every required Palo control and exception with the replacement. Record implemented controls, compensating controls and accepted gaps. Test decryption and blocking, not just policy creation.
 5. Run real PSC consumer transactions in both regions and correlate them with workload and inspection logs. For MariaDB, include authentication, queries, intended writer selection, TLS, long-lived sessions and reconnects.
 6. Break the inspection/data path while backend probes remain healthy. Also test backend, zone, region and inspection-endpoint failures, draining and failover. Define the expected failure result and alert on end-to-end service health.
@@ -237,4 +256,4 @@ Google documents TLS-inspection exclusions for HTTP/2, QUIC/HTTP/3 and PROXY pro
 - Can PSC publication move to the workload VPC, and who owns consumer migration, policy, certificates, database health and support?
 - What latency, throughput, availability, cost and Preview-feature requirements must the tests meet?
 
-The current passthrough ILB type and configured return routes are not open decisions. The unresolved routing work concerns the replacement architecture.
+The passthrough ILB type, inline PA placement and return routing are confirmed. The unresolved routing work is regional forward-path PA selection for managed proxy sources.

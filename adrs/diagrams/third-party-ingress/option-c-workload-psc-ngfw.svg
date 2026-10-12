@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1870" viewBox="0 0 1800 1870" role="img" aria-labelledby="title desc">
-<title id="title">C / Workload-side PSC with Cloud NGFW Enterprise</title>
+<title id="title">C / Workload-side PSC with health-managed backends</title>
 <desc id="desc">Publish inside the workload VPC and inspect at the protected interface. No central PA transit on this path.. Blue lines show application traffic; green dashed lines show return traffic; amber dotted lines show native health checks; gray dotted lines show resource or policy references. Purple lines show policy-directed inspection. Red lines show rejected or bypass paths. See adjacent ADR option for requirements.</desc>
 <defs><marker id="ink" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#172b4d"/></marker><marker id="ink-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#172b4d"/></marker><marker id="muted" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#526581"/></marker><marker id="muted-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#526581"/></marker><marker id="data" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#1769aa"/></marker><marker id="data-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#1769aa"/></marker><marker id="return" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#07816e"/></marker><marker id="return-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#07816e"/></marker><marker id="health" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#a86b08"/></marker><marker id="health-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#a86b08"/></marker><marker id="inspect" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#7454b1"/></marker><marker id="inspect-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#7454b1"/></marker><marker id="risk" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#b23b39"/></marker><marker id="risk-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#b23b39"/></marker><marker id="control" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 0,0 L 9,4.5 L 0,9 Z" fill="#738197"/></marker><marker id="control-start" markerWidth="9" markerHeight="9" refX="1" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 9,0 L 0,4.5 L 9,9 Z" fill="#738197"/></marker></defs>
 <rect width="1800" height="1870" fill="#ffffff"/>
@@ -40,9 +40,9 @@
 <text x="412" y="491" font-size="18" font-weight="400" fill="#526581">New publication boundary</text>
 <rect x="721" y="389" width="363" height="183" rx="12" fill="#f0f5ff" stroke="#cad4e1" stroke-width="1.5"/>
 <text x="745" y="419" font-size="20" font-weight="700" fill="#172b4d">Internal passthrough NLB</text>
-<text x="745" y="447" font-size="18" font-weight="400" fill="#526581">Frontend and native backends share</text>
-<text x="745" y="469" font-size="18" font-weight="400" fill="#526581">this VPC.</text>
-<text x="745" y="491" font-size="18" font-weight="400" fill="#526581">No RP or Envoy backend connection.</text>
+<text x="745" y="447" font-size="18" font-weight="400" fill="#526581">Backend service + native pool</text>
+<text x="745" y="469" font-size="18" font-weight="400" fill="#526581">Health-based backend selection</text>
+<text x="745" y="491" font-size="18" font-weight="400" fill="#526581">Frontend/backends share this VPC.</text>
 <text x="1160" y="317" font-size="21" font-weight="700" fill="#172b4d">Protected workload zone A</text>
 <text x="1160" y="344" font-size="18" font-weight="400" fill="#526581">Repeat endpoint coverage for every protected workload zone</text>
 <rect x="1164" y="373" width="250" height="114" rx="12" fill="#f6f0fc" stroke="#cad4e1" stroke-width="1.5"/>
@@ -79,8 +79,8 @@
 <text x="68" y="1291" font-size="18" font-weight="400" fill="#526581">Do not match the original consumer address or assume the</text>
 <text x="68" y="1313" font-size="18" font-weight="400" fill="#526581">VM primary destination.</text>
 <rect x="617" y="1167" width="545" height="245" rx="12" fill="#fff7e8" stroke="#cad4e1" stroke-width="1.5"/>
-<text x="641" y="1197" font-size="20" font-weight="700" fill="#172b4d">Health and database behavior</text>
-<text x="641" y="1225" font-size="18" font-weight="400" fill="#526581">Native NLB health checks still need firewall permission.</text>
+<text x="641" y="1197" font-size="20" font-weight="700" fill="#172b4d">C uses a health-managed backend pool</text>
+<text x="641" y="1225" font-size="18" font-weight="400" fill="#526581">NLB health checks and backend selection are supported.</text>
 <text x="641" y="1247" font-size="18" font-weight="400" fill="#526581">A TCP probe is not a successful authenticated query.</text>
 <text x="641" y="1269" font-size="18" font-weight="400" fill="#526581">For writes, backend eligibility must follow the database role</text>
 <text x="641" y="1291" font-size="18" font-weight="400" fill="#526581">and failover design.</text>
@@ -106,7 +106,7 @@
 <text x="931" y="1568" font-size="18" font-weight="400" fill="#526581">Document any accepted feature gap before cutting consumers over.</text>
 <text x="931" y="1590" font-size="18" font-weight="400" fill="#526581">Keep the current RP publication available until end-to-end tests pass.</text>
 <text x="44" y="1836" font-size="17" font-weight="400" fill="#526581">GCP third-party ingress | Reverse proxy removal | Architecture options | 2026-10-12</text>
-<text x="44" y="64" font-size="34" font-weight="700" fill="#172b4d">C / Workload-side PSC with Cloud NGFW Enterprise</text>
+<text x="44" y="64" font-size="34" font-weight="700" fill="#172b4d">C / Workload-side PSC with health-managed backends</text>
 <text x="44" y="104" font-size="21" font-weight="400" fill="#526581">Publish inside the workload VPC and inspect at the protected interface. No central PA transit on this path.</text>
 <rect x="44" y="126" width="390.953125" height="30" rx="6" fill="#f4f6f9" stroke="#cad4e1" stroke-width="1.5"/>
 <text x="57" y="147" font-size="17" font-weight="700" fill="#172b4d">CANDIDATE / DIFFERENT SECURITY MODEL</text>
