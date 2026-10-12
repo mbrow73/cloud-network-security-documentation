@@ -36,7 +36,7 @@ Native MariaDB connections use a database protocol over TCP, with or without TLS
 
 Keep the current path until a replacement has passed end-to-end tests in both regions.
 
-If regional Palo inspection and the existing Palo controls must stay, pursue Option B with a routing redesign. A managed TCP proxy can remove the RPs, but it cannot use their tagged regional routes.
+If regional Palo inspection and the existing Palo controls must stay, test Option F for PA-backed publication with service DNAT, or Option G for workload-side publication with Palo NSI interception. Both are candidates, not qualified deployments. Option B remains available with a routing redesign; a managed TCP proxy cannot inherit the RP-tagged regional routes.
 
 If replacing Palo for this traffic is acceptable, test Option C. Publishing PSC in the workload VPC with Cloud NGFW Enterprise removes the need for an RP or a central PA transit path. It also changes the security model, publication ownership and consumer migration plan.
 
@@ -53,6 +53,8 @@ No replacement has been selected for production.
 | C. Workload-side PSC, passthrough NLB and Cloud NGFW Enterprise | Yes | TCP-capable; validate database health and TLS inspection separately | Policy interception at the workload interface | Moves publication and replaces the Palo enforcement point for this traffic |
 | D. Internal HTTPS Application Load Balancer | HTTP(S) services only | Not supported | Routed Palo backend leg or a separate workload-side NGFW model | Wrong protocol for MariaDB; same tagged-route problem as B |
 | E. Single-VM variant of C using protocol forwarding | Yes | TCP-capable; validate listener and TLS behavior | Workload-side Cloud NGFW Enterprise | No backend pool, native health checks or automatic healthy-target selection |
+| F. PA-backed PSC publication with DNAT | Yes, if remaining RP functions are replaced | TCP forwarding; database/TLS behavior needs proof | Regional PA backends apply security policy and service NAT | Inferred PSC/PAN composition; requires eligible producer-VPC PA interfaces and service NAT ownership |
+| G. Workload-side PSC with Palo NSI Packet Intercept | Yes, if remaining RP functions are replaced | Candidate PSC/MariaDB combination needs qualification | Policy diversion to own VM-Series appliances | Moves publication; adds GENEVE/intercept deployment and appliance operations, with explicit failure acceptance |
 
 The diagrams show architecture and packet behavior, not production resource names. The second region is labeled as such because its name was not supplied. PA paths are shown separately from VPC boundaries because the actual PA interface and next-hop resource layout is not specified here. Solid blue lines are application traffic, dashed green lines are returns, dotted amber lines are native health checks, dotted gray lines are resource or policy references, and purple lines are policy-directed inspection. Red marks identify rejected or bypass paths. Return lines summarize response direction on the same service connections; they do not represent a bypass around inspection. Open an SVG at full size to read the packet and operational notes.
 
@@ -202,6 +204,99 @@ A C deployment can start with one backend, but it still has the backend-service 
 
 This removes the RP with fewer load-balancing resources, but it trades away C's health-managed backend model. Use it only if that availability model is acceptable for the service. Publication migration and the Cloud NGFW acceptance work are still required.
 
+## Option F: PA-backed PSC publication with destination NAT
+
+[![Option F: Regional PA backends, destination translation and workload forwarding](diagrams/third-party-ingress/option-f-pa-backed-psc-dnat.svg)](diagrams/third-party-ingress/option-f-pa-backed-psc-dnat.svg)
+
+[Open the full-size SVG](diagrams/third-party-ingress/option-f-pa-backed-psc-dnat.svg)
+
+Keep application publication in the ingress VPC, but make eligible regional Palo interfaces the internal passthrough NLB's native backends instead of the RPs. Each regional frontend selects its own PA pool. Palo maps the published service VIP and port to the intranet workload using destination NAT and forwards the traffic through its supported intranet path.
+
+```text
+Third-party PSC consumer
+  -> ingress-VPC service attachment
+  -> regional passthrough NLB service VIP
+  -> regional PA backend: security policy and destination NAT
+  -> intranet workload IP:port
+```
+
+The native NLB backends remain in the frontend VPC: they are the selected PA interfaces, not the intranet workload endpoints. Palo performs the cross-VPC forwarding after translation. This does not relax the passthrough NLB's frontend/backend network requirement. Regional PA selection comes from the regional publication's backend pool rather than managed Envoy sources inheriting RP route tags.
+
+### Evidence and status
+
+This is an inferred composition of supported building blocks, not a verified end-to-end PSC recipe. Google documents PSC publication with passthrough NLB instance-group backends. Palo documents load-balancer forwarding-address NAT mappings to internal applications; its cited example uses an external load balancer. Those sources support the idea, but do not establish that the exact current PA interface, HA and PSC configuration can be reused unchanged. [PSC producer support](https://docs.cloud.google.com/vpc/docs/about-vpc-hosted-services#producer-configuration), [PAN load balancer and NAT example](https://docs.paloaltonetworks.com/vm-series/deployment/public-cloud/set-up-the-vm-series-firewall-on-google-cloud-platform/configuring-gcp-load-balancer).
+
+### Packet and service behavior
+
+At the PA, the incoming source is the producer PSC NAT address and the destination is the published forwarding VIP and port. The PA's destination translation changes the destination to the workload IP and port. If the selected design uses PA source NAT, document that translated source and its effect on workload logging and client identity. The firewall reverses its translations for the response on the published connection.
+
+DNAT does not terminate database TLS. Payload inspection still requires a compatible Palo decryption policy or plaintext service traffic. Any RP certificate, authentication, name-selection or connection-management functions must be replaced separately; NAT is not an HTTP or application-proxy feature replacement.
+
+### Conditions before choosing F
+
+- Confirm a supported PA backend interface in the producer frontend VPC, resource ownership, region and backend attachment type.
+- Define how active/passive or active/active PA members become eligible and how stateful sessions behave during failover.
+- Assign ownership for per-service VIP/port NAT mappings, security profiles, workload target updates, logs and capacity.
+- Check the application path with real PSC consumer transactions. Native NLB health checks check the PA backend, not a successful MariaDB login/query or correct writer role.
+- Prove the RP functions that remain necessary, the actual database/TLS transaction, and failure behavior before removing the RP backend.
+
+F is worth testing when keeping Palo and the ingress publication boundary is important. It retains appliance operations and adds service NAT ownership, but could remove the dedicated RP tier.
+
+## Option G: Workload-side PSC with Palo NSI Packet Intercept
+
+[![Option G: Workload publication, policy interception, GENEVE transport and VM-Series inspection](diagrams/third-party-ingress/option-g-workload-psc-palo-nsi.svg)](diagrams/third-party-ingress/option-g-workload-psc-palo-nsi.svg)
+
+[Open the full-size SVG](diagrams/third-party-ingress/option-g-workload-psc-palo-nsi.svg)
+
+Use C's workload-side PSC publication and native passthrough backend model. Replace the managed Cloud NGFW Enterprise inspection service with a separately deployed Palo VM-Series inspection service using Google's in-band Network Security Integration (NSI) Packet Intercept.
+
+```text
+PSC -> workload-side application NLB -> protected workload NIC -> application
+                                           |
+                                  policy-directed interception
+                                           |
+                             GENEVE -> inspection NLB -> VM-Series
+                                           |
+                              permitted original packet returns
+```
+
+This is policy-driven interface interception, not a routed PA next hop. The interception infrastructure transports packets to the inspection appliances without reproducing the current RP-tagged routing model. The normal round-trip model returns permitted packets to the original network path. It is distinct from F's service destination NAT.
+
+### Evidence and status
+
+Google documents in-band NSI as generally available and explicitly lists Palo VM-Series as a supported partner. Palo provides a GENEVE inspection deployment guide. The integration technology is documented; the exact PSC-delivered MariaDB flow, supported appliance versions and TLS/decryption behavior remain validation items for this candidate. The presence of a partner listing is not proof that every current PA configuration can be used unchanged. [NSI release notes](https://docs.cloud.google.com/network-security-integration/docs/release-notes), [Supported in-band partners](https://docs.cloud.google.com/network-security-integration/docs/in-band/in-band-partners), [PAN NSI deployment](https://docs.paloaltonetworks.com/vm-series/deployment/public-cloud/set-up-the-vm-series-firewall-on-google-cloud-platform/google-cloud-network-security-integration-nsi-with-vm-series-firewall).
+
+### Separate application publication from inspection deployment
+
+There are two load-balancing roles. The application NLB is the PSC-published frontend with native workload backends. The inspection NLB distributes encapsulated packets to VM-Series. It is not another application frontend or an RP tier.
+
+| Role | Application service | NSI inspection service |
+| --- | --- | --- |
+| Producer | Workload VPC publishes the application through PSC | Appliance deployment offers packet inspection |
+| Consumer | Third-party VPC consumes the published application | Workload VPC uses the inspection service |
+| Frontend | Application passthrough VIP and service port | Inspection passthrough forwarding rule on UDP/6081 |
+| Backends | Native workload endpoints | VM-Series instance group |
+| Selection | Application backend-service health/distribution model | Zonal intercept deployment/group and inspection backend health |
+
+The use of producer/consumer in NSI describes inspection roles, not the third-party PSC application's producer/consumer relationship.
+
+### Interception and transport
+
+A hierarchical or global network firewall rule applies a security profile group containing a `CUSTOM_INTERCEPT` profile. An intercept endpoint group and its workload-VPC association reference the inspection deployment group. Zonal intercept deployments identify the inspection forwarding rules. Regional network policies do not supply this interception action. [NSI policy rules](https://docs.cloud.google.com/network-security-integration/docs/in-band/firewall-policies-overview), [Consumer setup](https://docs.cloud.google.com/network-security-integration/docs/in-band/configure-consumer-service).
+
+GENEVE carries the original packet to the VM-Series service and returns permitted packets. In normal round-trip inspection, preserve the inner source/destination addresses, protocol and ports rather than opening a different translated connection. Provision the supported instance-group inspection backends, UDP/6081 delivery, health-probe permission and current GENEVE MTU requirements. [In-band packet flow](https://docs.cloud.google.com/network-security-integration/docs/in-band/in-band-integration-overview), [Inspection producer setup](https://docs.cloud.google.com/network-security-integration/docs/in-band/configure-producer-service).
+
+### Conditions before choosing G
+
+- Confirm support for the actual PSC producer/backend combination and PSC NAT/VIP packet seen at the protected interface. Test MariaDB authentication, queries, TLS negotiation and client identity with correlated PAN logs.
+- Check the supported PAN-OS/plugin/licensing and configuration requirements. Deploy appropriate inspection appliances rather than assuming an existing routed PA can be switched into this mode unchanged.
+- Provide matching interception and appliance coverage for the protected workload zones and required service regions. Confirm the intended region-local inspection placement.
+- Compare the required PAN profiles and exceptions in this deployment mode. GENEVE and policy interception do not decrypt TLS automatically.
+- Test incomplete endpoint associations separately from appliance, zone and service failures. Google's policy documentation describes an allow fallback for incomplete interception configuration; do not assume every failure is fail-closed. [Fallback behavior](https://docs.cloud.google.com/network-security-integration/docs/in-band/firewall-policies-overview#action_on_match).
+- Use end-to-end transactions to prove inspection. Application backend health and inspection appliance health are separate signals. TCP interception must observe a session from its SYN; plan session draining and cutover accordingly.
+
+G keeps the VM-Series enforcement surface rather than accepting the managed threat-profile engine's feature gaps. It still requires appliance lifecycle, policy, integration, licensing and publication-migration ownership. This candidate uses standard in-band round-trip inspection; the separate direct internet-egress overlay extension is not assumed or required.
+
 ## Palo controls versus Cloud NGFW
 
 Cloud NGFW Enterprise uses Palo Alto threat signatures. It does not expose the same policy and profile surface as the existing Palo appliances. Approval must compare the actual Panorama policies, subscriptions and exceptions, not vendor names.
@@ -244,13 +339,15 @@ Google documents TLS-inspection exclusions for HTTP/2, QUIC/HTTP/3 and PROXY pro
 3. Verify forward-route applicability and regional PA selection for the replacement source addresses. Check route precedence, PA next-hop type, applicable global-access settings and regional failure behavior. Return routing is confirmed; retain the established return configuration rather than treating it as unfinished work.
 4. Compare every required Palo control and exception with the replacement. Record implemented controls, compensating controls and accepted gaps. Test decryption and blocking, not just policy creation.
 5. Run real PSC consumer transactions in both regions and correlate them with workload and inspection logs. For MariaDB, include authentication, queries, intended writer selection, TLS, long-lived sessions and reconnects.
-6. Break the inspection/data path while backend probes remain healthy. Also test backend, zone, region and inspection-endpoint failures, draining and failover. Define the expected failure result and alert on end-to-end service health.
+6. For F, test PA backend health separately from database service health. For G, test missing intercept associations and appliance failures separately, including the documented incomplete-configuration fallback. Break the inspection/data path while backend probes remain healthy. Also test backend, zone, region and inspection-endpoint failures, draining and failover. Define the expected failure result and alert on end-to-end service health.
 7. Create a consumer cutover and rollback plan. Keep the existing RP publication until the candidate has passed the tests. Remove only the RPs for services that have migrated successfully.
 
 ## Decisions still needed
 
 - Must PA inspection remain region-local, or can both regions use a deliberately centralized `us-central1` path?
 - Can Cloud NGFW replace Palo for this traffic? Which control gaps prevent that change?
+- Can the regional PAs serve as producer-VPC backends for F, and who owns service NAT mappings?
+- Does the proposed PSC/MariaDB flow qualify for G, and can the organization operate the required NSI/PAN deployment and accept its failure behavior?
 - What project and resource ownership will the replacement use?
 - Which RP functions and database/application connection behaviors must be preserved?
 - Can PSC publication move to the workload VPC, and who owns consumer migration, policy, certificates, database health and support?

@@ -4,7 +4,7 @@ Cloud network security documentation, runbooks, and operational guides
 
 ## Architecture decision records
 
-- [GCP third-party ingress reverse-proxy removal](adrs/adr-gcp-third-party-ingress-reverse-proxy-removal.md) - proposed options, detailed SVG diagrams, regional Palo routing constraints, and Cloud NGFW inspection gaps
+- [GCP third-party ingress reverse-proxy removal](adrs/adr-gcp-third-party-ingress-reverse-proxy-removal.md) - proposed options, detailed SVG diagrams, regional Palo routing constraints, Cloud NGFW inspection gaps, and PA/DNAT or Palo NSI candidates
 - [GCP internet egress architecture](adrs/adr-gcp-internet-egress-architecture.md)
 
 ## AWS diagrams
