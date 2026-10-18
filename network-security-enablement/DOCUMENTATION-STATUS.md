@@ -84,3 +84,7 @@ These are short placeholder files, not completed procedures or extra current-pha
 ## Scaffolding and remaining references
 
 Indexes/cloud scope summaries, nine handoff decision records and templates are scaffolding. [Risk intake](projects/netsec-automation/shared/risk-findings/README.md) is not the authoritative risk document. Spreadsheet, Tech 08.11, policy PR and contact links remain placeholders to insert in place. No verdict/Gatekeeper/platform-operations doc backlog; catalog ownership remains deferred.
+
+## Supporting-document convention
+
+Keep named `TODO:` placeholders for supporting documents, forms and links. These are intended for Max's work agent to find and populate from supplied source material. Standard missing-access request instructions live in the general cloud troubleshooting guides; project QE workflows link to them and retain project-specific resolve/escalate decisions. Gatekeeper is owned by Cloud Security.

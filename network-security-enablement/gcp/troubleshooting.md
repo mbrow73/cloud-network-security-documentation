@@ -22,6 +22,15 @@ Record the failing layer or current hypothesis, checks performed, useful configu
 
 Return to the originating project's workflow to choose remediation, request assistance or architecture escalation. After the responsible owner makes a correction, retest and link unresolved follow-ups.
 
+## 5. Provision missing individual access
+
+For a missing individual access requirement, NSE may help the requestor complete a **request form to provision the missing access** and implement it through the normal authorized process when it meets **NetSec Standard Tech 08.11** and has an appropriate business justification. Follow the [GCP standard routable firewall-rule requests guide](requests/standard-routable-firewall-rule-requests.md) once populated. For a third-party environment, use the [third-party standard request guide](requests/third-party-standard-requests.md) once populated.
+
+- **NetSec Standard Tech 08.11:** TODO: insert supporting document link.
+- **Request form / authorized implementation process:** TODO: insert supporting form/process link.
+
+If the finding instead requires changing shared automation/catalog coverage, follow the originating project's architecture-escalation route rather than treating the change as individual access. This guidance does not grant shared catalog/template change authority or other teams' platform privileges.
+
 ## Related workflows and request guides
 
 - [NetSec Automation — GCP QE defect handling](../projects/netsec-automation/gcp/qe-defect-handling.md).

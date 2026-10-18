@@ -15,7 +15,7 @@ NSE also reports gaps in expected controls and assists AFT Operations with plann
 For patterns included in the flow sheet, the relevant SG/GCP firewall configuration allows ingress because the main segmentation decision occurs at source egress. This applies to those patterns, not every cloud flow.
 
 - **Lambda to on-premises:** custom intent-driven SG egress is the primary control. CRE integrates with downstream Palo Alto/Illumio policy plumbing. The pattern sheet identifies the implementation status for each flow.
-- **Kubernetes:** EKS uses `ServiceEntry`; GKE uses Cilium network-policy entries. Centralized verdicting is planned but not implemented. Gatekeeper provides platform-owned declaration constraints such as namespace limits and wildcard restrictions; it is not the verdict engine.
+- **Kubernetes:** EKS uses `ServiceEntry`; GKE uses Cilium network-policy entries. Centralized verdicting is planned but not implemented. Gatekeeper is owned by Cloud Security and provides declaration constraints such as namespace limits and wildcard restrictions; it is not the verdict engine.
 - **On-premises sources:** the in-scope sources are on-premises cloud Kubernetes workloads. Service entries/verdicting are part of the intended architecture; implementation status is recorded in the pattern sheet.
 
 ## GCP service IP containers
@@ -43,7 +43,7 @@ When missing access requires a shared automation/service-catalog change, especia
 ## Scope boundaries
 
 - Verdicting is future work, not a current operational dependency.
-- Gatekeeper administration remains with its platform owner.
+- Gatekeeper is owned by Cloud Security.
 - Full service-catalog ownership is deferred.
 - Third-party environments are not currently included in automation. Their standard-request guides and other topic documents are separate.
 - Later phases can extend responsibilities explicitly; future capabilities are not prerequisites for accepting the current support assignment.

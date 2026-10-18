@@ -4,7 +4,7 @@
 
 ## 1. Confirm the pattern and expected phase behavior
 
-Capture the QE defect, automation pattern, environment and expected versus observed behavior. Support covers both AWS and GCP and all automation patterns during agreed IST hours. Use the pattern sheet to distinguish implemented functionality from planned work; verdicting is not implemented yet and Gatekeeper remains platform-owned.
+Capture the QE defect, automation pattern, environment and expected versus observed behavior. Support covers both AWS and GCP and all automation patterns during agreed IST hours. Use the pattern sheet to distinguish implemented functionality from planned work; verdicting is not implemented yet and Gatekeeper is owned by Cloud Security.
 
 **Pattern / control-placement sheet:** TODO: insert link.
 
@@ -16,7 +16,7 @@ Use [general GCP network troubleshooting](../../../gcp/troubleshooting.md) for a
 
 - **Application/test configuration issue:** help QE/requestors resolve it or give the responsible application team guidance, then retest.
 - **Missing platform prerequisite:** coordinate with the responsible platform operations team. For example, an unexpected IP allocation or tag/firewall mismatch needs the relevant platform/configuration owner.
-- **Missing individual access:** help requestors complete a **request form to provision the missing access** and implement it through the normal authorized process when it meets NetSec Standard Tech 08.11 and has an appropriate business justification. Use the [GCP standard routable firewall-rule requests guide](../../../gcp/requests/standard-routable-firewall-rule-requests.md) once populated.
+- **Missing individual access:** follow the [general GCP missing-access process](../../../gcp/troubleshooting.md#5-provision-missing-individual-access). Confirm this is an individual access requirement, not missing shared automation/catalog coverage.
 - **Missing shared automation/catalog access or suspected design flaw:** escalate to **NSAE — Network Security Architecture and Engineering** with the pattern, impact, expected/observed result and available evidence. A CRE/catalog change can affect many resources; do not treat it as a one-time access request or change shared catalog scope under the standard request process.
 - **Suspected gap in an expected implemented control:** submit a [risk finding](../shared/risk-findings/README.md) and flag it to NSAE. Keep planned features distinct from current control gaps.
 
@@ -27,5 +27,4 @@ If the scope or blast radius is unclear, ask NSAE to classify the issue. Conclus
 Ask QE to retest after the responsible owner makes the correction. Link engineering, platform, request and risk follow-ups as applicable.
 
 - **QE / NSAE / platform routing:** TODO: insert existing contact/queue links.
-- **Standard Tech 08.11:** TODO: insert standard link.
 - [Continuous Registration Engine](../shared/cre/README.md) — explanation outline.

@@ -9,4 +9,4 @@ A phased, in-progress project. Document the processes and implemented support sc
 - [GCP](gcp/README.md) — current-phase support and cloud-specific pattern notes.
 - [Risk-findings PR area](shared/risk-findings/README.md) — placeholder for NSAE's supplied risk document and new findings.
 
-Verdicting is not implemented yet. Gatekeeper is platform context, not NSAE/NSE-owned operations under this handoff. Neither needs a new troubleshooting document or readiness checklist for this phase. Full catalog ownership comes later.
+Verdicting is not implemented yet. Gatekeeper is owned by Cloud Security; its administration is outside this handoff. Neither needs a new troubleshooting document or readiness checklist for this phase. Full catalog ownership comes later.
