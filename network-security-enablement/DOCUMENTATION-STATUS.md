@@ -12,42 +12,51 @@ All packets are Draft/unaccepted. A file existing does not mean its content is f
 
 ```text
 network-security-enablement/
-├── README.md                         navigation + review workflow
-├── DOCUMENTATION-STATUS.md           this inventory
-├── templates/handoff.md              decision-record template
+├── README.md / DOCUMENTATION-STATUS.md / templates/handoff.md
+├── aws/
+│   ├── troubleshooting.md                      general technical checks [DRAFT]
+│   └── requests/
+│       ├── standard-security-group-requests.md [PLACEHOLDER]
+│       └── third-party-standard-requests.md    [PLACEHOLDER]
+├── gcp/
+│   ├── troubleshooting.md                      general technical checks [DRAFT]
+│   └── requests/
+│       ├── standard-routable-firewall-rule-requests.md [PLACEHOLDER]
+│       └── third-party-standard-requests.md    [PLACEHOLDER]
 ├── projects/netsec-automation/
-│   ├── README.md                     project index
+│   ├── README.md                               index
 │   ├── shared/
-│   │   ├── README.md                 overview + NSE expectations [SUBSTANTIVE DRAFT]
-│   │   ├── cre/                      explanation [OUTLINE]
-│   │   └── risk-findings/            intake + template [SCAFFOLD]
+│   │   ├── README.md                           overview + expectations [DRAFT]
+│   │   ├── cre/                                explanation [OUTLINE]
+│   │   └── risk-findings/                       intake/template [SCAFFOLD]
 │   ├── aws/
-│   │   ├── README.md                 cloud scope/navigation stub
-│   │   ├── troubleshooting.md        procedure [SUBSTANTIVE DRAFT]
-│   │   ├── intent-driven-sg-egress/   explanation [OUTLINE]
-│   │   └── processes/security-group-consolidation-migration/
-│   │                                 process [OUTLINE]
+│   │   ├── README.md                           scope/navigation stub
+│   │   ├── qe-defect-handling.md                project decisions [DRAFT]
+│   │   ├── intent-driven-sg-egress/             [OUTLINE]
+│   │   └── processes/security-group-consolidation-migration/ [OUTLINE]
 │   └── gcp/
-│       ├── README.md                 cloud scope/navigation stub
-│       └── troubleshooting.md        procedure [SUBSTANTIVE DRAFT]
+│       ├── README.md                           scope/navigation stub
+│       └── qe-defect-handling.md                project decisions [DRAFT]
 └── third-party-environments/
     ├── aws/
-    │   ├── resource-gateway-resy/     risk/explanation [OUTLINE]
-    │   └── app-id-content-update-remediation/  process [OUTLINE]
+    │   ├── resource-gateway-resy/               [OUTLINE]
+    │   └── app-id-content-update-remediation/   [OUTLINE]
     └── gcp/
-        ├── tock-exception/           exception/explanation [OUTLINE]
-        └── ngfw-poc/                 POC/explanation [OUTLINE]
+        ├── tock-exception/                     [OUTLINE]
+        └── ngfw-poc/                           [OUTLINE]
 ```
 
-Nine topic packets also have the decision record described above. No troubleshooting document remains at the NSE root.
+Nine topic packets also have a short decision record. General cloud troubleshooting contains technical checks; project QE workflows link it and select the resolution/escalation path. They do not duplicate the cloud procedure.
 
-## Materially drafted — start the one-at-a-time review here
+## Materially drafted — one-at-a-time review
 
-1. [Automation overview and NSE expectations](projects/netsec-automation/shared/README.md): primary/transitive model, current/planned distinction, both-cloud/all-pattern support, IST support expectations, request-versus-architecture boundary and reference placeholders.
-2. [AWS troubleshooting](projects/netsec-automation/aws/troubleshooting.md): application/port checks, missing AFT SG versus missing attachment, available current-phase pattern evidence, individual request versus catalog escalation, risk reporting and retest.
-3. [GCP troubleshooting](projects/netsec-automation/gcp/troubleshooting.md): application checks, applicable firewall/source-tag/IP-container checks, current-phase evidence, individual request versus catalog escalation, risk reporting and retest.
+1. [Automation overview and NSE expectations](projects/netsec-automation/shared/README.md): control model, all in-scope GCP services' IP containers, phased scope, both-cloud/all-pattern assignment and missing-access request boundary.
+2. [AWS QE defect handling](projects/netsec-automation/aws/qe-defect-handling.md): defect intake, cloud-guide link, resolve/request/escalate decisions and retest.
+3. [GCP QE defect handling](projects/netsec-automation/gcp/qe-defect-handling.md): the same project decision framework with GCP context.
+4. [General AWS troubleshooting](aws/troubleshooting.md): common application and applicable SG/provisioning checks and findings.
+5. [General GCP troubleshooting](gcp/troubleshooting.md): common application and applicable firewall/tag/service-container checks and findings.
 
-These are substantive first passes based on the discussion, not fully populated or validated platform command runbooks. Actual standards/spreadsheet/log/contact links remain placeholders. Review item 1 first, then each cloud guide.
+These are working first passes, not validated command runbooks. Links remain named placeholders. The project-specific guides were split from the original cloud troubleshooting drafts, not created as a new component operations program.
 
 ## Not materially filled in — still to author together
 
@@ -61,12 +70,17 @@ These files have headings plus brief context/examples; their actual workflows/de
 - [GCP Tock exception](third-party-environments/gcp/tock-exception/README.md): the actual exception details.
 - [GCP NGFW POC](third-party-environments/gcp/ngfw-poc/README.md): the actual POC scope, findings and NSE role.
 
-## Scaffolding — do not count as completed subject documents
+## Explicitly requested new placeholders — author later
 
-- Root/project/cloud indexes and this inventory: navigation, review workflow and scope summaries.
-- `handoff.md` files and reusable template: decision-record structure only; reviewer details/decisions not populated.
-- [Risk-findings intake](projects/netsec-automation/shared/risk-findings/README.md) and [finding template](projects/netsec-automation/shared/risk-findings/finding-template.md): submission scaffold, **not** the authoritative risk document Max will supply, and not actual assessed findings.
+After the existing document review and outstanding automation topics:
 
-## Reference placeholders, not new document scope
+- [AWS standard security-group requests](aws/requests/standard-security-group-requests.md).
+- [GCP standard routable firewall-rule requests](gcp/requests/standard-routable-firewall-rule-requests.md).
+- [AWS third-party standard requests](aws/requests/third-party-standard-requests.md).
+- [GCP third-party standard requests](gcp/requests/third-party-standard-requests.md).
 
-Pattern sheet (all clouds/patterns; current/planned), CRE table, Tech 08.11 and request-process links, relevant existing implementation PRs, supplied risk document and practical support references. Add them in place as available. No verdict/Gatekeeper/platform-operations doc backlog: verdicting does not exist yet and Gatekeeper is not managed by NSAE/NSE. Full service-catalog ownership is deferred.
+These are short placeholder files, not completed procedures or extra current-phase acceptance requirements.
+
+## Scaffolding and remaining references
+
+Indexes/cloud scope summaries, nine handoff decision records and templates are scaffolding. [Risk intake](projects/netsec-automation/shared/risk-findings/README.md) is not the authoritative risk document. Spreadsheet, Tech 08.11, policy PR and contact links remain placeholders to insert in place. No verdict/Gatekeeper/platform-operations doc backlog; catalog ownership remains deferred.

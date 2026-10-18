@@ -4,7 +4,7 @@
 
 ## Purpose and example
 
-Architecture identifies custom intent-driven SG egress as the primary segmentation control for the Lambda-to-on-premises example. Downstream Palo Alto / Illumio plumbing is described under [shared CRE integration](../../shared/cre/README.md).
+Custom intent-driven SG egress is the primary segmentation control for Lambda-to-on-premises traffic. Downstream Palo Alto / Illumio policy plumbing is covered in [shared CRE integration](../../shared/cre/README.md).
 
 ## Request and authorization contract
 

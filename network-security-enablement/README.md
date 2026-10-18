@@ -2,9 +2,11 @@
 
 Architecture/NSAE handoff documentation for NSE, organized by project/process and cloud. The project is delivered in phases; accept the documented support slice, not an implied completed future architecture.
 
-## Cloud troubleshooting
+## General cloud guides
 
-[AWS troubleshooting](projects/netsec-automation/aws/troubleshooting.md) and [GCP troubleshooting](projects/netsec-automation/gcp/troubleshooting.md): diagnose/co-ordinate fixes, help with compliant individual requests, and escalate shared catalog gaps to NSAE. Shared project expectations link to the cloud guides.
+- [AWS troubleshooting](aws/troubleshooting.md) and [GCP troubleshooting](gcp/troubleshooting.md): reusable technical checks.
+- Project-specific QE workflows link those guides and decide how to act on the findings. For automation: [AWS](projects/netsec-automation/aws/qe-defect-handling.md), [GCP](projects/netsec-automation/gcp/qe-defect-handling.md).
+- Request-guide placeholders for later authoring: [AWS standard SG](aws/requests/standard-security-group-requests.md), [GCP standard routable firewall rules](gcp/requests/standard-routable-firewall-rule-requests.md), [AWS third-party standard requests](aws/requests/third-party-standard-requests.md), [GCP third-party standard requests](gcp/requests/third-party-standard-requests.md).
 
 ## Topics
 

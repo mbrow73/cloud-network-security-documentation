@@ -1,45 +1,56 @@
-# NetSec Automation — current-phase overview and QE support
+# NetSec Automation — overview and NSE expectations
 
-**Draft for review.** The automation project is partway through a phased delivery. This document covers the support slice being handed to Network Security Enablement (NSE), not the completed target architecture. [Project index](../README.md).
+**Draft.** NetSec Automation is being delivered in phases. This handoff covers NSE support while the project is in progress. [Project index](../README.md).
 
-## What is being handed over now
+## NSE support expectations
 
-NSE will provide troubleshooting support during agreed IST hours for QE-raised defects across **both AWS and GCP and all NetSec Automation patterns**. The pattern spreadsheet distinguishes implemented/current behavior from planned work; coverage for diagnosis does not imply every target-state control is already delivered. NSE helps identify application/test configuration problems, missing platform prerequisites and suspected automation defects. NSE helps QE and the responsible application/platform operations teams resolve their issues, and routes suspected architecture or service-catalog defects to **NSAE — Network Security Architecture and Engineering** with available diagnostic evidence.
+NSE provides troubleshooting support during agreed IST hours for QE-raised defects across **both AWS and GCP and all automation patterns**. The pattern sheet identifies implemented functionality and planned work. NSE helps requestors/application/platform teams resolve configuration or prerequisite issues and escalates suspected architecture or service-catalog defects to **NSAE — Network Security Architecture and Engineering**.
 
-NSE also records suspected gaps in expected automation controls and assists AFT Operations with planned native-firewall consolidation under the [separate consolidation/migration process](../aws/processes/security-group-consolidation-migration/README.md).
+NSE also reports gaps in expected controls and assists AFT Operations with planned native-firewall consolidation under the [separate consolidation/migration process](../aws/processes/security-group-consolidation-migration/README.md).
 
-## Phase and ownership boundaries
+## Primary and transitive controls
 
-- Coverage includes all automation patterns across both clouds. Current-phase status describes what should exist now; a missing or incomplete pattern can be diagnosed/escalated without assuming its future controls already exist.
-- **Verdicting has not been implemented yet.** Verdict-engine operation, diagnostic logs, acceptance tests and runbooks are not requirements for this handoff.
-- **Gatekeeper is not managed by NSAE/NSE under this handoff.** It is platform context/an external dependency, not a new operations deliverable. When relevant, route platform-owned behavior to its owner; do not create Gatekeeper administration documentation here.
-- Service-catalog ownership and the full automation lifecycle are deferred. NSAE continues architecture/catalog remediation during development.
-- Third-party environments are not currently included in automation; their separately requested documentation remains separate.
-- A later phase can extend the documented support scope. Planned features and other teams' dependencies are not missing deliverables for the current phase.
+**Primary controls** provide source-side egress segmentation, ideally close to the workload. **Secondary/transitive controls** provide downstream environment- and service-port policy plumbing.
 
-## Architecture context (current versus intended)
+For patterns included in the flow sheet, the relevant SG/GCP firewall configuration allows ingress because the main segmentation decision occurs at source egress. This applies to those patterns, not every cloud flow.
 
-Primary controls are the main source-side egress segmentation controls; secondary/transitive controls provide downstream environment/service-port policy plumbing. For patterns included in the supplied flow sheet, ingress is described as allowed by the relevant SG/GCP firewall configuration because the main segmentation decision is at source egress. This describes the pattern configuration, not universal vendor defaults.
+- **Lambda to on-premises:** custom intent-driven SG egress is the primary control. CRE integrates with downstream Palo Alto/Illumio policy plumbing. The pattern sheet identifies the implementation status for each flow.
+- **Kubernetes:** EKS uses `ServiceEntry`; GKE uses Cilium network-policy entries. Centralized verdicting is planned but not implemented. Gatekeeper provides platform-owned declaration constraints such as namespace limits and wildcard restrictions; it is not the verdict engine.
+- **On-premises sources:** the in-scope sources are on-premises cloud Kubernetes workloads. Service entries/verdicting are part of the intended architecture; implementation status is recorded in the pattern sheet.
 
-- **Lambda to on-premises:** the described primary control is custom intent-driven SG egress; downstream Palo Alto/Illumio policy plumbing is described through CRE. Exact implemented scope comes from the current-phase sheet, not this conceptual example.
-- **Kubernetes declaration model:** EKS uses `ServiceEntry`; GKE uses Cilium network-policy entries. Centralized verdicting is a future part of the model, not an existing support dependency. Gatekeeper declaration constraints (such as namespace limits and wildcard restrictions) are context only; Gatekeeper is not the verdict engine and its operation is not transferred here.
-- **GCP intra-cloud example:** GCP Platform Services created service/workload IP containers at NetSec's request to constrain new NLB resources to predictable IP space. Combined with GKE source tags, these support deterministic firewall templates. Example tags are `gkeusc1-600001725-e1` and `gkeuse4-600001725-e1`; the described rule permits the tagged central/east E1 clusters to reach the GKE INLB container on egress port 443. Sentinel and organization policies enforce the container-planning strategy; implementation PR links can be added below. This does not create a separate platform-policy operations handoff.
-- In-scope on-premises sources are described as on-premises cloud Kubernetes workloads; service entries/verdicting are part of the intended design, not proof that all future controls are implemented now.
+## GCP service IP containers
 
-## NSE expectations and troubleshooting route
+GCP Platform Services created IP containers for **all services included in the GCP scope of Network Automation**, not only NLBs or VIPs. Containers constrain new service deployments to designated IP space so firewall templates can use predictable destination ranges. Sentinel and organization policies enforce this allocation strategy.
 
-Use the cloud guides: [AWS troubleshooting](../aws/troubleshooting.md) and [GCP troubleshooting](../gcp/troubleshooting.md). This project page holds the shared expectations; each guide holds the applicable troubleshooting procedure.
+GKE source tags, including `gkeusc1-600001725-e1` and `gkeuse4-600001725-e1`, identify the central/east E1 clusters for the fleet template. For example, tagged GKE clusters can reach the GKE internal-NLB container on egress port 443. This is one use of the broader service-container strategy.
 
-NSE diagnoses and coordinates fixes. NSE may also help requestors complete forms and implement individual access through the normal authorized process when the request meets **NetSec Standard Tech 08.11** and has an appropriate business justification. **TODO: standard and existing request-process links.** This does not confer blanket catalog/template change authority.
+- **Service IP-container plan:** TODO: insert spreadsheet/document link.
+- **Sentinel enforcement:** TODO: insert policy PR/document link.
+- **Organization-policy enforcement:** TODO: insert policy PR/document link.
 
-When access is missing from an automation pattern/service catalog, particularly CRE-based policy plumbing, escalate to NSAE. A catalog change can have broad inherited impact and must not be handled as a one-time request. NSE supplies the pattern context and available evidence; NSAE handles the architectural/catalog decision and remediation coordination. Full service-catalog ownership remains deferred.
+## Handling QE defects and missing access
 
-## References to add when available
+Use the project workflows: [AWS QE defect handling](../aws/qe-defect-handling.md) and [GCP QE defect handling](../gcp/qe-defect-handling.md). They link to the cloud-level troubleshooting guides and determine what to resolve, route as a request, or escalate.
 
-- **TODO: pattern/control-placement spreadsheet covering both clouds and all patterns**, including implemented versus planned status.
-- **TODO: CRE policy-plumbing table/spreadsheet** for the applicable scope.
-- **TODO: Sentinel / organization-policy implementation PRs** for the GCP container strategy (references, not new runbooks).
-- **TODO: NSAE-provided risk document**, linked from the existing risk-findings area.
-- **TODO: practical support details** — agreed IST window, QE/NSAE/AFT/platform routing and relevant existing diagnostic links/access for patterns actually handed over.
+NSE may help requestors complete **request forms to provision missing access** and implement that access through the normal authorized process when it meets **NetSec Standard Tech 08.11** and has an appropriate business justification. This does not grant blanket catalog/template change authority.
 
-These are links/fields in this document, not a new document backlog or a global project-completion checklist. Record any material limitation in the applicable handoff decision; future capabilities do not need to exist before a narrower current-phase handoff can be accepted.
+- [AWS standard SG requests](../../../aws/requests/standard-security-group-requests.md) — placeholder.
+- [GCP standard routable firewall-rule requests](../../../gcp/requests/standard-routable-firewall-rule-requests.md) — placeholder.
+- **NetSec Standard Tech 08.11:** TODO: insert standard link.
+
+When missing access requires a shared automation/service-catalog change, especially CRE policy plumbing, NSE escalates it to NSAE. Such changes can have a broad blast radius and are not individual access requests. NSAE owns the architecture/catalog decision and remediation coordination.
+
+## Scope boundaries
+
+- Verdicting is future work, not a current operational dependency.
+- Gatekeeper administration remains with its platform owner.
+- Full service-catalog ownership is deferred.
+- Third-party environments are not currently included in automation. Their standard-request guides and other topic documents are separate.
+- Later phases can extend responsibilities explicitly; future capabilities are not prerequisites for accepting the current support assignment.
+
+## References
+
+- **AWS/GCP pattern and control-placement sheet (current/planned):** TODO: insert spreadsheet link.
+- **CRE policy-plumbing table:** TODO: insert table/document link.
+- **Risk document:** TODO: insert document link in the [risk-findings area](risk-findings/README.md).
+- **IST support window / QE, NSAE, AFT and platform contacts:** TODO: insert schedule/contact links.
