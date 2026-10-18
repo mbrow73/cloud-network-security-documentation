@@ -4,6 +4,10 @@ Operational handoffs from Architecture to Network Security Enablement (NSE).
 
 **Proposed workflow:** this area is a documentation scaffold, not a record that NSE has already agreed to the workflow or accepted support responsibility. All initial packets are **Draft**.
 
+## Documentation progress
+
+See the [document hierarchy, writing status and review queue](DOCUMENTATION-STATUS.md) for substantive drafts, outline-only packets and candidate follow-on references. No writing status implies operational acceptance.
+
 ## Handoff catalog
 
 ### NetSec Automation
