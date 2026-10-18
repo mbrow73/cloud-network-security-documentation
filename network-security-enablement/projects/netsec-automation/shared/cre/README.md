@@ -8,37 +8,39 @@
 
 **Policy scaffolding** is the prebuilt firewall policy for an automated traffic pattern. It allows traffic from a source address group to a destination address group on the required service/port. The [pattern/control-placement sheet](../README.md#references) identifies the automated traffic patterns.
 
-**CRE registration** supplies IP-to-tag mappings to downstream Palo Alto firewalls. Tag-based Dynamic Address Groups (DAGs) populate from those registrations. Existing rules using the matching groups then apply to the newly registered resources. CRE does not need to create or edit an allow rule for every new cluster/resource joining an existing pattern.
+**CRE source registration** supplies the source subnet CIDRs and their tags to downstream Palo Alto firewalls. Request the actual values passed to CRE from the requestor when confirming a flow. Tag-based Dynamic Address Groups (DAGs) populate from those registrations. Existing rules using the matching groups then apply to the newly registered resources. CRE does not need to create or edit an allow rule for every new cluster/resource joining an existing pattern.
 
 The group definitions and policy scaffolding must already be configured and committed. Updating dynamic registered IP/tag membership does **not** require a new firewall commit; changing the rules or group definitions is a different configuration change. See [Palo Alto dynamic registration](https://docs.paloaltonetworks.com/network-security/security-policy/administration/objects/addresses/register-ip-addresses-and-tags-dynamically) and [address-group behavior](https://docs.paloaltonetworks.com/network-security/security-policy/administration/objects/address-groups).
 
 ## Provisioning flow
 
 1. A new AWS account is vended through AFT, or the platform team provisions a component such as an EKS/GKE cluster.
-2. The applicable hook/platform integration calls the CRE API with the relevant addresses and classification context. For example, the AFT hook identifies EKS subnet addresses that need the EKS tag.
+2. The applicable hook/platform integration calls the CRE API with the source subnet CIDRs and classification context. For example, the AFT hook identifies EKS subnet CIDRs that need the EKS tag.
 3. CRE registers the applicable IP/tag mappings on the required downstream Palo Alto firewalls.
 4. The matching DAGs populate from those registrations.
 5. Existing policy-scaffolding rules referencing those groups apply to the registered resources.
 
 ```text
 AFT hook / platform provisioning
-  -> CRE API call with address + tag context
+  -> CRE API call with source subnet CIDRs + tag context
   -> registered IP/tag mappings on downstream Palos
   -> matching Dynamic Address Group membership
   -> existing policy-scaffolding rule applies
 ```
 
-The API caller's response is diagnostic evidence. Whether it confirms request acceptance or completed delivery to every target is still to be documented; do not infer this from an HTTP success status alone.
+A **successful CRE response guarantees that the address values provided in the API call were registered on every local firewall listed in that response**. The response is evidence of completed registration on those listed firewalls, not merely request acceptance.
+
+Compare the firewall blocking the flow with that explicit list. Success for the listed firewalls does not establish registration on an unlisted firewall. Also confirm that the submitted source CIDRs are correct for the affected flow; successful registration does not itself prove that the intended traffic matches the policy scaffolding.
 
 - **Hook / platform integration references:** TODO: insert document links.
 - **CRE request and response example:** TODO: insert sanitized example/document link.
-- **Response success / partial-failure meaning and propagation timing:** TODO: insert explanation/supporting link.
+- **CRE API response reference:** TODO: insert supporting document link.
 
 ## Example: EKS/GKE to on-premises Hydra
 
 The downstream Palos contain policy scaffolding allowing the applicable EKS/GKE source address group to the on-premises Hydra VIP destination address group on port 443.
 
-When a new EKS or GKE cluster is provisioned and the platform integration makes the CRE call, its registered addresses join the applicable source group. The cluster then matches the existing policy, without a new commit for that membership update. The existing allow rule is reused; this is not a new per-cluster firewall rule.
+When a new EKS or GKE cluster is provisioned and the platform integration makes the CRE call, its registered source subnet CIDRs populate the applicable source group. The cluster then matches the existing policy, without a new commit for that membership update. The existing allow rule is reused; this is not a new per-cluster firewall rule.
 
 - **Hydra pattern / group and policy names:** TODO: insert pattern/reference link.
 - **Applicable environments and downstream firewalls:** TODO: insert scope/reference link.
@@ -48,10 +50,10 @@ When a new EKS or GKE cluster is provisioned and the platform integration makes 
 A Palo Alto deny does **not** establish that policy scaffolding is missing. The policy may exist while the CRE call was never made, failed, used incorrect registration context, or did not produce the expected membership on the firewall seeing the flow.
 
 1. **Capture the blocked flow.** Use [AWS troubleshooting](../../../../aws/troubleshooting.md) or [GCP troubleshooting](../../../../gcp/troubleshooting.md) to identify the affected flow, blocking firewall and available rule/log evidence.
-2. **Obtain the CRE API call evidence.** QE/the requesting team should have the call response. Establish whether the call occurred, what addresses/classification were submitted and what the response reports. If evidence is missing, coordinate with the requesting/platform team; absence of evidence is not proof of a catalog gap.
-3. **Check registration and group membership.** Compare the flow's relevant addresses with the expected registered mappings, tags and group membership on the applicable downstream firewall. Account for the source identity used by the actual traffic path. A successful call response is useful evidence, not a substitute for checking the relevant downstream state when access remains blocked.
+2. **Obtain the CRE API call evidence.** QE/the requesting team should have the call response. Establish whether the call occurred, the exact source subnet CIDRs/classification submitted and the local firewall list/results in the response. Ask the requestor for the submitted values if necessary. If evidence is missing, obtain it from QE/the requesting team; absence of evidence is not proof of a catalog gap.
+3. **Check registration and group membership.** Verify registered source subnet CIDRs, tags and group membership **on the applicable firewall**. Check whether the flow's source address falls within the submitted CIDRs and whether the blocking firewall appears in the successful response's firewall list. The successful response guarantees registration on its listed firewalls; direct firewall inspection establishes which registration/group/policy state applies to the blocked flow.
 4. **Check policy scaffolding separately.** Use the CRE-enabled address-group reference to find the expected source/destination groups and the rules using them. Check the intended pattern's service/port and applicable policy scope. If membership and a candidate allow rule exist but the flow is still blocked, continue investigating the actual rule match/path rather than concluding the catalog is missing.
-5. **Route the finding.** Registration/integration failures need coordination with the responsible platform/CRE owner. Suspected missing or incorrect shared scaffolding/catalog coverage goes to NSAE with the evidence. NSE must not convert a broad catalog change into a one-time access request. Return to [AWS QE defect handling](../../aws/qe-defect-handling.md) or [GCP QE defect handling](../../gcp/qe-defect-handling.md) for project-specific routing.
+5. **Route the finding.** Escalate missing/failed registrations or CRE integration issues to the [CRE support contacts](#cre-support-contacts), with the submitted values, response and firewall evidence. Suspected missing or incorrect shared scaffolding/catalog coverage goes to NSAE with the evidence. NSE must not convert a broad catalog change into a one-time access request. Return to [AWS QE defect handling](../../aws/qe-defect-handling.md) or [GCP QE defect handling](../../gcp/qe-defect-handling.md) for project-specific routing.
 
 Conclusive root cause is not required before requesting engineering help. The distinction is to report the evidence and suspected failing layer rather than label every deny as missing catalog coverage.
 
@@ -59,10 +61,18 @@ Conclusive root cause is not required before requesting engineering help. The di
 
 - **Automated patterns / policy-scaffolding sheet:** TODO: insert spreadsheet/document link.
 - **CRE-enabled address-group and policy reference:** TODO: insert document/table link. Include group names, matching tags/filters, source/destination role, relevant pattern, environment/firewall scope and the policy references using each group. This lets operators filter by group name and distinguish existing coverage from missing scaffolding.
-- **Registered-IP / DAG membership lookup:** TODO: insert existing operator guide/console/log reference.
-- **CRE API response interpretation:** TODO: insert supporting document and sanitized examples.
-- **Registration correction / retry ownership:** TODO: insert responsible team and approved process link. Do not assume NSE can replay calls or modify registrations directly.
+- **Firewall registered-IP / DAG membership lookup:** TODO: insert existing firewall operator guide/reference.
+- **CRE API response examples:** TODO: insert supporting document and sanitized examples.
+- **CRE support escalation process:** TODO: insert internal process/queue link. CRE support handles registration issues and advises on correction/retry; NSE does not assume direct replay or registration-change authority.
 - **Illumio integration:** TODO: insert applicable mechanism/scope reference; the flow above covers Palo Alto.
+
+## CRE support contacts
+
+- **Primary CRE support contact:** TODO: insert internal name/contact.
+- **Alternate CRE support contact:** TODO: insert internal name/contact.
+- **CRE support queue / escalation channel:** TODO: insert internal queue/channel link.
+
+Contact details remain placeholders for internal completion. Send registration issues to CRE support; send shared policy-scaffolding/catalog changes to NSAE.
 
 ## Ownership boundary
 

@@ -18,7 +18,7 @@ For Kubernetes-related flows, use the relevant platform's existing references an
 
 ### CRE-backed Palo Alto paths
 
-For a blocked flow using CRE-enabled policy, capture the blocking firewall/rule evidence and obtain the CRE API call response from QE/the requesting team. A deny may reflect an unmade/failed registration call or unexpected group membership even when the policy scaffolding already exists. Follow the [CRE registration-versus-scaffolding checks](../projects/netsec-automation/shared/cre/README.md#diagnosing-blocked-cre-backed-traffic) before treating the block as missing catalog coverage.
+For a blocked flow using CRE-enabled policy, capture the blocking firewall/rule evidence and obtain the source subnet CIDRs passed to CRE and the API response from QE/the requesting team. A successful response guarantees registration of the submitted values on all local firewalls listed in that response; verify the applicable state on the blocking firewall. A deny may reflect an unmade/failed registration call or unexpected group membership even when the policy scaffolding already exists. Follow the [CRE registration-versus-scaffolding checks](../projects/netsec-automation/shared/cre/README.md#diagnosing-blocked-cre-backed-traffic) before treating the block as missing catalog coverage.
 
 ## 4. Record the finding
 

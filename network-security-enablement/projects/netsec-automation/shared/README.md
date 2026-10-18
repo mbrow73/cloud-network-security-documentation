@@ -14,7 +14,7 @@ NSE also reports gaps in expected controls and assists AFT Operations with plann
 
 For patterns included in the flow sheet, the relevant SG/GCP firewall configuration allows ingress because the main segmentation decision occurs at source egress. This applies to those patterns, not every cloud flow.
 
-- **Lambda to on-premises:** custom intent-driven SG egress is the primary control. CRE provisions downstream Palo Alto/Illumio policy plumbing. On Palo Alto, CRE registers IP/tag mappings that populate address groups used by existing policy scaffolding; [the CRE explanation](cre/README.md) separates registration failures from missing policy coverage. The pattern sheet identifies the implementation status for each flow.
+- **Lambda to on-premises:** custom intent-driven SG egress is the primary control. CRE provisions downstream Palo Alto/Illumio policy plumbing. On Palo Alto, CRE registers source subnet CIDR/tag mappings that populate address groups used by existing policy scaffolding; [the CRE explanation](cre/README.md) separates registration failures from missing policy coverage. The pattern sheet identifies the implementation status for each flow.
 - **Kubernetes:** EKS uses `ServiceEntry`; GKE uses Cilium network-policy entries. Centralized verdicting is planned but not implemented. Gatekeeper is owned by Cloud Security and provides declaration constraints such as namespace limits and wildcard restrictions; it is not the verdict engine.
 - **On-premises sources:** the in-scope sources are on-premises cloud Kubernetes workloads. Service entries/verdicting are part of the intended architecture; implementation status is recorded in the pattern sheet.
 
