@@ -14,7 +14,13 @@ Operational handoffs from Architecture to Network Security Enablement (NSE).
 | --- | --- | --- | --- |
 | AWS | [NetSec Automation](projects/netsec-automation/aws/README.md) | Project ownership, support model, operating procedures | [Handoff](projects/netsec-automation/aws/handoff.md) |
 | AWS | [Security-group consolidation / migration](projects/netsec-automation/aws/processes/security-group-consolidation-migration/README.md) | Migration preparation, execution, validation, recovery | [Handoff](projects/netsec-automation/aws/processes/security-group-consolidation-migration/handoff.md) |
-| GCP | [NetSec Automation](projects/netsec-automation/gcp/README.md) | Placeholder; supported capabilities to define independently | [Handoff](projects/netsec-automation/gcp/handoff.md) |
+| GCP | [NetSec Automation](projects/netsec-automation/gcp/README.md) | Initial GKE control-model context; scope/enforcement to validate | [Handoff](projects/netsec-automation/gcp/handoff.md) |
+
+### Shared and focused automation packets
+
+- [Shared control-placement model](projects/netsec-automation/shared/control-model.md): Architecture working draft and authoritative-sheet placeholder; not an acceptance record.
+- [Shared CRE integration](projects/netsec-automation/shared/cre/README.md) · [Handoff](projects/netsec-automation/shared/cre/handoff.md): explicitly scoped AWS/GCP downstream integration.
+- [AWS intent-driven SG egress](projects/netsec-automation/aws/intent-driven-sg-egress/README.md) · [Handoff](projects/netsec-automation/aws/intent-driven-sg-egress/handoff.md): focused primary-control packet.
 
 ### Third-party environments
 

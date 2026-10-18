@@ -4,7 +4,9 @@
 
 ## 1. Purpose, outcomes, and scope
 
-- TODO: problem solved, consumers, supported AWS accounts, Regions, and environments, capabilities in this release.
+- The described segmentation model places the primary control near the source and provisions downstream/transitive service-level policy separately; see the [shared control model](../shared/control-model.md).
+- Initial example: Lambda to an on-premises service uses intent-driven SG egress as its primary control. EKS-to-on-premises intent is described through developer-authored service entries with a centralized verdict; actual runtime enforcement still needs to be identified.
+- TODO: supported AWS accounts, Regions, environments, exact deployed capabilities/release, and exclusions. Planned integration must not be labeled live.
 - TODO: exclusions and capabilities retained by Architecture or other teams.
 
 ## 2. Architecture and inventory
@@ -44,6 +46,10 @@ For each procedure, document trigger, inputs, prechecks, exact actions, expected
 - TODO: conditions under which retry or rollback is unsafe and requires Architecture intervention.
 
 ## 8. Dependencies and related processes
+
+- [Intent-driven SG egress](intent-driven-sg-egress/README.md): request/enforcement/lifecycle outline.
+- [Shared CRE integration](../shared/cre/README.md): AWS/GCP downstream policy-plumbing outline.
+
 
 - [Security-group consolidation / migration](processes/security-group-consolidation-migration/README.md) is a separate process handoff; project acceptance does not approve migration execution.
 - TODO: supported onboarding prerequisites, service dependencies, risk decisions, and upstream/downstream runbooks.

@@ -1,10 +1,12 @@
 # GCP NetSec Automation — project operational handoff
 
-**Draft placeholder — scope not yet defined; not execution-ready.** [Review and acceptance](handoff.md) · [Project index](../README.md).
+**Draft outline — initial control-model context captured; scope and enforcement not validated; not execution-ready.** [Review and acceptance](handoff.md) · [Project index](../README.md).
 
 ## 1. Scope and capability inventory
 
-TODO: identify the GCP automation capabilities/release being handed over, supported projects/Regions/environments, consumers, and exclusions. Do not copy the AWS service model or security-group migration process into this scope.
+Initial examples are GKE-to-on-premises service-entry intent/central verdict with CRE-based downstream policy, and intra-GCP fleet firewall templates combining GKE source tags with service-specific destination IP containers. See the [shared control model](../shared/control-model.md) for the supplied examples and unresolved enforcement questions.
+
+TODO: confirm capabilities/release, supported projects/Regions/environments, consumers, exclusions and live versus planned status. Do not copy the AWS service model or SG migration process into this scope.
 
 ## 2. Architecture and dependencies
 
