@@ -1,8 +1,8 @@
 # GCP NetSec Automation — handoff record
 
 - **Status:** Draft
-- **Document type:** Outline / not execution-ready
-- **Submitting team:** Architecture
+- **Document type:** Draft initial QE troubleshooting support handoff
+- **Submitting team:** Network Security Architecture and Engineering (NSAE)
 - **Receiving team:** Network Security Enablement
 - **Architecture contact:** TODO: name / team handle
 - **NSE reviewer / acceptance authority:** TODO: name / team handle and authority
@@ -15,7 +15,9 @@
 
 ## Requested operational scope
 
-TODO: Define the responsibilities requested from NSE, exclusions, support hours, dependency ownership, and responsibility retained by Architecture. Do not infer scope from the title.
+NSE provides IST-hours QE defect triage for supported patterns, helps QE/application and GCP platform owners resolve configuration or provisioning prerequisites, and escalates suspected architecture/catalog defects to NSAE with evidence. NSE records potential control-coverage risks.
+
+[Shared scope and responsibility boundaries](../shared/support-model.md) and [QE triage procedure](../shared/qe-defect-triage.md) define this phase. **Service-catalog ownership, architecture remediation and third-party environment automation support are excluded.** TODO: exact supported-pattern revision, IST hours/days, contacts, access and evidence references for this cloud.
 
 ## Acceptance criteria and evidence
 
@@ -24,7 +26,10 @@ TODO: Define the responsibilities requested from NSE, exclusions, support hours,
 - [ ] Applicable procedures, success checks, failure paths, and recovery validated; evidence linked.
 - [ ] Monitoring and escalation routes verified.
 - [ ] Required security/risk/change approvals linked separately; no approvals implied here.
-- [ ] TODO: add measurable packet-specific criteria from the documentation readiness section.
+- [ ] NSE demonstrates an application/test configuration triage and missing platform prerequisite diagnosis applicable to this cloud.
+- [ ] NSE produces an actionable NSAE escalation without requiring conclusive root cause first.
+- [ ] NSE demonstrates the risk-findings PR route with the authoritative risk document/reviewer linked.
+- [ ] Supported-pattern sheet, exact IST coverage, intake/escalation contacts and diagnostic references are populated.
 
 **Evidence:** TODO: immutable test records, walkthrough, tickets, dashboards, or recorded demonstrations.
 
@@ -32,7 +37,7 @@ TODO: Define the responsibilities requested from NSE, exclusions, support hours,
 
 | Gap | Blocking? | Owner | Due date | Resolution / evidence |
 | --- | --- | --- | --- | --- |
-| Unfilled outline and unvalidated procedures | Yes | TODO: Architecture owner | TODO | Not resolved |
+| Missing reference sheets, operator links/contacts/hours and unvalidated triage walkthroughs | Yes | TODO: NSAE owner | TODO | Not resolved |
 
 ## Decision history (append only)
 

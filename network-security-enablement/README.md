@@ -12,9 +12,11 @@ Operational handoffs from Architecture to Network Security Enablement (NSE).
 
 | Cloud | Packet | Scope | Decision record |
 | --- | --- | --- | --- |
-| AWS | [NetSec Automation](projects/netsec-automation/aws/README.md) | Project ownership, support model, operating procedures | [Handoff](projects/netsec-automation/aws/handoff.md) |
+| AWS | [NetSec Automation](projects/netsec-automation/aws/README.md) | Initial IST-hours QE triage and NSAE escalation | [Handoff](projects/netsec-automation/aws/handoff.md) |
 | AWS | [Security-group consolidation / migration](projects/netsec-automation/aws/processes/security-group-consolidation-migration/README.md) | Migration preparation, execution, validation, recovery | [Handoff](projects/netsec-automation/aws/processes/security-group-consolidation-migration/handoff.md) |
-| GCP | [NetSec Automation](projects/netsec-automation/gcp/README.md) | Initial GKE control-model context; scope/enforcement to validate | [Handoff](projects/netsec-automation/gcp/handoff.md) |
+| GCP | [NetSec Automation](projects/netsec-automation/gcp/README.md) | Initial IST-hours QE triage; GKE Cilium pattern context | [Handoff](projects/netsec-automation/gcp/handoff.md) |
+
+The automation handoff is initially [QE troubleshooting support](projects/netsec-automation/shared/support-model.md), not catalog ownership. [Third-party environment](#third-party-environments) documentation remains separate; those environments are not currently covered by automation.
 
 ### Shared and focused automation packets
 
@@ -58,6 +60,8 @@ A PR merge alone is not operational acceptance. Draft outlines can be merged wit
 NSE accepts operational responsibilities, not security risk on behalf of the business. Formal risk acceptance requires the separately authorized risk owner and system of record. Link that decision, affected scope, conditions, and expiry; do not imply approval from a documentation review. Likewise, accepting documentation does not authorize a production change.
 
 ## Minimum readiness before proposing a packet
+
+Apply readiness criteria to the requested scope. For the initial automation support handoff, validate diagnostic access, triage/routing, risk reporting and support coverage; do not imply full service-catalog or component lifecycle ownership.
 
 - [ ] Named Architecture contact, NSE reviewer, service/process owner, and escalation route.
 - [ ] In-scope and out-of-scope responsibilities, dependencies, and support boundaries.

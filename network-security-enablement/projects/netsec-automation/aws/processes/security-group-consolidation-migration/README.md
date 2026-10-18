@@ -6,6 +6,12 @@
 
 TODO: define consolidation versus migration, supported resource types/environments, exclusions, target state, and required parent-project readiness.
 
+## NSE assistance to AFT Operations
+
+The initial project handoff expects NSE to help AFT Operations during planned native-firewall consolidation required for NetSec Automation: identify expected pattern prerequisites, assist troubleshooting, coordinate validation/retest, and escalate suspected architecture issues to NSAE. This packet develops the AWS security-group consolidation/migration process; any additional native-firewall scope must be specified separately.
+
+TODO: planned waves/change references, AFT/NSE/NSAE roles, access, execution/rollback authority and support contacts. Support acceptance alone does not authorize SG deletion, attachment changes or production execution.
+
 ## 2. Discovery and dependency mapping
 
 TODO: authoritative SG/rule inventory, attachments, referencing SGs, owners, workloads, existing IaC/state ownership, and connectivity evidence. Identify service-managed/controller-managed resources and exceptions before planning changes.

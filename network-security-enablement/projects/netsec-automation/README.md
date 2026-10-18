@@ -2,6 +2,12 @@
 
 Cloud-specific project handoffs and shared control-model documentation for Network Security Enablement.
 
+## Current handoff: QE troubleshooting support
+
+[Initial NSE support scope](shared/support-model.md) · [QE defect-triage guide](shared/qe-defect-triage.md) · [Risk-findings PR intake](shared/risk-findings/README.md).
+
+NSE supports expected automation patterns during agreed IST hours while architecture development continues, helping QE/platform teams resolve configuration and prerequisite issues and escalating suspected design/catalog defects to **NSAE — Network Security Architecture and Engineering**. Catalog ownership comes later. Third-party environments are not currently included in automation. AWS and GCP support decisions remain separately scoped.
+
 ## Shared architecture and integrations
 
 - [Primary and secondary/transitive control model](shared/control-model.md): working definitions, example flows, GCP address-container model, and unresolved enforcement/scope questions.

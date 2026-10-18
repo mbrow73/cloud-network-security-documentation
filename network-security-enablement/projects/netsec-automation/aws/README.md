@@ -1,68 +1,43 @@
-# AWS NetSec Automation — project operational handoff
+# AWS NetSec Automation — initial QE troubleshooting handoff
 
-**Draft outline — not execution-ready.** This packet defines the proposed steady-state project handoff, not approval for SG migration. [Review and acceptance](handoff.md).
+**Draft for review — operator links, support window and diagnostic details still required.** [Review and acceptance](handoff.md) · [Project index](../README.md).
 
-## 1. Purpose, outcomes, and scope
+## 1. Purpose and initial responsibilities
 
-- The described segmentation model places the primary control near the source and provisions downstream/transitive service-level policy separately; see the [shared control model](../shared/control-model.md).
-- Initial example: Lambda to an on-premises service uses intent-driven SG egress as its primary control. EKS-to-on-premises intent is described through developer-authored service entries with a centralized verdict; actual runtime enforcement still needs to be identified.
-- TODO: supported AWS accounts, Regions, environments, exact deployed capabilities/release, and exclusions. Planned integration must not be labeled live.
-- TODO: exclusions and capabilities retained by Architecture or other teams.
+NSE provides IST-hours troubleshooting for QE defects against expected, supported automation patterns. NSE helps identify application/test configuration issues and missing platform prerequisites, coordinates correction with QE/platform operations, and escalates suspected automation architecture or service-catalog defects to **Network Security Architecture and Engineering (NSAE)** with diagnostic evidence.
 
-## 2. Architecture and inventory
+The [shared support model](../shared/support-model.md) defines responsibility boundaries, exclusions, escalation and acceptance scenarios. Full catalog ownership and component maintenance/release ownership are not transferred in this phase.
 
-- TODO: authoritative architecture/ADR, component and traffic-flow diagrams, code/module/catalog repositories.
-- TODO: execution platform, workflow entry points, authoritative sources of intent/state, deployed versions, account/environment inventory.
-- TODO: interfaces and dependencies, including any registration, identity, approval, or policy services actually used.
-- Related background, not an assertion of the deployed design: [AWS paved-road policy and rollout considerations](../../../../assessments/aws-paved-road-sentinel-policy-and-rollout-considerations.md).
+## 2. Cloud-specific pattern context
 
-## 3. Ownership and support contract
+- Lambda-to-on-premises patterns use custom intent-driven SG egress as the described primary control.
+- EKS patterns use developer-authored `ServiceEntry` declarations with Gatekeeper guardrails and a separate verdict engine.
+- Missing AFT-vended SGs and missing workload SG attachments are examples of prerequisite/configuration failures NSE helps isolate and route.
 
-- TODO: responsibilities for request intake, approval, execution, catalog maintenance, platform dependencies, incidents, and engineering defects.
-- TODO: support hours, service expectations, escalation contacts, and the boundary between NSE operations and Architecture changes.
+**TODO: authoritative supported-pattern/control-placement spreadsheet**, revision, supported accounts, Regions and environments. Third-party environments are not currently included in automation. See the [shared control model](../shared/control-model.md) for the primary/transitive distinction and cross-cloud context.
 
-## 4. Access and prerequisites
+## 3. Support workflow and evidence
 
-- TODO: operator roles, approved authentication method, access request/revocation process, environment prerequisites, and break-glass controls.
-- Link secret-store entries/instructions; do not embed credentials.
+Follow the [QE defect-triage guide](../shared/qe-defect-triage.md): confirm the supported pattern, check application/test and platform prerequisites, inspect declaration/admission/verdict evidence, trace expected control behavior and resolve/route with evidence. Potential coverage gaps go through [risk-findings intake](../shared/risk-findings/README.md).
 
-## 5. Normal operations
+TODO: component-specific logs/dashboards, operator access, approved diagnostic commands, QE intake and NSAE/platform escalation queues. Gatekeeper guardrails are not the verdict decision, and admission success is not proof of working connectivity.
 
-For each procedure, document trigger, inputs, prechecks, exact actions, expected result, evidence, failure handling, and escalation.
+## 4. Coverage and change boundaries
 
-- TODO: request submission, validation/review, plan/approval/execution, and confirmation.
-- TODO: modifying/revoking an existing request, correcting failed jobs, reconciling drift, and safe retry behavior.
-- TODO: routine catalog/configuration changes, release promotion, and periodic maintenance.
+- Coverage is during agreed India Standard Time (IST) support hours. TODO: exact hours/days, rota, support start and outside-hours routing.
+- NSE assists diagnosis and coordination; changes follow the responsible team's approved access/change process.
+- No new-pattern approval, automatic access bypass, risk acceptance, or service-catalog ownership is implied.
+- TODO: agreed severity/response expectations; none are invented here.
 
-## 6. Monitoring and incident response
+## 5. Reference inputs and dependencies
 
-- TODO: dashboards, health signals, alerts, logs, audit trail, and retention.
-- TODO: decision tree for invalid input, denied policy, unavailable dependency, failed deployment, partial execution, and drift; verify which failure modes apply.
-- TODO: triage ownership, containment, evidence capture, escalation thresholds, and communications.
+- [Intent-driven SG egress](intent-driven-sg-egress/README.md).
+- [Security-group consolidation / migration](processes/security-group-consolidation-migration/README.md): NSE assistance to AFT Operations; separate process/change authority.
+- [Shared CRE integration](../shared/cre/README.md): TODO: policy-plumbing/lifecycle spreadsheet and actual deployed status.
+- TODO: flow spreadsheet, declaration/verdict implementation references and Gatekeeper constraints/namespace limits.
+- TODO: platform/Sentinel/organization-policy implementation PRs applicable to this cloud.
+- TODO: NSAE-provided risk document, linked from the shared risk intake.
 
-## 7. Change, recovery, and rollback
+## 6. Support-readiness acceptance
 
-- TODO: approved change workflow, release/version controls, backup/state safeguards, rollback criteria and procedure, recovery success checks.
-- TODO: conditions under which retry or rollback is unsafe and requires Architecture intervention.
-
-## 8. Dependencies and related processes
-
-- [Intent-driven SG egress](intent-driven-sg-egress/README.md): request/enforcement/lifecycle outline.
-- [Shared CRE integration](../shared/cre/README.md): AWS/GCP downstream policy-plumbing outline.
-
-
-- [Security-group consolidation / migration](processes/security-group-consolidation-migration/README.md) is a separate process handoff; project acceptance does not approve migration execution.
-- TODO: supported onboarding prerequisites, service dependencies, risk decisions, and upstream/downstream runbooks.
-
-## 9. Demonstration and readiness evidence
-
-- TODO: NSE completes one representative successful request and one relevant failure/recovery scenario in an approved test environment.
-- TODO: demonstrate traceability from request/approval to rendered change, deployment result, and audit evidence.
-- TODO: verify alert routing, escalation, access, and release/recovery procedures.
-- Record evidence, owners, remaining blockers, reviewed revision, and the explicit decision in [handoff.md](handoff.md).
-
-## 10. Open questions to resolve together
-
-- What exact automation capabilities and release are being handed over first?
-- Which procedures will NSE own versus Architecture and application/platform teams?
-- What tooling, support expectations, and authoritative repository links apply?
+Demonstrate cloud-applicable cases of application/configuration triage, missing platform prerequisite diagnosis, evidence-based NSAE escalation and a potential control-gap report. Verify required access and escalation routes. Record evidence and open blockers in [handoff.md](handoff.md); acceptance is limited to the support scope, not full steady-state project ownership.

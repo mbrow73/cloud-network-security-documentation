@@ -9,9 +9,9 @@ NetSec Automation separates **primary** segmentation controls from **secondary /
 - **Primary:** the main network segmentation control, ideally closest to the source workload, enforcing permitted egress intent.
 - **Secondary / transitive:** controls downstream of the primary, provisioned with environment- and service-specific port-level policy plumbing to support the permitted path.
 - **Intent and verdict:** a workload/application request and its central authorization decision. Document the runtime mechanism separately from the artifact/decision that configures it.
-- **IP container:** in the GCP example, a service/workload-specific address-allocation construct used to place new resources into predictable IP space and make destination-IP firewall templates deterministic. Its implementation and allocation enforcement remain to be documented.
+- **IP container:** in the GCP example, a service/workload-specific address-allocation construct used to place new resources into predictable IP space and make destination-IP firewall templates deterministic. Architecture identifies Sentinel policies and organization policies as enforcement of the container-planning strategy; exact policy scope and implementation PRs are pending.
 
-Architecture describes ingress as generally allowed by default because the source-side egress control carries the main segmentation decision. This is a design convention being described, **not a statement of AWS/GCP product defaults**. The exact applicable boundaries and inbound exceptions are unresolved; do not translate this into universal allow-ingress rules.
+For the patterns included in the authoritative flow sheet, ingress is allowed by default in the relevant SG/GCP firewall configuration; source-side egress carries the main segmentation decision. This is the described architecture configuration, **not a statement of product defaults or a universal allow-ingress instruction**. Third-party environments are not yet included in automation. In-scope on-premises sources are described as on-premises cloud Kubernetes workloads that will also require service entries and verdicts; other on-premises sources are not implicitly covered.
 
 ## Control-placement matrix
 
@@ -20,8 +20,8 @@ TODO: link or upload the authoritative resource/control-placement sheet, its own
 | Cloud / source | Destination | Primary intent/control described | Downstream provisioning described | Open validation |
 | --- | --- | --- | --- | --- |
 | AWS Lambda | On-premises service | Custom intent-driven SG egress rule | Planned CRE integration with Palo Alto / Illumio at account-vending scope | Scope, deployed status, source identity, permitted service/port set, lifecycle |
-| AWS EKS workload | On-premises service | App-authored service entry with a centralized verdict; actual runtime enforcement to identify | CRE-based downstream plumbing described at vending time | Mesh/product, verdict authority, denied/bypass paths, exact bootstrap event |
-| GCP GKE workload | On-premises service | App-authored service entry with a centralized verdict; actual runtime enforcement to identify | CRE-based downstream plumbing described at vending time | Same enforcement questions; identify GCP project/cluster provisioning event rather than assuming AWS account semantics |
+| AWS EKS workload | On-premises service | Developer-authored EKS `ServiceEntry` with a separate centralized verdict; Gatekeeper declaration guardrails | CRE-based downstream plumbing described at vending time | Exact verdict/runtime implementation, applicable constraints and bootstrap references |
+| GCP GKE workload | On-premises service | Developer-authored GKE Cilium network-policy entry with a separate centralized verdict; Gatekeeper declaration guardrails | CRE-based downstream plumbing described at vending time | Exact verdict/runtime implementation and GCP-specific bootstrap/lifecycle references |
 | GCP GKE nodes / clusters in routable network | GKE internal NLB IP container | Fleet-template firewall egress policy scoped by network tags and destination IP space; relationship to application primary controls to confirm | No separate secondary hop specified for this intra-GCP example | Allocation controls, tag governance, approved consumers/ports and environment boundaries |
 
 ## AWS example: Lambda to on-premises
@@ -39,7 +39,11 @@ The primary policy is application-intent driven; the downstream policy is descri
 
 ## EKS / GKE example: workload to on-premises
 
-Application developers write a service entry that receives a centralized verdict. CRE supplies downstream Palo Alto / Illumio plumbing at the applicable vending/bootstrap event. The service-entry implementation, the verdict service's authoritative name, and the actual runtime enforcement/no-bypass mechanism are still to be identified.
+Developers use **`ServiceEntry` in EKS** and **a Cilium network-policy entry in GKE**. Gatekeeper governs aspects of both declarations, including per-namespace entry limits, wildcard restrictions and mandatory access declarations. The exact numeric limit, constraints and implementation links are TODO.
+
+**Gatekeeper is not the verdict engine.** Declaration/admission guardrails, the separate centralized verdict, and runtime packet enforcement must be documented as distinct steps. TODO: verdict service name, decision/evidence interface and platform-specific runtime enforcement checks. Do not use Gatekeeper admission success as evidence of traffic authorization or successful connectivity.
+
+CRE supplies downstream Palo Alto / Illumio plumbing at the applicable vending/bootstrap event. **TODO: Architecture-provided CRE policy-plumbing/lifecycle table or spreadsheet** for exact scope, identities, events and component references.
 
 **Conditional technical constraint:** if “service entry” means Istio `ServiceEntry`, neither that registry artifact nor `REGISTRY_ONLY` alone establishes an outbound security boundary. Document the deployed enforcement and traffic-capture constraints before describing a verdict as guaranteed segmentation. [Istio security guidance](https://istio.io/latest/docs/ops/best-practices/security/#understand-traffic-capture-limitations).
 
@@ -52,14 +56,17 @@ Per Architecture, the GCP Platform Services team created service/workload IP con
 
 The described template allows the tagged central/east E1 GKE clusters to send egress TCP 443 traffic to the GKE internal-NLB IP container. Confirm protocol, exact resource identity, scope and deployed rule references before using this as an implementation specification. The meaning and isolation boundary of `e1` are not yet documented.
 
-The container's purpose is to constrain new NLB deployments to designated address space, enabling predictable/static firewall rules as resources are added. The firewall supplies runtime traffic enforcement; the container supplies address grouping/allocation structure. TODO: identify what actually forces placement into that space, who can change membership or tags, and how out-of-container deployments are blocked/detected.
+The container's purpose is to constrain new NLB deployments to designated address space, enabling predictable/static firewall rules as resources are added. The firewall supplies runtime traffic enforcement; the container supplies address grouping/allocation structure. Architecture identifies **Sentinel policies and organization policies** as enforcing the container-planning strategy. **TODO: implementation/enforcement PR links**, including which resources, allocation constraints, identities and deployment paths each policy covers. Document source-tag governance separately unless those same policies demonstrably cover it.
 
-## Questions required before operational acceptance
+## Operational handoff and remaining reference inputs
 
-1. What enforces each approved/denied verdict at runtime, and which traffic can bypass it (unmeshed/direct-IP/unsupported protocols or resource types)?
-2. Which ingress paths rely on this source-egress model, and how are unmanaged sources, third-party sources, internet ingress, and missing primary controls handled?
-3. What exact events provision CRE policy in each cloud, what identity does each downstream product see, and how are updates, deletion, drift, retries, and partial failures handled?
-4. Who governs IP allocation and source tags, and what stops another resource/environment from inheriting fleet access or a deployment landing outside the expected IP space?
-5. Which capabilities are live, planned, or partially deployed, and who owns the normal and failed operation of each component?
+The [initial support handoff](support-model.md) covers NSE troubleshooting QE defects during agreed IST support hours, coordination with application/platform/AFT owners, and escalation of suspected design/catalog defects to **Network Security Architecture and Engineering (NSAE)**. It does not transfer the service catalog. NSE also reports potential control gaps and assists planned native-firewall consolidation under its separate process.
 
-For each supported flow, record source identity/scope, destination/port, intent authority, primary runtime enforcement, secondary controls, bootstrap/change/delete triggers, evidence, and responsible teams in or alongside the authoritative placement sheet.
+The current handoff is support-focused; comprehensive future service ownership is not a prerequisite for drafting it. Complete these operator references before calling the support procedure execution-ready:
+
+- **TODO: authoritative supported-pattern/control-placement spreadsheet**, owner and revision.
+- **TODO: CRE policy-plumbing/lifecycle spreadsheet**, including environment/service/port and identity mapping.
+- **TODO: Sentinel / organization-policy enforcement PRs** for container planning and any applicable tag governance.
+- **TODO: verdict-engine and Gatekeeper constraint/evidence references**, including namespace limit values and runtime checks.
+- **TODO: NSAE-provided risk document**, linked from [risk-findings intake](risk-findings/README.md).
+- **TODO: exact IST coverage, QE/NSAE/AFT queues, access and diagnostic links**.
