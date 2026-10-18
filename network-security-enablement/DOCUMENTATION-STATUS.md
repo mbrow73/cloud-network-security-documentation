@@ -27,7 +27,7 @@ network-security-enablement/
 │   ├── README.md                               index
 │   ├── shared/
 │   │   ├── README.md                           overview + expectations [DRAFT]
-│   │   ├── cre/                                explanation [OUTLINE]
+│   │   ├── cre/                                registration/scaffolding [DRAFT]
 │   │   └── risk-findings/                       intake/template [SCAFFOLD]
 │   ├── aws/
 │   │   ├── README.md                           scope/navigation stub
@@ -56,13 +56,14 @@ Nine topic packets also have a short decision record. General cloud troubleshoot
 4. [General AWS troubleshooting](aws/troubleshooting.md): common application and applicable SG/provisioning checks and findings.
 5. [General GCP troubleshooting](gcp/troubleshooting.md): common application and applicable firewall/tag/service-container checks and findings.
 
+6. [CRE registration and policy-scaffolding explanation](projects/netsec-automation/shared/cre/README.md): proprietary API, AFT/platform triggers, dynamic IP/tag membership, Hydra example, response evidence and registration-versus-policy diagnosis. The address-group/reference links and exact success/retry details remain TODOs.
+
 These are working first passes, not validated command runbooks. Links remain named placeholders. The project-specific guides were split from the original cloud troubleshooting drafts, not created as a new component operations program.
 
 ## Not materially filled in — still to author together
 
 These files have headings plus brief context/examples; their actual workflows/details have not yet been supplied or written:
 
-- [Continuous Registration Engine](projects/netsec-automation/shared/cre/README.md): how registration maps to downstream policy and how NSE recognizes missing catalog coverage.
 - [AWS intent-driven SG egress](projects/netsec-automation/aws/intent-driven-sg-egress/README.md): the actual request/rule/attachment workflow.
 - [AWS SG consolidation/migration](projects/netsec-automation/aws/processes/security-group-consolidation-migration/README.md): the actual migration/consolidation process and AFT/NSE responsibilities.
 - [AWS Resource Gateway / Resy](third-party-environments/aws/resource-gateway-resy/README.md): the actual environment risk/acceptance details.

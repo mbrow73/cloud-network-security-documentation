@@ -16,6 +16,10 @@ Check the applicable firewall-rule/template scope, workload/source tags and dest
 
 For GKE flows, inspect the relevant existing Cilium network-policy configuration and platform evidence with its owner when applicable. Do not infer a successful authorization decision merely from a declaration being present.
 
+### CRE-backed Palo Alto paths
+
+For a blocked flow using CRE-enabled policy, capture the blocking firewall/rule evidence and obtain the CRE API call response from QE/the requesting team. A deny may reflect an unmade/failed registration call or unexpected group membership even when the policy scaffolding already exists. Follow the [CRE registration-versus-scaffolding checks](../projects/netsec-automation/shared/cre/README.md#diagnosing-blocked-cre-backed-traffic) before treating the block as missing catalog coverage.
+
 ## 4. Record the finding
 
 Record the failing layer or current hypothesis, checks performed, useful configuration/run/log evidence and unknowns. Relevant findings include an application/test configuration issue, missing prerequisite, missing individual access, or a suspected shared policy/automation gap. A suspected cause does not need to be conclusively proven before asking the responsible team for help.
