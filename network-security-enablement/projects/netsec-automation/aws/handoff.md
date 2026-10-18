@@ -1,4 +1,4 @@
-# AWS NetSec Automation — handoff record
+# AWS NetSec Automation — review decision record
 
 - **Status:** Draft — no acceptance decision recorded.
 - **Document:** [Topic](README.md)

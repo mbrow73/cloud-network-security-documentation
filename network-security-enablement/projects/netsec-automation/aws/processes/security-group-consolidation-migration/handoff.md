@@ -1,4 +1,4 @@
-# Security-group consolidation / migration — handoff record
+# Security-group consolidation / migration — review decision record
 
 - **Status:** Draft — no acceptance decision recorded.
 - **Document:** [Topic](README.md)

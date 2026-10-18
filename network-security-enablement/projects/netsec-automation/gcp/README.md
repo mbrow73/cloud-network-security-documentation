@@ -1,10 +1,10 @@
 # GCP NetSec Automation — current-phase support
 
-**Draft.** [Handoff decision](handoff.md) · [Project index](../README.md).
+**Scope/navigation stub, not a separate detailed handoff explanation.** [Handoff decision](handoff.md) · [Project index](../README.md).
 
 ## Scope
 
-NSE supports QE defect troubleshooting for **all GCP automation patterns**, during agreed IST hours; the overall assignment covers both AWS and GCP. The pattern sheet identifies current versus planned behavior. Follow the [project expectations](../shared/README.md) and the root-level [AWS/GCP troubleshooting guide](../../../troubleshooting/README.md). NSE diagnoses/co-ordinates fixes and helps requestors with individual access requests/implementation that meet NetSec Standard Tech 08.11 with appropriate business justification. Shared automation/service-catalog changes, including missing CRE pattern access, go to NSAE because of their wider impact.
+NSE supports QE defect troubleshooting for **all GCP automation patterns**, during agreed IST hours; the overall assignment covers both AWS and GCP. The pattern sheet identifies current versus planned behavior. Follow the [project expectations](../shared/README.md) and the [GCP troubleshooting guide](troubleshooting.md). NSE diagnoses/co-ordinates fixes and helps requestors with individual access requests/implementation that meet NetSec Standard Tech 08.11 with appropriate business justification. Shared automation/service-catalog changes, including missing CRE pattern access, go to NSAE because of their wider impact.
 
 ## GCP context and related processes
 

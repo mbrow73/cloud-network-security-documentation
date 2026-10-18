@@ -1,4 +1,4 @@
-# AWS intent-driven SG egress — handoff record
+# AWS intent-driven SG egress — review decision record
 
 - **Status:** Draft — no acceptance decision recorded.
 - **Document:** [Topic](README.md)

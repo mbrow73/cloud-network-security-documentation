@@ -1,4 +1,4 @@
-# App-ID preview / content-update remediation — handoff record
+# App-ID preview / content-update remediation — review decision record
 
 - **Status:** Draft — no acceptance decision recorded.
 - **Document:** [Topic](README.md)

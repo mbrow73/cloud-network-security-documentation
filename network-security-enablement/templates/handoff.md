@@ -1,4 +1,4 @@
-# Topic — handoff decision
+# Topic — review decision record
 
 - **Status:** Draft
 - **Document / revision:** TODO: link and reviewed revision

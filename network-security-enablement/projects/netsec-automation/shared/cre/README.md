@@ -12,7 +12,7 @@ Explain how CRE supports downstream/transitive environment/service-port policy p
 
 ## What NSE checks and where an issue goes
 
-TODO: existing registration/policy references useful for diagnosis and who owns a provisioning correction. Use the [general AWS/GCP troubleshooting guide](../../../../troubleshooting/README.md) for the request-versus-architecture decision.
+TODO: existing registration/policy references useful for diagnosis and who owns a provisioning correction. Use [AWS troubleshooting](../../aws/troubleshooting.md) or [GCP troubleshooting](../../gcp/troubleshooting.md) for the request-versus-architecture decision.
 
 A missing pattern/catalog entry that changes inherited automation access goes to **NSAE**: it can have a broad blast radius and is not an ordinary individual access request. NSE can help requestors with compliant, justified one-time access through the normal process, but does not take over service-catalog definition or broad changes.
 

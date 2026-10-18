@@ -1,4 +1,4 @@
-# Resource Gateway / Resy risk acceptance — handoff record
+# Resource Gateway / Resy risk acceptance — review decision record
 
 - **Status:** Draft — no acceptance decision recorded.
 - **Document:** [Topic](README.md)

@@ -1,4 +1,4 @@
-# GCP NetSec Automation — handoff record
+# GCP NetSec Automation — review decision record
 
 - **Status:** Draft — no acceptance decision recorded.
 - **Document:** [Topic](README.md)

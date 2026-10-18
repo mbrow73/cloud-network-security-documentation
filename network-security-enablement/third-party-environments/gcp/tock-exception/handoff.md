@@ -1,4 +1,4 @@
-# GCP Tock exception — handoff record
+# GCP Tock exception — review decision record
 
 - **Status:** Draft — no acceptance decision recorded.
 - **Document:** [Topic](README.md)

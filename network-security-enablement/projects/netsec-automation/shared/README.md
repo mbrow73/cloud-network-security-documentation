@@ -28,7 +28,7 @@ Primary controls are the main source-side egress segmentation controls; secondar
 
 ## NSE expectations and troubleshooting route
 
-Use the root-level [NSE troubleshooting guide for AWS and GCP](../../../troubleshooting/README.md). The general procedure is maintained once; this project page defines expectations and scope.
+Use the cloud guides: [AWS troubleshooting](../aws/troubleshooting.md) and [GCP troubleshooting](../gcp/troubleshooting.md). This project page holds the shared expectations; each guide holds the applicable troubleshooting procedure.
 
 NSE diagnoses and coordinates fixes. NSE may also help requestors complete forms and implement individual access through the normal authorized process when the request meets **NetSec Standard Tech 08.11** and has an appropriate business justification. **TODO: standard and existing request-process links.** This does not confer blanket catalog/template change authority.
 

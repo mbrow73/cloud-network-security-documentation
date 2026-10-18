@@ -2,9 +2,9 @@
 
 Architecture/NSAE handoff documentation for NSE, organized by project/process and cloud. The project is delivered in phases; accept the documented support slice, not an implied completed future architecture.
 
-## Shared operations guide
+## Cloud troubleshooting
 
-[General troubleshooting for AWS and GCP](troubleshooting/README.md): diagnose/co-ordinate fixes; help with Tech 08.11-compliant, justified individual requests; escalate shared automation/CRE catalog gaps to NSAE. Project pages define their support expectations.
+[AWS troubleshooting](projects/netsec-automation/aws/troubleshooting.md) and [GCP troubleshooting](projects/netsec-automation/gcp/troubleshooting.md): diagnose/co-ordinate fixes, help with compliant individual requests, and escalate shared catalog gaps to NSAE. Shared project expectations link to the cloud guides.
 
 ## Topics
 
@@ -26,7 +26,7 @@ Architecture/NSAE handoff documentation for NSE, organized by project/process an
 
 ## Lightweight handoff review
 
-Each topic packet has content plus a `handoff.md` decision record. Architecture proposes it; NSE accepts the stated scope or requests changes/rejects with reasons for Architecture to address. Keep a short dated decision history with the reviewed revision and responsibility/exclusions. Merging a draft is not acceptance.
+In topic directories, `README.md` is the actual explanation/process document (some are still outlines). `handoff.md` is only the short acceptance/rejection **decision record**, not another explanation. Cloud/project index READMEs are navigation/scope stubs. Architecture proposes it; NSE accepts the stated scope or requests changes/rejects with reasons for Architecture to address. Keep a short dated decision history with the reviewed revision and responsibility/exclusions. Merging a draft is not acceptance.
 
 Use [the decision template](templates/handoff.md). Review the actual process/phase being handed over. Keep current scope, future work and external dependencies distinct. Do not turn every mentioned component into another document, or require future systems/other teams' runbooks to exist before accepting a narrower task. A future phase extends scope only when explicitly proposed.
 

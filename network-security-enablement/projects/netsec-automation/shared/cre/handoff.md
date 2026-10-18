@@ -1,4 +1,4 @@
-# CRE integration — AWS and GCP — handoff record
+# CRE integration — AWS and GCP — review decision record
 
 - **Status:** Draft — no acceptance decision recorded.
 - **Document:** [Topic](README.md)

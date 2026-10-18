@@ -1,4 +1,4 @@
-# GCP NGFW POC — handoff record
+# GCP NGFW POC — review decision record
 
 - **Status:** Draft — no acceptance decision recorded.
 - **Document:** [Topic](README.md)
