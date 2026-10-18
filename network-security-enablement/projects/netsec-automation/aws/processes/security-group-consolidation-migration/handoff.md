@@ -47,4 +47,4 @@ No decision has been made. For each review, append:
 - **Effective date / operational owner:** TODO; required for Accepted
 - **Nonblocking follow-ups:** TODO: owner and due date, or none
 
-Acceptance is revision- and scope-specific. Review history does not grant risk acceptance or authorize production execution. See the [area workflow](../../../../README.md).
+Acceptance is revision- and scope-specific. Review history does not grant risk acceptance or authorize production execution. See the [area workflow](../../../../../README.md).

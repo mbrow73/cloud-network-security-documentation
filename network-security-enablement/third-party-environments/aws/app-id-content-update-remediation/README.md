@@ -40,4 +40,4 @@ TODO: NSE demonstrates preview triage, one representative approved remediation, 
 
 ## Related background
 
-- [AWS GWLB egress App-ID deny policy](../../../runbooks/aws/aws-gwlb-egress-app-id-deny-policy.md) — existing background only; confirm whether it applies to these third-party environments.
+- [AWS GWLB egress App-ID deny policy](../../../../runbooks/aws/aws-gwlb-egress-app-id-deny-policy.md) — existing background only; confirm whether it applies to these third-party environments.

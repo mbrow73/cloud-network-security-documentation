@@ -8,7 +8,7 @@ TODO: confirm what Resource Gateway and Resy refer to, whether this is one share
 
 ## 2. Architecture and evidence
 
-TODO: link the authoritative deployed architecture and traffic paths. The repository contains a [VPC Lattice Resource Gateway routing diagram](../../../diagrams/aws-vpc-lattice-resource-gateway-gwlb-rds-routing.png); confirm applicability before treating it as this environment's design.
+TODO: link the authoritative deployed architecture and traffic paths. The repository contains a [VPC Lattice Resource Gateway routing diagram](../../../../diagrams/aws-vpc-lattice-resource-gateway-gwlb-rds-routing.png); confirm applicability before treating it as this environment's design.
 
 ## 3. Risk statement and treatment options
 

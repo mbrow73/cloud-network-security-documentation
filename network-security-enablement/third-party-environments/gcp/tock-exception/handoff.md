@@ -1,4 +1,4 @@
-# NetSec Automation — handoff record
+# GCP Tock exception — handoff record
 
 - **Status:** Draft
 - **Document type:** Outline / not execution-ready
@@ -11,7 +11,7 @@
 - **Reviewed revision:** TODO: content commit SHA or immutable review link
 - **Review request:** TODO: PR / tracking link
 - **Requested support start:** TODO: date; not effective until explicitly accepted
-- **Related packets / dependencies:** [SG migration process](processes/security-group-consolidation-migration/handoff.md) — separately reviewed
+- **Related packets / dependencies:** TODO: authoritative supporting records and related handoffs
 
 ## Requested operational scope
 
@@ -47,4 +47,4 @@ No decision has been made. For each review, append:
 - **Effective date / operational owner:** TODO; required for Accepted
 - **Nonblocking follow-ups:** TODO: owner and due date, or none
 
-Acceptance is revision- and scope-specific. Review history does not grant risk acceptance or authorize production execution. See the [area workflow](../../README.md).
+Acceptance is revision- and scope-specific. Review history does not grant risk acceptance or authorize production execution. See the [area workflow](../../../README.md).

@@ -6,16 +6,31 @@ Operational handoffs from Architecture to Network Security Enablement (NSE).
 
 ## Handoff catalog
 
-| Packet | Category | Scope | Decision record |
+### NetSec Automation
+
+[Project index](projects/netsec-automation/README.md). Cloud handoffs are independent.
+
+| Cloud | Packet | Scope | Decision record |
 | --- | --- | --- | --- |
-| [NetSec Automation](projects/netsec-automation/README.md) | Project | Service ownership, support model, operating procedures | [Handoff](projects/netsec-automation/handoff.md) |
-| [Security-group consolidation / migration](projects/netsec-automation/processes/security-group-consolidation-migration/README.md) | Project process | Migration preparation, execution, validation, recovery | [Handoff](projects/netsec-automation/processes/security-group-consolidation-migration/handoff.md) |
-| [Resource Gateway / Resy risk acceptance](third-party-environments/resource-gateway-resy/README.md) | Third-party environment | Operational exposure, risk record, compensating controls | [Handoff](third-party-environments/resource-gateway-resy/handoff.md) |
-| [App-ID preview changes / content-update remediation](third-party-environments/app-id-content-update-remediation/README.md) | Third-party operational process | Preview assessment, controlled rollout, break/fix | [Handoff](third-party-environments/app-id-content-update-remediation/handoff.md) |
+| AWS | [NetSec Automation](projects/netsec-automation/aws/README.md) | Project ownership, support model, operating procedures | [Handoff](projects/netsec-automation/aws/handoff.md) |
+| AWS | [Security-group consolidation / migration](projects/netsec-automation/aws/processes/security-group-consolidation-migration/README.md) | Migration preparation, execution, validation, recovery | [Handoff](projects/netsec-automation/aws/processes/security-group-consolidation-migration/handoff.md) |
+| GCP | [NetSec Automation](projects/netsec-automation/gcp/README.md) | Placeholder; supported capabilities to define independently | [Handoff](projects/netsec-automation/gcp/handoff.md) |
+
+### Third-party environments
+
+AWS and GCP have different topic sets; these are not mirrored directory trees.
+
+| Cloud | Packet | Scope | Decision record |
+| --- | --- | --- | --- |
+| AWS | [Resource Gateway / Resy risk acceptance](third-party-environments/aws/resource-gateway-resy/README.md) | Operational exposure, risk record, compensating controls | [Handoff](third-party-environments/aws/resource-gateway-resy/handoff.md) |
+| AWS | [App-ID preview changes / content-update remediation](third-party-environments/aws/app-id-content-update-remediation/README.md) | Preview assessment, controlled rollout, break/fix | [Handoff](third-party-environments/aws/app-id-content-update-remediation/handoff.md) |
+| GCP | [Tock exception](third-party-environments/gcp/tock-exception/README.md) | Exception scope, authorization, controls, lifecycle | [Handoff](third-party-environments/gcp/tock-exception/handoff.md) |
+| GCP | [NGFW POC](third-party-environments/gcp/ngfw-poc/README.md) | Test scope, success criteria, evidence, operational findings | [Handoff](third-party-environments/gcp/ngfw-poc/handoff.md) |
 
 ## Directory rules
 
-- Organize by enduring project or environment/process, not by review status. Keep paths stable after acceptance.
+- Organize by enduring project or environment/process, then cloud (`aws/` or `gcp/`), not by review status. Keep paths stable after acceptance.
+- Cloud subdirectories contain only relevant topics. AWS and GCP scope and acceptance remain independent; do not create mirrored procedures without an actual need.
 - Keep project-dependent procedures under their project. Migration has its own decision because accepting routine support does not automatically accept a migration process.
 - Each packet has a `README.md` for content and a `handoff.md` for scope, readiness, and the decision trail.
 - Link existing ADRs, diagrams, runbooks, and authoritative risk/change records; do not copy them into a second source of truth.
