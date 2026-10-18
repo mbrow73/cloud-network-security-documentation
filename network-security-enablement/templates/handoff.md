@@ -1,52 +1,17 @@
-# Packet title — handoff record
-
-<!-- Copy this template into a packet directory as handoff.md; adjust the area workflow link for that depth. -->
+# Topic — handoff decision
 
 - **Status:** Draft
-- **Document type:** Outline / not execution-ready
-- **Submitting team:** Architecture
-- **Receiving team:** Network Security Enablement
-- **Architecture contact:** TODO: name / team handle
-- **NSE reviewer / acceptance authority:** TODO: name / team handle and authority
-- **Service or process owner:** TODO: name / team
-- **Content:** TODO: relative link to packet documentation
-- **Reviewed revision:** TODO: content commit SHA or immutable review link
-- **Review request:** TODO: PR / tracking link
-- **Requested support start:** TODO: date; not effective until explicitly accepted
-- **Related packets / dependencies:** TODO: packet links, or none
+- **Document / revision:** TODO: link and reviewed revision
+- **Submitting contact / NSE reviewer:** TODO
+- **Phase / process / implemented scope:** TODO
+- **Responsibility being handed over:** TODO
+- **Exclusions / future work / external dependencies:** TODO
+- **Relevant references:** TODO: existing links or placeholders
 
-## Requested operational scope
+## Decision history
 
-TODO: Define the responsibilities requested from NSE, exclusions, support hours, dependency ownership, and responsibility retained by Architecture. Do not infer scope from the title.
+Append date, reviewer, reviewed scope/revision and outcome: Proposed / Changes requested / Rejected / Accepted. Rejection/change requests need a reason and correction needed; acceptance needs the agreed responsibility/start and scoped follow-ups.
 
-## Acceptance criteria and evidence
+Judge the handoff against its stated phase/process, not the whole future architecture. Do not require documents for systems the submitting team does not own or components not implemented yet. Only actual gaps affecting the agreed task are candidates for blocking acceptance.
 
-- [ ] Scope and responsibility boundaries agreed by the named owners.
-- [ ] Required access and training demonstrated for the receiving team.
-- [ ] Applicable procedures, success checks, failure paths, and recovery validated; evidence linked.
-- [ ] Monitoring and escalation routes verified.
-- [ ] Required security/risk/change approvals linked separately; no approvals implied here.
-- [ ] TODO: add measurable packet-specific criteria from the documentation readiness section.
-
-**Evidence:** TODO: immutable test records, walkthrough, tickets, dashboards, or recorded demonstrations.
-
-## Gaps and follow-ups
-
-| Gap | Blocking? | Owner | Due date | Resolution / evidence |
-| --- | --- | --- | --- | --- |
-| Unfilled outline and unvalidated procedures | Yes | TODO: Architecture owner | TODO | Not resolved |
-
-## Decision history (append only)
-
-No decision has been made. For each review, append:
-
-- **Date / reviewer / authority:** TODO
-- **Outcome:** Proposed / Changes requested / Rejected / Accepted
-- **Reviewed content revision and scope:** TODO
-- **Reason:** TODO; required for Changes requested and Rejected, including impact and the correction/evidence needed for reconsideration
-- **Correction links / re-review reference:** TODO
-- **Accepted scope / exclusions:** TODO; required for Accepted
-- **Effective date / operational owner:** TODO; required for Accepted
-- **Nonblocking follow-ups:** TODO: owner and due date, or none
-
-Acceptance is revision- and scope-specific. Review history does not grant risk acceptance or authorize production execution. See the [area workflow](../README.md).
+Operational acceptance is not formal risk acceptance or production change approval. [Workflow](../README.md).

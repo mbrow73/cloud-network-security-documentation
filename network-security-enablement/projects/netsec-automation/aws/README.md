@@ -1,43 +1,19 @@
-# AWS NetSec Automation — initial QE troubleshooting handoff
+# AWS NetSec Automation — current-phase support
 
-**Draft for review — operator links, support window and diagnostic details still required.** [Review and acceptance](handoff.md) · [Project index](../README.md).
+**Draft.** [Handoff decision](handoff.md) · [Project index](../README.md).
 
-## 1. Purpose and initial responsibilities
+## Scope
 
-NSE provides IST-hours troubleshooting for QE defects against expected, supported automation patterns. NSE helps identify application/test configuration issues and missing platform prerequisites, coordinates correction with QE/platform operations, and escalates suspected automation architecture or service-catalog defects to **Network Security Architecture and Engineering (NSAE)** with diagnostic evidence.
+NSE supports QE defect troubleshooting for implemented AWS patterns identified for this phase, during agreed IST hours. Follow the [shared overview and support process](../shared/README.md): help resolve configuration or platform-prerequisite issues, escalate suspected automation/design/catalog defects to NSAE, and report potential control gaps.
 
-The [shared support model](../shared/support-model.md) defines responsibility boundaries, exclusions, escalation and acceptance scenarios. Full catalog ownership and component maintenance/release ownership are not transferred in this phase.
+## AWS context and related processes
 
-## 2. Cloud-specific pattern context
+- [Intent-driven SG egress](intent-driven-sg-egress/README.md) — requested topic outline.
+- [SG consolidation / migration](processes/security-group-consolidation-migration/README.md) — separate process, including NSE assistance to AFT Operations.
+- AWS examples include checking whether AFT vended the required SG and whether QE attached it to the workload.
 
-- Lambda-to-on-premises patterns use custom intent-driven SG egress as the described primary control.
-- EKS patterns use developer-authored `ServiceEntry` declarations with Gatekeeper guardrails and a separate verdict engine.
-- Missing AFT-vended SGs and missing workload SG attachments are examples of prerequisite/configuration failures NSE helps isolate and route.
+## References for this phase
 
-**TODO: authoritative supported-pattern/control-placement spreadsheet**, revision, supported accounts, Regions and environments. Third-party environments are not currently included in automation. See the [shared control model](../shared/control-model.md) for the primary/transitive distinction and cross-cloud context.
+TODO: link the applicable current-phase pattern spreadsheet and existing support contacts/diagnostic references. Record the actual patterns and responsibilities being handed over in the handoff decision; do not assume all target-state capabilities are live.
 
-## 3. Support workflow and evidence
-
-Follow the [QE defect-triage guide](../shared/qe-defect-triage.md): confirm the supported pattern, check application/test and platform prerequisites, inspect declaration/admission/verdict evidence, trace expected control behavior and resolve/route with evidence. Potential coverage gaps go through [risk-findings intake](../shared/risk-findings/README.md).
-
-TODO: component-specific logs/dashboards, operator access, approved diagnostic commands, QE intake and NSAE/platform escalation queues. Gatekeeper guardrails are not the verdict decision, and admission success is not proof of working connectivity.
-
-## 4. Coverage and change boundaries
-
-- Coverage is during agreed India Standard Time (IST) support hours. TODO: exact hours/days, rota, support start and outside-hours routing.
-- NSE assists diagnosis and coordination; changes follow the responsible team's approved access/change process.
-- No new-pattern approval, automatic access bypass, risk acceptance, or service-catalog ownership is implied.
-- TODO: agreed severity/response expectations; none are invented here.
-
-## 5. Reference inputs and dependencies
-
-- [Intent-driven SG egress](intent-driven-sg-egress/README.md).
-- [Security-group consolidation / migration](processes/security-group-consolidation-migration/README.md): NSE assistance to AFT Operations; separate process/change authority.
-- [Shared CRE integration](../shared/cre/README.md): TODO: policy-plumbing/lifecycle spreadsheet and actual deployed status.
-- TODO: flow spreadsheet, declaration/verdict implementation references and Gatekeeper constraints/namespace limits.
-- TODO: platform/Sentinel/organization-policy implementation PRs applicable to this cloud.
-- TODO: NSAE-provided risk document, linked from the shared risk intake.
-
-## 6. Support-readiness acceptance
-
-Demonstrate cloud-applicable cases of application/configuration triage, missing platform prerequisite diagnosis, evidence-based NSAE escalation and a potential control-gap report. Verify required access and escalation routes. Record evidence and open blockers in [handoff.md](handoff.md); acceptance is limited to the support scope, not full steady-state project ownership.
+Verdicting is future work, Gatekeeper operation is not transferred, third-party environments are outside automation, and full service-catalog ownership is deferred. No new component runbooks or completed future phases are required by this page.

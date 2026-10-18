@@ -1,23 +1,19 @@
-# CRE integration — shared AWS and GCP automation
+# CRE integration — AWS and GCP
 
-**Draft outline — intended integration described, deployment state to confirm.** [Review and acceptance](handoff.md) · [Shared control model](../control-model.md).
+**Requested topic outline; scope to fill in together.** [Handoff decision](handoff.md) · [Current-phase overview](../README.md).
 
-## Purpose and scope
+## Purpose
 
-CRE provides the described downstream/transitive policy-plumbing integration with Palo Alto and Illumio for AWS and GCP. It is shared project material rather than duplicated cloud-specific documentation. TODO: confirm CRE's full authoritative name and which integrations are currently live versus planned.
+Describe the CRE integration used/planned for downstream Palo Alto/Illumio environment/service-port policy plumbing across AWS and GCP. Keep implemented scope and future work clearly separated; do not assume the entire intended integration is already live.
 
-## Trigger and identity contract
+## Policy-plumbing reference
 
-TODO: exact account/project/cluster vending events in each cloud, authoritative inputs and source identities, environment/service/port mapping, NAT effects, and validation/authorization. Do not assume AWS account vending and GCP project/cluster provisioning are interchangeable.
+**TODO: Architecture-provided CRE table/spreadsheet** identifying relevant source identities, services/ports, environments and vending/bootstrap scope. Link the existing source rather than create a second catalog.
 
-## Policy lifecycle
+## NSE support for the phase being handed over
 
-TODO: create/update/delete behavior, reconciliation, drift, idempotency, stale registrations, partial failures, safe retries, rollback, and audit evidence. Identify when resource/address changes require re-registration.
+TODO: document the applicable prerequisite checks, available existing references and how NSE routes a suspected CRE/plumbing issue to the responsible team/NSAE. Do not transfer CRE platform ownership or demand a full lifecycle operations manual unless a later handoff explicitly includes it.
 
-## Operations and ownership
+## Later work / exclusions
 
-TODO: operators, access, integration owners, upstream/downstream responsibilities, health checks, alerts, manual recovery, and escalation.
-
-## Acceptance evidence
-
-TODO: cloud- and product-specific tests of supported lifecycle and failure scenarios. Record the precise integrations/cloud scope accepted; a shared record must not imply acceptance of all AWS/GCP capabilities.
+Full integration ownership, lifecycle procedures and any future verdict dependency are not implied by this outline. Record the narrow phase/support scope in the handoff decision when this topic is reviewed.

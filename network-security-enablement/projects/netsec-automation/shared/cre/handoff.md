@@ -1,50 +1,20 @@
 # CRE integration — AWS and GCP — handoff record
 
-- **Status:** Draft
-- **Document type:** Outline / not execution-ready
-- **Submitting team:** Architecture
-- **Receiving team:** Network Security Enablement
-- **Architecture contact:** TODO: name / team handle
-- **NSE reviewer / acceptance authority:** TODO: name / team handle and authority
-- **Service or process owner:** TODO: name / team
-- **Content:** [Packet documentation](README.md)
-- **Reviewed revision:** TODO: content commit SHA or immutable review link
-- **Review request:** TODO: PR / tracking link
-- **Requested support start:** TODO: date; not effective until explicitly accepted
-- **Related packets / dependencies:** [Shared control model](../control-model.md) — exact operational scope and dependencies to confirm
+- **Status:** Draft — no acceptance decision recorded.
+- **Document:** [Topic](README.md)
+- **Submitting / receiving teams:** NSAE/Architecture → Network Security Enablement
+- **Review contacts:** TODO: submitting contact and NSE reviewer
+- **Phase / implemented patterns:** TODO: identify the scope of this handoff; do not invent a project phase number
+- **Requested responsibility:** TODO: describe only the process/support scope proposed in this packet. An outline is not a commitment to deliver its full future-state lifecycle.
+- **Not included / future / external dependencies:** TODO: exclusions relevant to this packet
+- **References:** TODO: relevant spreadsheet/links when available
 
-## Requested operational scope
+## Review and decision
 
-TODO: Define the responsibilities requested from NSE, exclusions, support hours, dependency ownership, and responsibility retained by Architecture. Do not infer scope from the title.
+Review this documented scope, not completion of the entire project or other teams' systems. A future component that does not exist is not a current-phase blocker. NSE may accept the stated subset and explicitly exclude later work.
 
-## Acceptance criteria and evidence
+Append the reviewer, date, reviewed revision/scope and outcome: **Proposed / Changes requested / Rejected / Accepted**. For a rejection or requested change, record the reason and correction needed. For acceptance, record the agreed responsibility/start and any scoped follow-ups. Only identify an actual gap as blocking when it prevents the responsibility being handed over; do not pre-classify every placeholder as a blocker.
 
-- [ ] Scope and responsibility boundaries agreed by the named owners.
-- [ ] Required access and training demonstrated for the receiving team.
-- [ ] Applicable procedures, success checks, failure paths, and recovery validated; evidence linked.
-- [ ] Monitoring and escalation routes verified.
-- [ ] Required security/risk/change approvals linked separately; no approvals implied here.
-- [ ] TODO: add measurable packet-specific criteria from the documentation readiness section.
+**Decision history:** None yet.
 
-**Evidence:** TODO: immutable test records, walkthrough, tickets, dashboards, or recorded demonstrations.
-
-## Gaps and follow-ups
-
-| Gap | Blocking? | Owner | Due date | Resolution / evidence |
-| --- | --- | --- | --- | --- |
-| Unfilled outline and unvalidated procedures | Yes | TODO: Architecture owner | TODO | Not resolved |
-
-## Decision history (append only)
-
-No decision has been made. For each review, append:
-
-- **Date / reviewer / authority:** TODO
-- **Outcome:** Proposed / Changes requested / Rejected / Accepted
-- **Reviewed content revision and scope:** TODO
-- **Reason:** TODO; required for Changes requested and Rejected, including impact and the correction/evidence needed for reconsideration
-- **Correction links / re-review reference:** TODO
-- **Accepted scope / exclusions:** TODO; required for Accepted
-- **Effective date / operational owner:** TODO; required for Accepted
-- **Nonblocking follow-ups:** TODO: owner and due date, or none
-
-Acceptance is revision- and scope-specific. Review history does not grant risk acceptance or authorize production execution. See the [area workflow](../../../../README.md).
+Operational acceptance is separate from formal risk acceptance or approval of a production change. [Area workflow](../../../../README.md).

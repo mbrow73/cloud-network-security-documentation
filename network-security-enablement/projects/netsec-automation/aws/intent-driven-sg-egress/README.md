@@ -1,6 +1,6 @@
 # AWS intent-driven security-group egress
 
-**Draft outline — exact request, verdict and deployment implementation to confirm.** [Review and acceptance](handoff.md) · [AWS project](../README.md) · [Shared control model](../../shared/control-model.md).
+**Requested topic outline — fill in the phase being handed over, not the completed target architecture.** [Review and acceptance](handoff.md) · [AWS project](../README.md) · [Current-phase overview](../../shared/README.md).
 
 ## Purpose and example
 
@@ -8,7 +8,7 @@ Architecture identifies custom intent-driven SG egress as the primary segmentati
 
 ## Request and authorization contract
 
-TODO: request interface, owner identity, source/resource binding, destination representation, service/port/environment context, verdict authority, and handling of unknown or denied intent.
+TODO: describe the implemented request/rule workflow and relevant inputs for this phase. Verdicting is not implemented yet; it is future work, not a missing handoff dependency.
 
 ## Rendering and runtime enforcement
 
@@ -16,8 +16,8 @@ TODO: intent-to-rule translation, actual SG attachment, rule ownership, combined
 
 ## Operational lifecycle
 
-TODO: submit/change/revoke procedures, CI/approval/execution path, propagation checks, failures/retries, rollback, evidence, and escalation.
+TODO: checks and issue-routing relevant to NSE support of the implemented SG workflow. Expand only the procedures actually being handed over; full lifecycle/catalog ownership is deferred.
 
-## Readiness and boundaries
+## Phase boundaries
 
-TODO: live versus planned capability inventory, supported resources and exclusions, allowed/denied connectivity tests, and named NSE/Architecture/platform ownership. The [SG consolidation/migration process](../processes/security-group-consolidation-migration/README.md) remains a separate handoff.
+TODO: identify implemented patterns and current support responsibilities, with future items explicitly excluded. The [SG consolidation/migration process](../processes/security-group-consolidation-migration/README.md) remains a separate handoff.

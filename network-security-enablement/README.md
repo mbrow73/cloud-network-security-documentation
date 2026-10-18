@@ -1,78 +1,31 @@
 # Network Security Enablement
 
-Operational handoffs from Architecture to Network Security Enablement (NSE).
+Architecture/NSAE handoff documentation for NSE, organized by project/process and cloud. The project is delivered in phases; accept the documented support slice, not an implied completed future architecture.
 
-**Proposed workflow:** this area is a documentation scaffold, not a record that NSE has already agreed to the workflow or accepted support responsibility. All initial packets are **Draft**.
-
-## Documentation progress
-
-See the [document hierarchy, writing status and review queue](DOCUMENTATION-STATUS.md) for substantive drafts, outline-only packets and candidate follow-on references. No writing status implies operational acceptance.
-
-## Handoff catalog
+## Topics
 
 ### NetSec Automation
 
-[Project index](projects/netsec-automation/README.md). Cloud handoffs are independent.
+- [Project index](projects/netsec-automation/README.md).
+- [Shared current-phase overview and QE support](projects/netsec-automation/shared/README.md).
+- [AWS support](projects/netsec-automation/aws/README.md) · [decision](projects/netsec-automation/aws/handoff.md).
+- [GCP support](projects/netsec-automation/gcp/README.md) · [decision](projects/netsec-automation/gcp/handoff.md).
+- [Shared CRE integration](projects/netsec-automation/shared/cre/README.md) · [decision](projects/netsec-automation/shared/cre/handoff.md).
+- [AWS intent-driven SG egress](projects/netsec-automation/aws/intent-driven-sg-egress/README.md) · [decision](projects/netsec-automation/aws/intent-driven-sg-egress/handoff.md).
+- [AWS SG consolidation/migration](projects/netsec-automation/aws/processes/security-group-consolidation-migration/README.md) · [decision](projects/netsec-automation/aws/processes/security-group-consolidation-migration/handoff.md).
+- [Risk-findings PR area](projects/netsec-automation/shared/risk-findings/README.md) — placeholder for the supplied risk document and new findings.
 
-| Cloud | Packet | Scope | Decision record |
-| --- | --- | --- | --- |
-| AWS | [NetSec Automation](projects/netsec-automation/aws/README.md) | Initial IST-hours QE triage and NSAE escalation | [Handoff](projects/netsec-automation/aws/handoff.md) |
-| AWS | [Security-group consolidation / migration](projects/netsec-automation/aws/processes/security-group-consolidation-migration/README.md) | Migration preparation, execution, validation, recovery | [Handoff](projects/netsec-automation/aws/processes/security-group-consolidation-migration/handoff.md) |
-| GCP | [NetSec Automation](projects/netsec-automation/gcp/README.md) | Initial IST-hours QE triage; GKE Cilium pattern context | [Handoff](projects/netsec-automation/gcp/handoff.md) |
+### Third-party environments (separate from automation)
 
-The automation handoff is initially [QE troubleshooting support](projects/netsec-automation/shared/support-model.md), not catalog ownership. [Third-party environment](#third-party-environments) documentation remains separate; those environments are not currently covered by automation.
+- AWS: [Resource Gateway / Resy risk acceptance](third-party-environments/aws/resource-gateway-resy/README.md), [App-ID preview/content-update remediation](third-party-environments/aws/app-id-content-update-remediation/README.md).
+- GCP: [Tock exception](third-party-environments/gcp/tock-exception/README.md), [NGFW POC](third-party-environments/gcp/ngfw-poc/README.md).
 
-### Shared and focused automation packets
+## Lightweight handoff review
 
-- [Shared control-placement model](projects/netsec-automation/shared/control-model.md): Architecture working draft and authoritative-sheet placeholder; not an acceptance record.
-- [Shared CRE integration](projects/netsec-automation/shared/cre/README.md) · [Handoff](projects/netsec-automation/shared/cre/handoff.md): explicitly scoped AWS/GCP downstream integration.
-- [AWS intent-driven SG egress](projects/netsec-automation/aws/intent-driven-sg-egress/README.md) · [Handoff](projects/netsec-automation/aws/intent-driven-sg-egress/handoff.md): focused primary-control packet.
+Each topic packet has content plus a `handoff.md` decision record. Architecture proposes it; NSE accepts the stated scope or requests changes/rejects with reasons for Architecture to address. Keep a short dated decision history with the reviewed revision and responsibility/exclusions. Merging a draft is not acceptance.
 
-### Third-party environments
+Use [the decision template](templates/handoff.md). Review the actual process/phase being handed over. Keep current scope, future work and external dependencies distinct. Do not turn every mentioned component into another document, or require future systems/other teams' runbooks to exist before accepting a narrower task. A future phase extends scope only when explicitly proposed.
 
-AWS and GCP have different topic sets; these are not mirrored directory trees.
+Operational acceptance does not accept business/security risk or approve production changes. Maintain cloud-specific topics without mirroring irrelevant AWS/GCP folders. Link existing references and use placeholders without inventing facts.
 
-| Cloud | Packet | Scope | Decision record |
-| --- | --- | --- | --- |
-| AWS | [Resource Gateway / Resy risk acceptance](third-party-environments/aws/resource-gateway-resy/README.md) | Operational exposure, risk record, compensating controls | [Handoff](third-party-environments/aws/resource-gateway-resy/handoff.md) |
-| AWS | [App-ID preview changes / content-update remediation](third-party-environments/aws/app-id-content-update-remediation/README.md) | Preview assessment, controlled rollout, break/fix | [Handoff](third-party-environments/aws/app-id-content-update-remediation/handoff.md) |
-| GCP | [Tock exception](third-party-environments/gcp/tock-exception/README.md) | Exception scope, authorization, controls, lifecycle | [Handoff](third-party-environments/gcp/tock-exception/handoff.md) |
-| GCP | [NGFW POC](third-party-environments/gcp/ngfw-poc/README.md) | Test scope, success criteria, evidence, operational findings | [Handoff](third-party-environments/gcp/ngfw-poc/handoff.md) |
-
-## Directory rules
-
-- Organize by enduring project or environment/process, then cloud (`aws/` or `gcp/`), not by review status. Keep paths stable after acceptance.
-- Cloud subdirectories contain only relevant topics. AWS and GCP scope and acceptance remain independent; do not create mirrored procedures without an actual need.
-- Keep project-dependent procedures under their project. Migration has its own decision because accepting routine support does not automatically accept a migration process.
-- Each packet has a `README.md` for content and a `handoff.md` for scope, readiness, and the decision trail.
-- Link existing ADRs, diagrams, runbooks, and authoritative risk/change records; do not copy them into a second source of truth.
-- Third-party environment naming/ownership and the meaning of “Resy” need confirmation; the directory does not assert a vendor, platform, or production topology.
-- Use `TODO: ...` placeholders for unknown facts. Never replace them with invented owners, service levels, technical steps, or approvals.
-
-## Proposed review lifecycle
-
-1. **Draft:** Architecture prepares the packet. List missing information, named owner roles, acceptance criteria, and supporting evidence.
-2. **Proposed:** Architecture opens a review PR, identifies the packet/revision and requested support scope, and requests review from the designated NSE reviewers (`TODO: team handle`). No responsibility transfers yet.
-3. **Changes requested:** NSE records specific gaps, why they block acceptance, and the evidence needed. Architecture links the corrections and resubmits. Use **Rejected** for an explicit decision not to accept the proposed scope; reasons are mandatory.
-4. **Accepted:** An authorized NSE representative records the reviewed revision, accepted scope, effective date, ownership, and evidence. Open blockers must be resolved; any nonblocking follow-ups need an owner and due date.
-5. Material scope/procedure changes require renewed review. Append decisions rather than overwriting history. Prior acceptance applies only to its recorded revision and scope.
-
-A PR merge alone is not operational acceptance. Draft outlines can be merged without changing their status. Status fields are manually maintained; this scaffold adds no approval automation or branch-protection enforcement. Confirm reviewer authority and repository controls before adopting the workflow.
-
-## Acceptance boundary
-
-NSE accepts operational responsibilities, not security risk on behalf of the business. Formal risk acceptance requires the separately authorized risk owner and system of record. Link that decision, affected scope, conditions, and expiry; do not imply approval from a documentation review. Likewise, accepting documentation does not authorize a production change.
-
-## Minimum readiness before proposing a packet
-
-Apply readiness criteria to the requested scope. For the initial automation support handoff, validate diagnostic access, triage/routing, risk reporting and support coverage; do not imply full service-catalog or component lifecycle ownership.
-
-- [ ] Named Architecture contact, NSE reviewer, service/process owner, and escalation route.
-- [ ] In-scope and out-of-scope responsibilities, dependencies, and support boundaries.
-- [ ] Executable procedures, required access, validation evidence, and tested recovery/rollback path where applicable.
-- [ ] Monitoring, incident ownership, change controls, and required training/walkthrough.
-- [ ] Risks/exceptions linked to authorized decisions, with expiry and re-review obligations.
-- [ ] Critical placeholders resolved; noncritical gaps explicitly classified with owners/dates.
-- [ ] Measurable packet-specific acceptance criteria and reviewed content revision.
-
-Use the [handoff record template](templates/handoff.md) for additional packets.
+[Document hierarchy and writing status](DOCUMENTATION-STATUS.md). All packets currently remain Draft; refine one topic at a time.
