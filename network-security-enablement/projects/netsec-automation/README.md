@@ -2,8 +2,9 @@
 
 A phased, in-progress project. Document the processes and implemented support scope being handed over now, not the completed future architecture.
 
-- [Shared overview and current-phase QE support](shared/README.md).
-- [Shared CRE integration](shared/cre/README.md) — requested outline; fill in the relevant scope as we work through it.
+- [Shared overview and project expectations](shared/README.md): NSE support covers both clouds and all automation patterns, with current/planned behavior distinguished.
+- [General AWS/GCP troubleshooting](../../troubleshooting/README.md): one root-level guide referenced by these project expectations.
+- [Continuous Registration Engine (CRE)](shared/cre/README.md) — requested outline; fill in the relevant scope as we work through it.
 - [AWS](aws/README.md) — current-phase support, intent-driven SG egress and the separate consolidation/migration process.
 - [GCP](gcp/README.md) — current-phase support and cloud-specific pattern notes.
 - [Risk-findings PR area](shared/risk-findings/README.md) — placeholder for NSAE's supplied risk document and new findings.

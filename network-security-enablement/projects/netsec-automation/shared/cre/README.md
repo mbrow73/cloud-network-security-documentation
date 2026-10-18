@@ -1,19 +1,21 @@
-# CRE integration — AWS and GCP
+# Continuous Registration Engine (CRE) — AWS and GCP
 
-**Requested topic outline; scope to fill in together.** [Handoff decision](handoff.md) · [Current-phase overview](../README.md).
+**Requested explanatory outline; refine when we reach this topic.** CRE is NetSec's internally developed Continuous Registration Engine. [Project expectations](../README.md) · [Handoff decision](handoff.md).
 
-## Purpose
+## What this document should explain
 
-Describe the CRE integration used/planned for downstream Palo Alto/Illumio environment/service-port policy plumbing across AWS and GCP. Keep implemented scope and future work clearly separated; do not assume the entire intended integration is already live.
+Explain how CRE supports downstream/transitive environment/service-port policy plumbing with Palo Alto/Illumio across AWS and GCP, so NSE can recognize a missing registration/provisioning issue versus a missing automation pattern or catalog definition. Keep implemented behavior and future work separate.
 
-## Policy-plumbing reference
+## How the relevant pattern is registered and mapped
 
-**TODO: Architecture-provided CRE table/spreadsheet** identifying relevant source identities, services/ports, environments and vending/bootstrap scope. Link the existing source rather than create a second catalog.
+**TODO: Architecture-provided CRE table/spreadsheet and a concise worked flow.** Describe the applicable trigger (for example vending/bootstrap), what identity/context is registered, how it maps to the expected catalog policy, and which downstream controls are affected. Do not invent internals, API calls or deployed integrations before they are supplied.
 
-## NSE support for the phase being handed over
+## What NSE checks and where an issue goes
 
-TODO: document the applicable prerequisite checks, available existing references and how NSE routes a suspected CRE/plumbing issue to the responsible team/NSAE. Do not transfer CRE platform ownership or demand a full lifecycle operations manual unless a later handoff explicitly includes it.
+TODO: existing registration/policy references useful for diagnosis and who owns a provisioning correction. Use the [general AWS/GCP troubleshooting guide](../../../../troubleshooting/README.md) for the request-versus-architecture decision.
 
-## Later work / exclusions
+A missing pattern/catalog entry that changes inherited automation access goes to **NSAE**: it can have a broad blast radius and is not an ordinary individual access request. NSE can help requestors with compliant, justified one-time access through the normal process, but does not take over service-catalog definition or broad changes.
 
-Full integration ownership, lifecycle procedures and any future verdict dependency are not implied by this outline. Record the narrow phase/support scope in the handoff decision when this topic is reviewed.
+## Scope limit
+
+This is one explanation for the existing requested CRE topic, not a new document series or full CRE platform operations manual. Full service-catalog ownership is deferred; verdicting is not implemented yet and is not required to explain the existing policy-plumbing model.

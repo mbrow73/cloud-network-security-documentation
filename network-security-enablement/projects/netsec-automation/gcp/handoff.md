@@ -4,8 +4,8 @@
 - **Document:** [Topic](README.md)
 - **Submitting / receiving teams:** NSAE/Architecture → Network Security Enablement
 - **Review contacts:** TODO: submitting contact and NSE reviewer
-- **Phase / implemented patterns:** TODO: identify the scope of this handoff; do not invent a project phase number
-- **Requested responsibility:** Current-phase QE troubleshooting for the implemented patterns named below; coordinate configuration/platform fixes and escalate suspected automation defects to NSAE. No verdicting, Gatekeeper administration or service-catalog ownership is transferred.
+- **Coverage / phase context:** All GCP automation patterns; assignment covers both AWS and GCP. TODO: link pattern sheet showing current versus planned behavior
+- **Requested responsibility:** QE troubleshooting for all automation patterns in this cloud; diagnose/co-ordinate fixes, help requestors with individual access forms/implementation meeting Tech 08.11 and appropriate business justification, and escalate shared automation/CRE catalog gaps to NSAE. No verdicting, Gatekeeper administration or service-catalog ownership is transferred.
 - **Not included / future / external dependencies:** TODO: exclusions relevant to this packet
 - **References:** TODO: relevant spreadsheet/links when available
 

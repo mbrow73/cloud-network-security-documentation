@@ -4,7 +4,7 @@
 
 ## Scope
 
-NSE supports QE defect troubleshooting for implemented AWS patterns identified for this phase, during agreed IST hours. Follow the [shared overview and support process](../shared/README.md): help resolve configuration or platform-prerequisite issues, escalate suspected automation/design/catalog defects to NSAE, and report potential control gaps.
+NSE supports QE defect troubleshooting for **all AWS automation patterns**, during agreed IST hours; the overall assignment covers both AWS and GCP. The pattern sheet identifies current versus planned behavior. Follow the [project expectations](../shared/README.md) and the root-level [AWS/GCP troubleshooting guide](../../../troubleshooting/README.md). NSE diagnoses/co-ordinates fixes and helps requestors with individual access requests/implementation that meet NetSec Standard Tech 08.11 with appropriate business justification. Shared automation/service-catalog changes, including missing CRE pattern access, go to NSAE because of their wider impact.
 
 ## AWS context and related processes
 

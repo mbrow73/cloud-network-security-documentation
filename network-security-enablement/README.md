@@ -2,6 +2,10 @@
 
 Architecture/NSAE handoff documentation for NSE, organized by project/process and cloud. The project is delivered in phases; accept the documented support slice, not an implied completed future architecture.
 
+## Shared operations guide
+
+[General troubleshooting for AWS and GCP](troubleshooting/README.md): diagnose/co-ordinate fixes; help with Tech 08.11-compliant, justified individual requests; escalate shared automation/CRE catalog gaps to NSAE. Project pages define their support expectations.
+
 ## Topics
 
 ### NetSec Automation
@@ -10,7 +14,7 @@ Architecture/NSAE handoff documentation for NSE, organized by project/process an
 - [Shared current-phase overview and QE support](projects/netsec-automation/shared/README.md).
 - [AWS support](projects/netsec-automation/aws/README.md) · [decision](projects/netsec-automation/aws/handoff.md).
 - [GCP support](projects/netsec-automation/gcp/README.md) · [decision](projects/netsec-automation/gcp/handoff.md).
-- [Shared CRE integration](projects/netsec-automation/shared/cre/README.md) · [decision](projects/netsec-automation/shared/cre/handoff.md).
+- [Continuous Registration Engine (CRE)](projects/netsec-automation/shared/cre/README.md) · [decision](projects/netsec-automation/shared/cre/handoff.md).
 - [AWS intent-driven SG egress](projects/netsec-automation/aws/intent-driven-sg-egress/README.md) · [decision](projects/netsec-automation/aws/intent-driven-sg-egress/handoff.md).
 - [AWS SG consolidation/migration](projects/netsec-automation/aws/processes/security-group-consolidation-migration/README.md) · [decision](projects/netsec-automation/aws/processes/security-group-consolidation-migration/handoff.md).
 - [Risk-findings PR area](projects/netsec-automation/shared/risk-findings/README.md) — placeholder for the supplied risk document and new findings.
