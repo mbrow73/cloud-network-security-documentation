@@ -10,7 +10,7 @@ Capture the QE defect, automation pattern, environment and expected versus obser
 
 ## 2. Diagnose with the cloud guide
 
-Use [general AWS network troubleshooting](../../../aws/troubleshooting.md) for application, request and applicable cloud-control checks. Record the finding and available evidence here rather than duplicate the technical procedure.
+Use [general AWS network troubleshooting](../../../aws/troubleshooting.md) to classify the flow, identify in-path controls and determine whether NetSec is blocking it using SG/flow-log, SIEM and applicable firewall evidence. Record the finding and available evidence here rather than duplicate the technical procedure; application root-cause analysis is not a prerequisite for handoff.
 
 ## 3. Act on the result
 
