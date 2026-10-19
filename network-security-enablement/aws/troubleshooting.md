@@ -6,15 +6,17 @@
 
 Get the following from the requestor:
 
-- Source and destination workload/endpoint IPs, destination port and protocol; source port if known. For each side, record the **non-routable (NR) workload IP, if present**, and the **routable (R) IP used across account/network boundaries**. Mark NR **not applicable** for routable-only workloads; do not require a second IP where none exists. If an address/mapping is unknown, flag it for lookup rather than treating it as not applicable.
+- Source and destination workload/endpoint IPs, destination port and protocol; source port if known. For each side, record the **non-routable (NR) workload IP, if present**, and the **routable (R) IP used across account/network boundaries**. Mark NR **not applicable** for routable-only workloads; do not require a second IP where none exists. If the requestor only knows the NR IP, AWS account and Region, start with those and look up the routable mapping; do not treat an unknown mapping as not applicable.
 - Where each endpoint lives: **AWS account ID/name and Region**, **GCP project ID/name and region where applicable**, or **on-premises/third-party site or network and owning team**. Record production/non-production for each side; an endpoint does not need to be in AWS.
 - For zonal AWS workloads, capture the **source subnet and Availability Zone (AZ)** so the corresponding local Palo Alto pair can be selected. For an NR source, also record the NAT gateway and its AZ for the tested path.
 - A recent failed-test timestamp with time zone, and a way to reproduce the same flow during investigation.
-- For hostname-based connections, the hostname/URL and IP resolved during the test. Note known NAT, proxy or load-balancer translations so searches use the addresses visible at each hop.
+- For **third-party peering inspection**, where SNI-based controls are enforced, also capture the destination hostname/URL and the IP resolved during the test. Record known NAT/proxy mappings for firewall searches.
 
 Do not require a project pattern/configuration reference before starting these checks.
 
-**Use the IP visible at the control being checked.** An AWS account can contain both routable workloads and workloads in non-routable `100.65.x.x` space. For an NR source, use its **workload NR IP** to find its ENI/SG and source-workload flow logs; use the **routable source IP of the NAT gateway** for checks beyond the source account, until another translation/proxy changes it. For a routable-only source, use its workload R IP. Routable here means routable across the relevant enterprise networks, not necessarily a public internet IP. Record the actual NR→R mapping for the tested path; apply the same local-versus-routable distinction to the destination where applicable. See AWS's [private NAT example](https://docs.aws.amazon.com/whitepapers/latest/building-scalable-secure-multi-vpc-network-infrastructure/private-nat-gateway.html).
+**Workload versus firewall searches:** use the workload ENI IP for its SG and VPC Flow Logs checks. Beyond the source account, an NR workload is represented by its NAT gateway's routable source; a proxy may originate a separate connection. Enterprise-routable addresses in this environment are `10.x.x.x`; NR workloads use `100.65.x.x` space.
+
+**If only the NR IP, account and Region are known:** find the workload ENI and subnet, then open the subnet's effective route table (its explicit association, or the VPC main table). Follow the route matching the destination to the NAT gateway. Open that gateway under **VPC → NAT gateways** and record its subnet/AZ and assigned private `10.x.x.x` addresses used for SNAT. Record the assigned SNAT addresses, not just the subnet CIDR; confirm the translated source used by the test from traffic evidence when needed. If the route points elsewhere, follow the actual path rather than assuming a NAT gateway. AWS references: [subnet route tables](https://docs.aws.amazon.com/vpc/latest/userguide/subnet-route-tables.html) and [NAT gateway addresses](https://docs.aws.amazon.com/vpc/latest/userguide/nat-gateway-working-with.html).
 
 ## 2. Identify the type of flow
 
@@ -31,15 +33,15 @@ This is the environment-specific control map. Bidirectional arrows describe endp
 | Internet account ↔ third party | SGs, egresscore Palo Altos (non-production) / core Palo Altos (production), and third-party Palo Altos. |
 | Intranet account ↔ third party | SGs and third-party Palo Altos only. |
 | Intranet account ↔ on-premises | SGs and Equinix (production) / TRCWMID2 (non-production). |
-| Web egress through an internet egress account, including the return leg | Applicable SGs, **EWP (Enterprise Web Proxy; not NetSec-owned)**, and **egresscore Palo Altos (non-production) / egress Palo Altos (production)**. Add any other source/destination segment controls actually traversed. |
+| Web egress through an internet egress account, including the return leg | Applicable SGs, **EWP (Enterprise Web Proxy; not NetSec-owned)**, and **egresscore Palo Altos (non-production) / egress Palo Altos (production)**. |
 
-For flows using the internet-egress-account **web-egress path**, combine that egress chain with the applicable private/source/destination legs above. For example, if the path also traverses a third-party Palo Alto, retain it in the control list; if it traverses the on-premises boundary, retain Equinix/TRCWMID2. These are path-composition rules, not an assertion that every connection to a resource in the egress account traverses EWP. A proxy can create a separate outbound connection: correlate the workload→EWP and EWP→destination legs using the addresses/timestamps visible on each leg, not one unchanged tuple end to end. EWP findings go to its owner; passing NetSec controls does not clear EWP.
+For proxied web egress, check the workload→EWP and EWP→destination connections separately. EWP is not NetSec-owned; coordinate EWP findings with its owner.
 
-Keep the production firewall names distinct: **core** for the internet-account paths above; **egress** for web egress. **Other unlisted pairings (including GCP/private connectivity to egress-account resources):** TODO: insert applicable control paths. Do not assume an unlisted path is SG-only.
+Keep the production firewall names distinct: **core** for the internet-account paths above; **egress** for web egress.
 
-**Firewall inventory / source-AZ-to-Palo-Alto-pair mapping / management IPs / path reference:** TODO: insert supporting document link.
+**Panorama:** TODO: insert Panorama link. Find local firewalls, source-AZ-to-pair mapping and associated device/management details through Panorama.
 
-Local Palo Altos are deployed as **AZ-based pairs**. For a zonal AWS source, read its subnet/AZ from the source ENI/subnet details and use the inventory mapping to select the corresponding local pair for Traffic-log checks and PCAP; do not guess across all three AZ pairs. Identify the member(s) handling the reproduced flow. For other firewalls along the path, use their applicable path mapping. If the mapping is missing or the expected pair does not see the flow, record that gap and verify the path with NSAE rather than treating an empty capture as clearance.
+Local Palo Altos are deployed as **AZ-based pairs**. For a zonal AWS source, read its subnet/AZ from the source ENI/subnet details and use Panorama to identify and select the corresponding local pair for Traffic-log checks and PCAP; do not guess across all three AZ pairs. Identify the member(s) handling the reproduced flow. Find other applicable firewalls and their details through Panorama as well. If the mapping is missing or the expected pair does not see the flow, record that gap and verify the path with NSAE rather than treating an empty capture as clearance.
 
 ## 4. Troubleshoot the controls
 
@@ -49,15 +51,15 @@ Work through applicable controls in order. Skip AWS-side checks for non-AWS endp
 
 #### Find the workload ENI and associated SGs
 
-1. For an AWS source, sign in to the **source account provided by the requestor**, select its Region, then open **EC2 → Network & Security → Network Interfaces**. For a non-AWS source, use its owning platform's checks and continue here at the applicable AWS side; do not search an unrelated AWS account for it.
+1. For an AWS source, sign in to the **source account provided by the requestor**, select its Region, then open **EC2 → Network & Security → Network Interfaces**. For a non-AWS source, perform the applicable NetSec checks below and continue the ENI/SG procedure at the AWS side; do not search an unrelated AWS account for it.
 2. Search/filter by the **workload's local IP**: its NR `100.65.x.x` address when present, otherwise its routable workload IP. Include secondary private IPs. Select the matching network interface (ENI) and verify workload, VPC and subnet. Do **not** use the downstream NAT-gateway R IP to identify the source workload's SG.
 3. Open the associated **Security groups** from the ENI details. Check **Outbound rules** for destination address, protocol and port. Evaluate all attached SGs together: their allow rules are combined, not limited to the expected named SG.
-4. Record ENI/SG IDs and distinguish **missing SG**, **existing SG not attached**, and **existing/attached SG with stale or missing rules**. NetSec supplies rule changes through SG deployment modules; an existing SG does not mean AFT has applied the newest rules. Compare deployed rules against the **latest applicable version of the NetSec SG deployment module**, including relevant account/environment inputs, and check which version/run AFT actually applied. If expected newer rules are absent, have the **requestor request an AFT Operations run** using the updated module version; NSE can coordinate when needed. Include account/environment, SG ID, expected module version/rules, actual deployed rules and last-run evidence. Recheck deployed state after the run; do not bypass module deployment with an ad hoc rule change.
-5. For an AWS destination, repeat in the **destination account/Region**, finding its ENI by the destination workload's local NR/R IP. Confirm SG attachment, check module/rule currency as above, and check **Inbound rules** against the source address visible there—normally the NAT gateway's R source for an NR workload crossing the source-account boundary, or the proxy's source for a separate proxied leg. Non-AWS destination checks belong to its platform/owner.
+4. Record ENI/SG IDs and distinguish **missing SG**, **existing SG not attached**, and **existing/attached SG with stale or missing rules**. NetSec supplies rule changes through SG deployment modules; an existing SG does not mean AFT has applied the newest rules. Compare deployed rules against the **latest applicable version of the NetSec SG deployment module**, including relevant account/environment inputs, and check which version/run AFT actually applied. If expected newer rules are absent, have the **requestor ask AFT Operations to run the account** using the updated module version; this is an informal ask, and NSE can coordinate when needed. Include account/environment, SG ID, expected module version/rules, actual deployed rules and last-run evidence. Recheck deployed state after the run; do not bypass module deployment with an ad hoc rule change.
+5. For an AWS destination, repeat in the **destination account/Region**, finding its ENI by the destination workload's local NR/R IP. Confirm SG attachment, check module/rule currency as above, and check **Inbound rules** against the source address visible there—the source workload's R IP, the NAT gateway's R source for an NR workload, or an on-premises/GCP routable IP, as applicable. For a proxied connection, use the proxy's source.
 
 **NetSec SG deployment modules / versions / expected rules:** TODO: insert supporting repository/release link.
 
-**AFT Operations run-request process:** TODO: insert supporting process link.
+**For non-AWS endpoints, NetSec performs the applicable checks:** Illumio and Palo Alto for on-premises; Palo Alto and GCP firewall rules for GCP. Use the routable endpoint addresses visible to those controls.
 
 AWS references: [network interfaces](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-eni.html) and [security-group rules](https://docs.aws.amazon.com/vpc/latest/userguide/security-group-rules.html).
 
@@ -67,21 +69,19 @@ Open **CloudWatch → Logs → Logs Insights**, choose **Logs Insights QL**, and
 
 Find the configured log destination through the ENI, subnet or VPC **Flow logs** tab. Confirm interface coverage, successful delivery and **ALL** traffic logging before expecting both ACCEPT and REJECT; REJECT-only logging cannot demonstrate acceptance.
 
-Example: source workload NR `100.65.1.10` → source NAT R `192.168.1.1` → destination `192.168.1.2`, TCP/443. The **source-workload** query below uses the NR IP and includes return traffic. For a downstream/destination query, substitute the source NAT R IP (or the proxy's source on a proxied leg) and the destination IP visible there. For a routable-only workload, use its R IP in both locations unless another translation applies. Replace the example addresses, port and protocol; TCP is `6`, UDP is `17`. No ENI filter is required.
+Example: workload ENI IP `100.65.1.10` communicating with `10.1.1.1` on TCP/443. Match the workload IP as source for outbound traffic and destination for return traffic. Replace the example addresses, port and protocol; TCP is `6`, UDP is `17`. No ENI ID filter is required.
 
 ```sql
 fields @timestamp, srcAddr, srcPort, dstAddr, dstPort,
        protocol, action, logStatus, packets, bytes
 | filter protocol = 6
-| filter (srcAddr = "100.65.1.10" and dstAddr = "192.168.1.2" and dstPort = 443)
-      or (srcAddr = "192.168.1.2" and dstAddr = "100.65.1.10" and srcPort = 443)
+| filter (srcAddr = "100.65.1.10" and dstAddr = "10.1.1.1" and dstPort = 443)
+      or (srcAddr = "10.1.1.1" and dstAddr = "100.65.1.10" and srcPort = 443)
 | sort @timestamp desc
 | limit 200
 ```
 
-This uses discovered fields for standard VPC Flow Logs. For a custom format, inspect a raw record and map/parse its actual fields first. Keep ACCEPT evidence rather than filtering only to REJECT. To inspect `NODATA`/`SKIPDATA`, remove IP/port/protocol filters: those status records may lack a flow tuple. See [discovered fields](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CWL_AnalyzeLogData-discoverable-fields.html) and [running a query](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CWL_AnalyzeLogData_RunSampleQuery.html).
-
-Query the **source workload's** log group first, then the applicable **destination/downstream** group using that hop's NR/R or proxy tuple. The selected group and addresses/time scope the query; an ENI ID is not required. If a broad log group mixes workload and NAT records, inspect the matching records' observation points before attributing actions to the workload SG. Custom NAT flow-log formats may also include original packet-address fields; use the [record field definitions](https://docs.aws.amazon.com/vpc/latest/userguide/flow-log-records.html) to interpret them.
+This uses discovered fields for standard VPC Flow Logs. See [running a query](https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CWL_AnalyzeLogData_RunSampleQuery.html). For an AWS destination, repeat the check in its workload flow-log group using its ENI IP and the peer address seen there.
 
 - **Source REJECT for the initiating flow:** recheck source SG egress. A VPC REJECT is not an SG-rule identifier; if the SG permits it, inspect the network ACL or route that evidence to its owner.
 - **Destination REJECT for the incoming flow:** check expected SG attachment, then individual ingress rules against the actual source. If SGs permit it, inspect the network ACL; do not equate every REJECT with an SG deny.
@@ -94,21 +94,21 @@ SGs are stateful; network ACLs are stateless. Do not request reverse SG openings
 
 **SIEM:** TODO: insert SIEM link.
 
-Select the **Illumio/Palo Alto** view dropdown and the failed-test time window. For post-source-account checks, start with the **routable NAT source IP**, not the workload's NR IP. This continues the example above with R source `192.168.1.1`; use the proxy's actual outbound source instead for a proxied leg:
+Select the **Illumio/Palo Alto** view dropdown and the failed-test time window. Use the **routable source and destination visible to the inspected control**. For an NR workload beyond its source account, use the NAT gateway's R source, not the workload's NR IP; for a proxied leg, use the proxy's source. Example with R source `10.2.1.10` and destination `10.1.1.1`:
 
 ```text
-source.ip : "192.168.1.1" and destination.ip : "192.168.1.2"
+source.ip : "10.2.1.10" and destination.ip : "10.1.1.1"
 ```
 
 Expand matching hits. Filter/search expanded fields for **action** to find the traffic action and **observer** to identify the reporting Palo Alto/Illumio instance. Save action, device, timestamp and rule/policy evidence; confirm the device belongs to the identified path.
 
-Add port/protocol filters using fields actually present in the view. Search reverse and translated tuples where relevant. One observer's permit does not clear other controls. When no explicit block appears, inspect local logs next; no hits are not proof of no drops. Use the Illumio owner/reference for Illumio-specific follow-up, not PAN-OS procedures.
+Add port/protocol filters using fields actually present in the view. Search reverse and translated tuples where relevant. One observer's permit does not clear other controls. When no explicit block appears, inspect local logs next; no hits are not proof of no drops. For on-premises endpoints, NetSec checks the applicable Illumio and Palo Alto evidence; use Illumio-specific checks for Illumio, not PAN-OS procedures.
 
 ### 4.3 Check local firewall logs
 
 If the SIEM and destination SG/flow-log checks do not identify the block, inspect each applicable Palo Alto locally:
 
-1. Select the **local Palo Alto pair corresponding to the zonal source's AZ** using the step 3 mapping. Sign in to **Citrix** (TODO: insert Citrix link), select the **Chrome** app, then open `https://<firewall-management-IP>` for the relevant member(s). Use the path inventory for other in-path firewalls.
+1. Select the **local Palo Alto pair corresponding to the zonal source's AZ** through Panorama as described in step 3. Sign in to **Citrix** (TODO: insert Citrix link), select the **Chrome** app, then open `https://<firewall-management-IP>` for the relevant member(s). Find other in-path firewalls and their management details in Panorama.
 2. Open **Monitor → Logs → Traffic**. Use the filter builder to match source/destination IPs, port/protocol and test time. Repeat for reverse traffic and NAT-translated addresses.
 3. Expand entries and record action, rule, application/App-ID, zones, NAT fields, session ID and session-end reason. Check for denies, drops or resets absent from the SIEM.
 4. **URL/content-enforcement log evidence is not currently available in this deployment.** Investigate these drops through the PCAP procedure below, not URL Filtering/Threat-log correlation. A Traffic-log allow alone does not clear URL/content enforcement. Record this logging gap with the findings.
