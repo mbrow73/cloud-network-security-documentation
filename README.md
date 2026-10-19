@@ -2,6 +2,10 @@
 
 Cloud network security documentation, runbooks, and operational guides
 
+## Operational handoffs
+
+- [Network Security Enablement](network-security-enablement/README.md) — proposed Architecture-to-Operations handoff workflow, review records, and topic outlines
+
 ## Architecture decision records
 
 - [GCP third-party ingress reverse-proxy removal](adrs/adr-gcp-third-party-ingress-reverse-proxy-removal.md) - proposed options, detailed SVG diagrams, regional Palo routing constraints, Cloud NGFW inspection gaps, PA/DNAT or Palo NSI candidates

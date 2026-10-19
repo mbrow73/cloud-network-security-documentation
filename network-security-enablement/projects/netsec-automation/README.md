@@ -1,0 +1,12 @@
+# NetSec Automation
+
+A phased, in-progress project. Document the processes and implemented support scope being handed over now, not the completed future architecture.
+
+- [Shared overview and project expectations](shared/README.md): NSE support covers both clouds and all automation patterns, with current/planned behavior distinguished.
+- Project QE defect workflows: [AWS](aws/qe-defect-handling.md) and [GCP](gcp/qe-defect-handling.md), linked from shared expectations; each workflow uses its general cloud troubleshooting guide.
+- [Continuous Registration Engine (CRE)](shared/cre/README.md) — requested outline; fill in the relevant scope as we work through it.
+- [AWS](aws/README.md) — current-phase support, intent-driven SG egress and the separate consolidation/migration process.
+- [GCP](gcp/README.md) — current-phase support and cloud-specific pattern notes.
+- [Risk-findings PR area](shared/risk-findings/README.md) — placeholder for NSAE's supplied risk document and new findings.
+
+Verdicting is not implemented yet. Gatekeeper is owned by Cloud Security; its administration is outside this handoff. Neither needs a new troubleshooting document or readiness checklist for this phase. Full catalog ownership comes later.
