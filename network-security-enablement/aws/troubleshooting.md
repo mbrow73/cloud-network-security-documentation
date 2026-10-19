@@ -8,6 +8,7 @@ Get the following from the requestor:
 
 - Source and destination workload/endpoint IPs, destination port and protocol; source port if known. For each side, record the **non-routable (NR) workload IP, if present**, and the **routable (R) IP used across account/network boundaries**. Mark NR **not applicable** for routable-only workloads; do not require a second IP where none exists. If an address/mapping is unknown, flag it for lookup rather than treating it as not applicable.
 - Where each endpoint lives: **AWS account ID/name and Region**, **GCP project ID/name and region where applicable**, or **on-premises/third-party site or network and owning team**. Record production/non-production for each side; an endpoint does not need to be in AWS.
+- For zonal AWS workloads, capture the **source subnet and Availability Zone (AZ)** so the corresponding local Palo Alto pair can be selected. For an NR source, also record the NAT gateway and its AZ for the tested path.
 - A recent failed-test timestamp with time zone, and a way to reproduce the same flow during investigation.
 - For hostname-based connections, the hostname/URL and IP resolved during the test. Note known NAT, proxy or load-balancer translations so searches use the addresses visible at each hop.
 
@@ -36,7 +37,9 @@ For flows using the internet-egress-account **web-egress path**, combine that eg
 
 Keep the production firewall names distinct: **core** for the internet-account paths above; **egress** for web egress. **Other unlisted pairings (including GCP/private connectivity to egress-account resources):** TODO: insert applicable control paths. Do not assume an unlisted path is SG-only.
 
-**Firewall inventory / management IPs / path reference:** TODO: insert supporting document link.
+**Firewall inventory / source-AZ-to-Palo-Alto-pair mapping / management IPs / path reference:** TODO: insert supporting document link.
+
+Local Palo Altos are deployed as **AZ-based pairs**. For a zonal AWS source, read its subnet/AZ from the source ENI/subnet details and use the inventory mapping to select the corresponding local pair for Traffic-log checks and PCAP; do not guess across all three AZ pairs. Identify the member(s) handling the reproduced flow. For other firewalls along the path, use their applicable path mapping. If the mapping is missing or the expected pair does not see the flow, record that gap and verify the path with NSAE rather than treating an empty capture as clearance.
 
 ## 4. Troubleshoot the controls
 
@@ -105,16 +108,16 @@ Add port/protocol filters using fields actually present in the view. Search reve
 
 If the SIEM and destination SG/flow-log checks do not identify the block, inspect each applicable Palo Alto locally:
 
-1. Sign in to **Citrix** (TODO: insert Citrix link), select the **Chrome** app, then open `https://<firewall-management-IP>` using the path inventory.
+1. Select the **local Palo Alto pair corresponding to the zonal source's AZ** using the step 3 mapping. Sign in to **Citrix** (TODO: insert Citrix link), select the **Chrome** app, then open `https://<firewall-management-IP>` for the relevant member(s). Use the path inventory for other in-path firewalls.
 2. Open **Monitor → Logs → Traffic**. Use the filter builder to match source/destination IPs, port/protocol and test time. Repeat for reverse traffic and NAT-translated addresses.
 3. Expand entries and record action, rule, application/App-ID, zones, NAT fields, session ID and session-end reason. Check for denies, drops or resets absent from the SIEM.
-4. For URL/content enforcement, correlate **Monitor → Logs → URL Filtering** and **Threat** by session ID and time. An initial Traffic-log allow does not establish that subsequent inspection passed.
+4. **URL/content-enforcement log evidence is not currently available in this deployment.** Investigate these drops through the PCAP procedure below, not URL Filtering/Threat-log correlation. A Traffic-log allow alone does not clear URL/content enforcement. Record this logging gap with the findings.
 
-PAN-OS references: [log views](https://docs.paloaltonetworks.com/ngfw/help/11-2/monitor/monitor-logs/log-types), [Traffic-log fields](https://docs.paloaltonetworks.com/ngfw/administration/monitoring/use-syslog-for-monitoring/syslog-field-descriptions/traffic-log-fields) and [URL Filtering fields](https://docs.paloaltonetworks.com/ngfw/administration/monitoring/use-syslog-for-monitoring/syslog-field-descriptions/url-filtering-log-fields).
+PAN-OS reference: [Traffic-log fields](https://docs.paloaltonetworks.com/ngfw/administration/monitoring/use-syslog-for-monitoring/syslog-field-descriptions/traffic-log-fields).
 
 ### 4.4 Take a narrowly filtered Palo Alto PCAP
 
-If source/destination VPC Flow Logs, SIEM and local logs do not explain the failure, capture the reproduced flow at the Palo Altos along the path.
+If source/destination VPC Flow Logs, SIEM and local logs do not explain the failure, or URL/content enforcement is suspected, capture the reproduced flow at the Palo Altos along the path. For the local zonal firewall, open the **source-AZ-corresponding pair** selected in step 3 and capture on the member(s) handling the test, rather than trying all AZ pairs. Record the source AZ and selected firewall names with the capture.
 
 1. Open **Monitor → Packet Capture → Manage Filters**. Match the source/destination/port/protocol **visible at that firewall**: for an NR workload beyond its source account, use its NAT gateway's R source until another translation/proxy changes it. Include reverse traffic and NAT-visible tuples where applicable; do not hard-code an unknown client ephemeral port.
 2. Enable filtering and configure four stages with distinct file names: **receive**, **transmit**, **firewall** and **drop**.
@@ -125,7 +128,7 @@ If expected packets are absent, verify active dataplane/device, filter and captu
 
 **Interpretation leads, not automatic diagnoses:**
 
-- A dropped **TLS ClientHello** on third-party peering makes a missing destination hostname in the applicable URL category or an App-ID mismatch worth checking. Correlate hostname/SNI, rule, application and URL/Threat logs; the packet alone does not prove either cause.
+- A dropped **TLS ClientHello** on third-party peering makes a missing destination hostname in the applicable URL category or an App-ID mismatch worth checking. Use the PCAP (including hostname/SNI where visible), available Traffic-log context and the applicable rule/category/App-ID configuration; URL/Threat-log correlation is not currently available here. The dropped packet alone does not prove either cause.
 - An initial **TCP SYN** drop makes five-tuple/policy matching an early check. Other TCP drops can involve state, routing or inspection; a TCP drop alone is not proof of policy mismatch.
 - When PCAP drops have no explanation in Traffic logs, use filtered delta counters for dataplane causes such as spoofing checks, state problems or asymmetric-routing symptoms.
 
@@ -171,6 +174,22 @@ Attach endpoint locations/owners/environment, workload NR/R and NAT/proxy mappin
 - **Inconclusive / visibility gap:** name the missing hop, logs, capture or access and the owner needed next. No hits, an unobserved return path or an unmatched capture is not sufficient to clear NetSec.
 
 For SG-only flows, use interface/SG and bidirectional flow-log evidence; do not require Palo Alto evidence where no Palo Alto is in path. NSE does not need to prove application root cause before handing off a documented result.
+
+### Escalate unresolved cases to NSAE
+
+**If the problem cannot be identified through the applicable checks, escalate to NSAE — Network Security Architecture and Engineering — with all supporting evidence collected and checks performed up to that point.** This is a general route, not limited to CRE-backed flows or proven catalog defects. Do not require conclusive root cause or unavailable evidence before escalating.
+
+Include:
+
+- Impact, affected endpoints/owners/environment, failing flow and NR/R/NAT/proxy mappings, test timestamps and reproduction steps.
+- Source AZ, selected local Palo Alto pair/member(s), other in-path controls and any uncertainty about the path.
+- SG attachment/rule/module-version findings, AFT run status where relevant, and the log groups, time windows and queries used with their results.
+- Available SIEM/local Traffic-log extracts, PCAP files/stages and filtered counter samples, with what each check established or did not establish.
+- Checks not completed and why (missing access, mapping, logs or ability to reproduce), plus any existing CRE/AFT/EWP-owner case or follow-up.
+
+Keep unresolved visibility gaps explicit rather than clearing NetSec from absent evidence. Preserve the CRE-specific support route for identified registration issues.
+
+**NSAE escalation queue / contacts:** TODO: insert existing queue/contact link.
 
 ## Related workflows and request guides
 
