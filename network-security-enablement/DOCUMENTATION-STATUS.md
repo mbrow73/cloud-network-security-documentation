@@ -56,7 +56,7 @@ Nine topic packets also have a short decision record. General cloud troubleshoot
 4. [General AWS troubleshooting](aws/troubleshooting.md): common application and applicable SG/provisioning checks and findings.
 5. [General GCP troubleshooting](gcp/troubleshooting.md): common application and applicable firewall/tag/service-container checks and findings.
 
-6. [CRE registration and policy-scaffolding explanation](projects/netsec-automation/shared/cre/README.md): proprietary API, AFT/platform triggers, dynamic IP/tag membership, Hydra example, response evidence and registration-versus-policy diagnosis. Source subnet CIDRs, successful-response guarantees, firewall verification and CRE support escalation are filled in. Supporting-reference links and internal contact names remain TODOs.
+6. [CRE registration and policy-scaffolding explanation](projects/netsec-automation/shared/cre/README.md): proprietary API, AFT/platform triggers, dynamic IP/tag membership, Hydra example, response evidence and registration-versus-policy diagnosis. Resource IP/subnet CIDR registration, source/destination group roles, vending and application-onboarding triggers, data-service/Cloud Run connector examples, explicit API success/error handling, firewall verification and CRE support escalation are filled in. Supporting-reference links and internal contact names remain TODOs.
 
 These are working first passes, not validated command runbooks. Links remain named placeholders. The project-specific guides were split from the original cloud troubleshooting drafts, not created as a new component operations program.
 
