@@ -2,6 +2,10 @@
 
 Cloud network security documentation, runbooks, and operational guides
 
+## Operational handoffs
+
+- [Panorama address-object tag mismatch recovery](runbooks/panorama-address-object-tag-recovery.md) - remove/re-add procedure, confirmation status, and required local-firewall policy verification
+
 ## Architecture decision records
 
 - [GCP third-party ingress reverse-proxy removal](adrs/adr-gcp-third-party-ingress-reverse-proxy-removal.md) - proposed options, detailed SVG diagrams, regional Palo routing constraints, Cloud NGFW inspection gaps, PA/DNAT or Palo NSI candidates
