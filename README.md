@@ -4,7 +4,7 @@ Cloud network security documentation, runbooks, and operational guides
 
 ## Operational handoffs
 
-- [Panorama address-object tag mismatch recovery](runbooks/panorama-address-object-tag-recovery.md) - remove/re-add procedure, confirmation status, and required local-firewall policy verification
+- [Panorama address-object tag mismatch recovery](runbooks/panorama-address-object-tag-recovery.md) - confirmed DG-override cause, scoped correction, and required local-firewall policy verification
 
 ## Architecture decision records
 
