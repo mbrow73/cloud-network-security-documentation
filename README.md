@@ -7,6 +7,10 @@ Cloud network security documentation, runbooks, and operational guides
 - [GCP third-party ingress reverse-proxy removal](adrs/adr-gcp-third-party-ingress-reverse-proxy-removal.md) - proposed options, detailed SVG diagrams, regional Palo routing constraints, Cloud NGFW inspection gaps, PA/DNAT or Palo NSI candidates
 - [GCP internet egress architecture](adrs/adr-gcp-internet-egress-architecture.md)
 
+## Network security assessments
+
+- [GCP public blockchain P2P — DMZ designs and risk register](assessments/gcp-public-blockchain-p2p-dmz-netsec-review.md) — proposed bidirectional/outbound-only options, private Palo TLS inspection, control coverage and residual risks
+
 ## AWS diagrams
 
 - [VPC Lattice Resource Gateway → GWLBe / GWLB / Palo → Amazon RDS](diagrams/aws-vpc-lattice-resource-gateway-gwlb-rds-routing.png)
