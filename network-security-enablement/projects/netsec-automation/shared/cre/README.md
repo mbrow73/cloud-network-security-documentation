@@ -1,8 +1,8 @@
 # Continuous Registration Engine (CRE) — AWS and GCP
 
-**Draft for review.** CRE is a proprietary NetSec application with an API that provisions required downstream access on Palo Alto and Illumio. This document explains the Palo Alto registration and policy-scaffolding path. Illumio-specific behavior remains a supporting-reference placeholder; Palo Alto mechanics must not be assumed to apply to Illumio.
+CRE is a proprietary NetSec application with an API that provisions required downstream access on Palo Alto and Illumio. This document explains the Palo Alto registration and policy-scaffolding path. Illumio-specific behavior remains a supporting-reference placeholder; Palo Alto mechanics must not be assumed to apply to Illumio.
 
-[Project expectations](../README.md) · [Review decision](handoff.md).
+[Project expectations](../README.md) · [AWS troubleshooting](../../../../aws/troubleshooting.md).
 
 ## Registration versus policy scaffolding
 
@@ -68,11 +68,11 @@ When a new EKS or GKE cluster is provisioned and the platform integration makes 
 
 A Palo Alto deny does **not** establish that policy scaffolding is missing. The policy may exist while the CRE call was never made, failed, used incorrect registration context, or did not produce the expected membership on the firewall seeing the flow.
 
-1. **Capture the blocked flow.** Use [AWS troubleshooting](../../../../aws/troubleshooting.md) or [GCP troubleshooting](../../../../gcp/troubleshooting.md) to identify the affected flow, blocking firewall and available rule/log evidence.
+1. **Capture the blocked flow.** Identify the affected flow, blocking firewall and available rule/log evidence. For AWS paths, use [AWS troubleshooting](../../../../aws/troubleshooting.md). **GCP troubleshooting:** TODO: insert reviewed procedure link.
 2. **Obtain the CRE API call evidence.** QE/the requesting team should have the call response. Establish which vending, platform or onboarding workflow made the call, the exact IP addresses/subnet CIDRs and classification context submitted, and the operation result, error reason if present, and local firewall list/results in the response. Ask the requestor for the submitted values if necessary. A returned error means registration was unsuccessful; a response alone is not success. If evidence is missing, obtain it from QE/the requesting team; absence of evidence is not proof of a catalog gap.
 3. **Check registration and group membership.** Verify registered IPs/subnet CIDRs, tags and group membership **on the applicable firewall** for both sides of the expected rule. Match the flow's source and destination addresses to their respective registrations and DAG references; do not assume that only the source requires registration. For an explicitly successful registration, compare the blocking firewall with the response's firewall list. Direct firewall inspection establishes which registration/group/policy state applies to the blocked flow.
 4. **Check policy scaffolding separately.** Use the CRE-enabled address-group reference to find the expected source/destination groups and the rules using them. Check the intended pattern's service/port and applicable policy scope. If membership and a candidate allow rule exist but the flow is still blocked, continue investigating the actual rule match/path rather than concluding the catalog is missing.
-5. **Route the finding.** Escalate missing/failed registrations or CRE integration issues to the [CRE support contacts](#cre-support-contacts), with the submitted values, response and firewall evidence. Suspected missing or incorrect shared scaffolding/catalog coverage goes to NSAE with the evidence. NSE must not convert a broad catalog change into a one-time access request. Return to [AWS QE defect handling](../../aws/qe-defect-handling.md) or [GCP QE defect handling](../../gcp/qe-defect-handling.md) for project-specific routing.
+5. **Route the finding.** Escalate missing/failed registrations or CRE integration issues to the [CRE support contacts](#cre-support-contacts), with the submitted values, response and firewall evidence. Suspected missing or incorrect shared scaffolding/catalog coverage goes to NSAE with the evidence. NSE must not convert a broad catalog change into a one-time access request. Follow the [project expectations](../README.md#handling-qe-defects-and-missing-access) for request-versus-architecture boundaries. **Project-specific QE workflows:** TODO: insert reviewed procedure links.
 
 Conclusive root cause is not required before requesting engineering help. The distinction is to report the evidence and suspected failing layer rather than label every deny as missing catalog coverage.
 

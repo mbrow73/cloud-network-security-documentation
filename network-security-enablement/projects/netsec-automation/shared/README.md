@@ -1,12 +1,12 @@
 # NetSec Automation — overview and NSE expectations
 
-**Draft.** NetSec Automation is being delivered in phases. This handoff covers NSE support while the project is in progress. [Project index](../README.md).
+NetSec Automation is being delivered in phases. This document covers NSE support while the project is in progress.
 
 ## NSE support expectations
 
 NSE provides troubleshooting support during agreed IST hours for QE-raised defects across **both AWS and GCP and all automation patterns**. The pattern sheet identifies implemented functionality and planned work. NSE helps requestors/application/platform teams resolve configuration or prerequisite issues and escalates suspected architecture or service-catalog defects to **NSAE — Network Security Architecture and Engineering**.
 
-NSE also reports gaps in expected controls and assists AFT Operations with planned native-firewall consolidation under the [separate consolidation/migration process](../aws/processes/security-group-consolidation-migration/README.md).
+NSE also reports gaps in expected controls and assists AFT Operations with planned native-firewall consolidation under a separate consolidation/migration process. **Consolidation/migration process:** TODO: insert approved process link.
 
 ## Primary and transitive controls
 
@@ -30,12 +30,12 @@ GKE source tags, including `gkeusc1-600001725-e1` and `gkeuse4-600001725-e1`, id
 
 ## Handling QE defects and missing access
 
-Use the project workflows: [AWS QE defect handling](../aws/qe-defect-handling.md) and [GCP QE defect handling](../gcp/qe-defect-handling.md). They link to the cloud-level troubleshooting guides and determine what to resolve, route as a request, or escalate.
+Use [AWS troubleshooting](../../../aws/troubleshooting.md) for AWS flow isolation and evidence collection. **GCP troubleshooting and project-specific QE workflows:** TODO: insert reviewed procedure links. The request and escalation boundaries below remain applicable.
 
 NSE may help requestors complete **request forms to provision missing access** and implement that access through the normal authorized process when it meets **NetSec Standard Tech 08.11** and has an appropriate business justification. This does not grant blanket catalog/template change authority.
 
-- [AWS standard SG requests](../../../aws/requests/standard-security-group-requests.md) — placeholder.
-- [GCP standard routable firewall-rule requests](../../../gcp/requests/standard-routable-firewall-rule-requests.md) — placeholder.
+- **AWS standard SG requests:** TODO: insert approved request-guide link.
+- **GCP standard routable firewall-rule requests:** TODO: insert approved request-guide link.
 - **NetSec Standard Tech 08.11:** TODO: insert standard link.
 
 When missing access requires a shared automation/service-catalog change, especially CRE policy plumbing, NSE escalates it to NSAE. Such changes can have a broad blast radius and are not individual access requests. NSAE owns the architecture/catalog decision and remediation coordination.
@@ -52,5 +52,5 @@ When missing access requires a shared automation/service-catalog change, especia
 
 - **AWS/GCP pattern and control-placement sheet (current/planned):** TODO: insert spreadsheet link.
 - **CRE policy-plumbing table:** TODO: insert table/document link.
-- **Risk document:** TODO: insert document link in the [risk-findings area](risk-findings/README.md).
+- **Risk document:** TODO: insert authoritative document link.
 - **IST support window / QE, NSAE, AFT and platform contacts:** TODO: insert schedule/contact links.

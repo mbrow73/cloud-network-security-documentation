@@ -4,7 +4,9 @@ Cloud network security documentation, runbooks, and operational guides
 
 ## Operational handoffs
 
-- [Network Security Enablement](network-security-enablement/README.md) — proposed Architecture-to-Operations handoff workflow, review records, and topic outlines
+- [NetSec Automation — overview and NSE expectations](network-security-enablement/projects/netsec-automation/shared/README.md).
+- [Continuous Registration Engine (CRE) — AWS and GCP](network-security-enablement/projects/netsec-automation/shared/cre/README.md).
+- [AWS network troubleshooting](network-security-enablement/aws/troubleshooting.md).
 
 ## Architecture decision records
 

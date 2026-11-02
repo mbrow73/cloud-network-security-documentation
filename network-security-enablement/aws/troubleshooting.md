@@ -1,6 +1,6 @@
 # AWS network troubleshooting
 
-**Draft.** Determine whether NetSec controls are blocking the reported flow, identify the blocking control when possible, or provide evidence for a handoff. Finding the application's root cause is not the objective. Project workflows determine remediation/escalation ownership; this guide does not transfer platform ownership.
+Determine whether NetSec controls are blocking the reported flow, identify the blocking control when possible, or provide evidence for a handoff. Finding the application's root cause is not the objective. Use the remediation and escalation boundaries below; this guide does not transfer platform ownership.
 
 ## 1. Capture the failing flow
 
@@ -158,18 +158,18 @@ Follow the [CRE registration-versus-scaffolding checks](../projects/netsec-autom
 
 ## 5. Provision missing individual access
 
-For a missing individual access requirement, NSE may help the requestor complete a **request form to provision the missing access** and implement it through the normal authorized process when it meets **NetSec Standard Tech 08.11** and has an appropriate business justification. Follow the [AWS standard security-group requests guide](requests/standard-security-group-requests.md) once populated. For a third-party environment, use the [third-party standard request guide](requests/third-party-standard-requests.md) once populated.
+For a missing individual access requirement, NSE may help the requestor complete a **request form to provision the missing access** and implement it through the normal authorized process when it meets **NetSec Standard Tech 08.11** and has an appropriate business justification. **AWS standard security-group requests:** TODO: insert approved request-guide link. **Third-party standard requests:** TODO: insert approved request-guide link.
 
 - **NetSec Standard Tech 08.11:** TODO: insert supporting document link.
 - **Request form / authorized implementation process:** TODO: insert supporting form/process link.
 
-Shared automation/catalog changes follow the project's architecture-escalation route, not individual-access processing. This guide grants no additional change authority.
+Shared automation/catalog changes go to NSAE through the escalation route below, not individual-access processing. This guide grants no additional change authority.
 
 ## 6. Record the NetSec disposition and hand off
 
 Attach endpoint locations/owners/environment, workload NR/R and NAT/proxy mappings, exact test window, path/devices, ENI/SG IDs and deployed rules/module version, queries/log actions, and relevant PCAP/counter evidence. Record one of:
 
-- **NetSec block identified:** name the control and evidence. Resolve, request access, coordinate with its owner or escalate through the project workflow; retest after correction.
+- **NetSec block identified:** name the control and evidence. Resolve, request access, coordinate with its owner or escalate through the NSAE route below; retest after correction.
 - **Checked NetSec controls passed the reproduced flow:** state exactly which controls and directions were verified, with correlated forwarding/acceptance evidence and no unresolved enforcement block in the tested scope. Hand off the remaining failure without claiming application root cause or clearing unchecked controls.
 - **Inconclusive / visibility gap:** name the missing hop, logs, capture or access and the owner needed next. No hits, an unobserved return path or an unmatched capture is not sufficient to clear NetSec.
 
@@ -191,9 +191,9 @@ Keep unresolved visibility gaps explicit rather than clearing NetSec from absent
 
 **NSAE escalation queue / contacts:** TODO: insert existing queue/contact link.
 
-## Related workflows and request guides
+## Related references
 
-- [NetSec Automation — AWS QE defect handling](../projects/netsec-automation/aws/qe-defect-handling.md).
-- [AWS standard security-group requests](requests/standard-security-group-requests.md) — placeholder.
-- [AWS third-party standard requests](requests/third-party-standard-requests.md) — placeholder.
+- [NetSec Automation — overview and NSE expectations](../projects/netsec-automation/shared/README.md).
+- [CRE registration and troubleshooting](../projects/netsec-automation/shared/cre/README.md).
+- **AWS QE defect-handling workflow:** TODO: insert reviewed procedure link.
 - **Diagnostic references / platform contacts:** TODO: insert existing links.
