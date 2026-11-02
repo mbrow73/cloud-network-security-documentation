@@ -2,6 +2,12 @@
 
 Cloud network security documentation, runbooks, and operational guides
 
+## Operational handoffs
+
+- [NetSec Automation — overview and NSE expectations](network-security-enablement/projects/netsec-automation/shared/README.md).
+- [Continuous Registration Engine (CRE) — AWS and GCP](network-security-enablement/projects/netsec-automation/shared/cre/README.md).
+- [AWS network troubleshooting](network-security-enablement/aws/troubleshooting.md).
+
 ## Architecture decision records
 
 - [GCP third-party ingress reverse-proxy removal](adrs/adr-gcp-third-party-ingress-reverse-proxy-removal.md) - proposed options, detailed SVG diagrams, regional Palo routing constraints, Cloud NGFW inspection gaps, PA/DNAT or Palo NSI candidates
